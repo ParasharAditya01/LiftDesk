@@ -23,7 +23,7 @@ Only the publishable/anon key belongs in the browser. Never place a Supabase ser
 - First-run gym workspace creation.
 - Member records with plan label, fee, status, and expiry date.
 - Manual check-in with server-side validation.
-- Member-specific QR generation and download; QR token validation RPC is available for a future scanner flow.
+- Member-specific QR generation/download plus a browser camera scanner backed by server-side QR token validation.
 - Seven-day inactivity flags and upcoming-renewal flags.
 - Persisted follow-up tasks and basic reports.
 
@@ -50,7 +50,7 @@ Before inviting real gyms, run the isolation checks below with two separate acco
 - [ ] Configure Supabase Auth site URL and allowed redirect URLs for the deployed domain.
 
 ## Important limitations
-- QR codes are generated and downloadable, and a secure QR validation RPC is provided. A live camera-scanning interface is not yet implemented.
+- QR generation and a browser camera-scanning interface are implemented in source, but camera permissions and end-to-end scanning have not been tested in a live browser.
 - Inactivity and expiry flags are calculated when the workspace is loaded; scheduled notifications are not configured.
 - Reports describe records stored in GymPulse. Listed monthly fees are not verified payments or revenue.
 - Subscription billing, gym invitations, automated email/WhatsApp reminders, exports, audit logs, and paid-plan enforcement are not implemented yet.
