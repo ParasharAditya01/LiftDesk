@@ -152,7 +152,6 @@ alter table public.attendance enable row level security;
 alter table public.follow_ups enable row level security;
 
 create policy "gym members can read their gym" on public.gyms for select to authenticated using (public.is_gym_member(id));
-create policy "owners can update their gym" on public.gyms for update to authenticated using (public.has_gym_role(id, array['owner','admin']::public.gym_role[])) with check (public.has_gym_role(id, array['owner','admin']::public.gym_role[]));
 create policy "users read own profile" on public.profiles for select to authenticated using (id = (select auth.uid()));
 create policy "users update own profile" on public.profiles for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
 create policy "gym members read workspace memberships" on public.gym_memberships for select to authenticated using (public.is_gym_member(gym_id));
@@ -164,8 +163,15 @@ create policy "owners remove members" on public.members for delete to authentica
 create policy "gym staff read attendance" on public.attendance for select to authenticated using (public.is_gym_member(gym_id));
 -- Attendance inserts are intentionally unavailable to browser clients. Use the validated SECURITY DEFINER RPCs.
 create policy "gym staff read follow ups" on public.follow_ups for select to authenticated using (public.is_gym_member(gym_id));
-create policy "gym staff create follow ups" on public.follow_ups for insert to authenticated with check (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[]) and created_by = (select auth.uid()));
-create policy "gym staff update follow ups" on public.follow_ups for update to authenticated using (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])) with check (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[]));
+create policy "gym staff create follow ups" on public.follow_ups for insert to authenticated with check (
+  public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])
+  and created_by = (select auth.uid())
+  and exists (select 1 from public.members m where m.id = member_id and m.gym_id = follow_ups.gym_id)
+);
+create policy "gym staff update follow ups" on public.follow_ups for update to authenticated using (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])) with check (
+  public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])
+  and exists (select 1 from public.members m where m.id = member_id and m.gym_id = follow_ups.gym_id)
+);
 create policy "owners delete follow ups" on public.follow_ups for delete to authenticated using (public.has_gym_role(gym_id, array['owner','admin']::public.gym_role[]));
 
 revoke all on function public.create_gym_for_current_user(text,text,text,text) from public;
@@ -177,7 +183,7 @@ grant execute on function public.is_gym_member(uuid) to authenticated;
 revoke all on function public.has_gym_role(uuid,public.gym_role[]) from public;
 grant execute on function public.has_gym_role(uuid,public.gym_role[]) to authenticated;
 
-grant select, update on public.gyms to authenticated;
+grant select on public.gyms to authenticated;
 grant select, insert, update, delete on public.gym_memberships to authenticated;
 grant select, insert, update, delete on public.members to authenticated;
 grant select on public.attendance to authenticated;
