@@ -162,12 +162,7 @@ create policy "gym staff add members" on public.members for insert to authentica
 create policy "gym staff update members" on public.members for update to authenticated using (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])) with check (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[]));
 create policy "owners remove members" on public.members for delete to authenticated using (public.has_gym_role(gym_id, array['owner','admin']::public.gym_role[]));
 create policy "gym staff read attendance" on public.attendance for select to authenticated using (public.is_gym_member(gym_id));
-create policy "gym staff record manual attendance" on public.attendance for insert to authenticated with check (
-  public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])
-  and recorded_by = (select auth.uid())
-  and exists (select 1 from public.members m where m.id = member_id and m.gym_id = attendance.gym_id and m.status = 'active')
-);
-create policy "gym staff read follow ups" on public.follow_ups for select to authenticated using (public.is_gym_member(gym_id));
+-- Attendance inserts are intentionally unavailable to browser clients. Use the validated SECURITY DEFINER RPCs.\ncreate policy "gym staff read follow ups" on public.follow_ups for select to authenticated using (public.is_gym_member(gym_id));
 create policy "gym staff create follow ups" on public.follow_ups for insert to authenticated with check (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[]) and created_by = (select auth.uid()));
 create policy "gym staff update follow ups" on public.follow_ups for update to authenticated using (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])) with check (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[]));
 create policy "owners delete follow ups" on public.follow_ups for delete to authenticated using (public.has_gym_role(gym_id, array['owner','admin']::public.gym_role[]));
@@ -184,7 +179,7 @@ grant execute on function public.has_gym_role(uuid,public.gym_role[]) to authent
 grant select, update on public.gyms to authenticated;
 grant select, insert, update, delete on public.gym_memberships to authenticated;
 grant select, insert, update, delete on public.members to authenticated;
-grant select, insert on public.attendance to authenticated;
+grant select on public.attendance to authenticated;
 grant select, insert, update, delete on public.follow_ups to authenticated;
 grant select, update on public.profiles to authenticated;
 
