@@ -93,6 +93,6 @@ function ScannerModal({onClose,onDecoded}:{onClose:()=>void;onDecoded:(raw:strin
   const scanner=new Html5QrcodeScanner('gympulse-qr-reader',{fps:10,qrbox:{width:230,height:230},rememberLastUsedCamera:true},false)
   scanner.render((decoded)=>{void scanner.clear().catch(()=>{});onDecoded(decoded)},(err)=>{if(typeof err==='string'&&err.toLowerCase().includes('permission'))setScannerError('Allow camera access in your browser settings, then try again.')})
   return()=>{void scanner.clear().catch(()=>{})}
- },[onDecoded])
+ },[])
  return <div className="modal-backdrop"><section className="qr-modal scanner-modal"><button className="icon qr-close" onClick={onClose} aria-label="Close scanner"><X/></button><p className="eyebrow">ATTENDANCE / QR SCAN</p><h2>Scan member code</h2><p className="muted">Use a member QR code issued by this gym.</p><div id="gympulse-qr-reader"/>{scannerError&&<Notice error={scannerError}/>}<p className="legal-note">The server validates gym ownership, member status, expiry, and duplicate check-ins.</p><button className="btn outline full" onClick={onClose}>Cancel</button></section></div>
 }
