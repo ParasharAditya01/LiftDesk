@@ -162,7 +162,8 @@ create policy "gym staff add members" on public.members for insert to authentica
 create policy "gym staff update members" on public.members for update to authenticated using (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])) with check (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[]));
 create policy "owners remove members" on public.members for delete to authenticated using (public.has_gym_role(gym_id, array['owner','admin']::public.gym_role[]));
 create policy "gym staff read attendance" on public.attendance for select to authenticated using (public.is_gym_member(gym_id));
--- Attendance inserts are intentionally unavailable to browser clients. Use the validated SECURITY DEFINER RPCs.\ncreate policy "gym staff read follow ups" on public.follow_ups for select to authenticated using (public.is_gym_member(gym_id));
+-- Attendance inserts are intentionally unavailable to browser clients. Use the validated SECURITY DEFINER RPCs.
+create policy "gym staff read follow ups" on public.follow_ups for select to authenticated using (public.is_gym_member(gym_id));
 create policy "gym staff create follow ups" on public.follow_ups for insert to authenticated with check (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[]) and created_by = (select auth.uid()));
 create policy "gym staff update follow ups" on public.follow_ups for update to authenticated using (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[])) with check (public.has_gym_role(gym_id, array['owner','admin','staff']::public.gym_role[]));
 create policy "owners delete follow ups" on public.follow_ups for delete to authenticated using (public.has_gym_role(gym_id, array['owner','admin']::public.gym_role[]));
