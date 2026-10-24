@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import QRCode from 'qrcode'\nimport { Html5QrcodeScanner } from 'html5-qrcode'
+import QRCode from 'qrcode'
+import { Html5QrcodeScanner } from 'html5-qrcode'
 import { Activity, Users, QrCode, CalendarDays, Bell, FileText, LayoutDashboard, LogOut, Plus, Search, ShieldCheck, X, Check, Menu } from 'lucide-react'
 import './styles.css'
 
