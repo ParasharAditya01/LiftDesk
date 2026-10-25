@@ -1,57 +1,64 @@
 # LiftDesk
 
-LiftDesk is an India-first gym operations SaaS MVP for independent gyms. The initial scope is member management, attendance, inactivity/renewal follow-ups, and basic reports.
+LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is being rebuilt incrementally in this repository with a strict pre-revenue budget of ₹0–₹1,000.
+
+## MVP scope
+
+- Member management and membership expiry tracking.
+- Member-specific QR codes and QR attendance.
+- Inactivity and renewal follow-ups.
+- Basic attendance and membership reports.
+- Multi-gym architecture with gym-level isolation enforced by PostgreSQL Row Level Security (RLS).
 
 ## Stack
+
 - React + TypeScript + Vite
-- Tailwind CSS utilities plus a custom responsive design system
-- Supabase Auth + PostgreSQL + Row Level Security (RLS)
-- QR-code generation via `qrcode`
+- Responsive custom CSS design system (Tailwind remains configured for utility styling)
+- Supabase Auth + PostgreSQL + RLS
+- QR generation and browser camera scanning planned for the attendance stage
+
+## Current rebuild status
+
+The first rebuild commit introduces the LiftDesk interface foundation and responsive navigation. It currently uses clearly labelled sample preview records; the preview is **not connected to a database** and is not ready for real gym data. Actions in the preview must not be interpreted as persisted operations.
+
+Planned implementation order:
+1. Interface and responsive states.
+2. Supabase authentication and first-run gym setup.
+3. Tenant-isolated member management.
+4. Server-validated manual and QR attendance.
+5. Renewal/inactivity follow-ups and basic reports.
+6. Security, build and responsive QA before the pilot.
 
 ## Local setup
-1. Install Node.js 20+.
-2. Copy `.env.example` to `.env.local`.
-3. Create a Supabase project and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local`.
-4. In Supabase SQL Editor, run `supabase/migrations/0001_initial_schema.sql`, then `supabase/migrations/0002_secure_manual_checkin.sql`.
-5. Configure Supabase Auth email confirmation and redirect URLs.
-6. Run `npm install`, then `npm run dev`. Run `npm run build` before deployment.
 
-Only the publishable/anon key belongs in the browser. Never place a Supabase service-role key in `VITE_*` variables or commit secrets.
+1. Install a supported Node.js version (Vite requires a recent supported Node.js release).
+2. Run `npm install`.
+3. Copy `.env.example` to `.env.local` when the Supabase stage is ready.
+4. Add the Supabase project URL and publishable/anon key to `.env.local`.
+5. Run `npm run dev`; run `npm run build` to verify the production bundle.
 
-## Current implementation scope
-- Email/password sign-up and sign-in.
-- First-run gym workspace creation.
-- Member records with plan label, fee, status, and expiry date.
-- Manual check-in with server-side validation.
-- Member-specific QR generation/download plus a browser camera scanner backed by server-side QR token validation.
-- Seven-day inactivity flags and upcoming-renewal flags.
-- Persisted follow-up tasks and basic reports.
+## Security requirements
 
-## Security model
-- Every tenant-owned row has a `gym_id`.
-- RLS is enabled on gyms, profiles, gym memberships, members, attendance, and follow-ups.
-- Membership/role checks are performed in database policies.
-- Gym creation uses a restricted `SECURITY DEFINER` RPC.
-- QR and manual check-ins validate gym membership, member status, expiry, and duplicate scans on the server.
-- UI filters are for usability only; they are not the security boundary.
+- Every tenant-owned record must be associated with a `gym_id`.
+- PostgreSQL RLS, not frontend filtering, is the security boundary.
+- Every write must be authorized server-side and checked against the user's active gym membership and role.
+- QR attendance must validate the random token, gym, membership status, expiry date and duplicate-scan window in a database function.
+- Never put a Supabase service-role key in browser code or any `VITE_*` variable.
+- Before a pilot, test with two separate gym-owner accounts and verify that neither gym can read or mutate the other's records.
 
-Before inviting real gyms, run the isolation checks below with two separate accounts and two gyms. Do not use production member data until these checks pass.
+## Pilot readiness checklist
 
-## Security and QA checklist
-- [ ] Apply migrations in a disposable Supabase project first.
-- [ ] Create Gym A and Gym B using separate owner accounts.
-- [ ] Verify Gym A cannot select, insert, update, or delete Gym B records using the browser client.
-- [ ] Verify staff cannot manage gym membership roles.
-- [ ] Verify expired/inactive members cannot check in.
-- [ ] Verify repeated check-ins are rejected server-side.
-- [ ] Verify sign-up email confirmation and password reset behavior.
-- [ ] Run `npm run build` and fix all TypeScript/build errors.
-- [ ] Test 320px, 360px, 375px, 390px and desktop layouts.
-- [ ] Configure Supabase Auth site URL and allowed redirect URLs for the deployed domain.
+- [ ] Supabase migrations reviewed and tested in a disposable project.
+- [ ] Gym A / Gym B cross-tenant RLS tests pass for read and write operations.
+- [ ] Role permissions and onboarding are verified.
+- [ ] Expired and inactive member check-ins are rejected server-side.
+- [ ] Duplicate check-ins are rejected server-side.
+- [ ] Sign-up, email confirmation, sign-in and sign-out are tested.
+- [ ] Production build passes.
+- [ ] Layout checked at 320, 360, 375, 390px and desktop widths.
+- [ ] Camera QR scanning is tested on a real browser/device.
+- [ ] No production member data is used until the checks above pass.
 
-## Important limitations
-- QR generation and a browser camera-scanning interface are implemented in source, but camera permissions and end-to-end scanning have not been tested in a live browser.
-- Inactivity and expiry flags are calculated when the workspace is loaded; scheduled notifications are not configured.
-- Reports describe records stored in LiftDesk. Listed monthly fees are not verified payments or revenue.
-- Subscription billing, gym invitations, automated email/WhatsApp reminders, exports, audit logs, and paid-plan enforcement are not implemented yet.
-- This repository has not yet been built or deployed in a live environment as part of this change. Treat it as an implementation in progress until the checklist is executed.
+## Not yet implemented or verified
+
+This is an active rebuild, not a production-ready service. Authentication, database integration, QR scan processing, real reports, automated reminders, billing, exports, audit logs and production deployment require subsequent implementation and testing. No build or deployment success is claimed until a run confirms it.
