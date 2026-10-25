@@ -48,7 +48,8 @@ for (const [name, source] of [
 }
 if (!/revoke all on function public\.record_manual_check_in\(uuid,uuid\) from public/i.test(manual)) failures.push('Manual check-in RPC must revoke PUBLIC execution')
 if (!/grant execute on function public\.record_manual_check_in\(uuid,uuid\) to authenticated/i.test(manual)) failures.push('Manual check-in RPC must grant execution only to authenticated users')
-if (!/revoke insert, update, delete on table public\.gym_memberships from authenticated/i.test(membershipHardening)) failures.push('Browser clients must not directly write gym memberships or alter roles')
+if (!/revoke all privileges on table public\.gym_memberships from anon, authenticated/i.test(membershipHardening)) failures.push('Anon and authenticated clients must have direct membership-table privileges revoked')
+if (!/grant select on table public\.gym_memberships to authenticated/i.test(membershipHardening)) failures.push('Authenticated clients must retain read-only membership access')
 
 // Inspect executable configuration, not comments explaining what must never be done.
 if (/VITE_[A-Z0-9_]*(?:SERVICE_ROLE|SERVICE_KEY)/i.test(app) ||
