@@ -1,4 +1,4 @@
--- GymPulse initial schema. Run in Supabase SQL Editor on a NEW project.
+-- LiftDesk initial schema. Run in Supabase SQL Editor on a NEW project.
 -- Tenant isolation is enforced by PostgreSQL RLS, not by frontend filters.
 create extension if not exists pgcrypto;
 
