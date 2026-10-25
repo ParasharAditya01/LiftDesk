@@ -61,3 +61,12 @@ input::placeholder,textarea::placeholder{color:#77736B}
 .status-expiring{background:#F2F0EB;color:#8B7350}
 .status-active{background:#F2F0EB;color:#292A2D}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* Semantic membership states stay distinct from the brand accent. */
+.status-active{background:#E7F3EA;color:#246B3B}
+.status-expiring{background:#FBF0D8;color:#805B16}
+.status-inactive{background:#FBE8E7;color:#A33732}
+.status-active i{background:currentColor}
+.status-expiring i{background:currentColor}
+.status-inactive i{background:currentColor}
