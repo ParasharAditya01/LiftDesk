@@ -8,6 +8,50 @@
 @media(max-width:720px){.sidebar{width:275px;transform:translateX(-100%);transition:transform .22s ease;box-shadow:none}.sidebar.sidebar-open{transform:translateX(0);box-shadow:18px 0 45px #111b1133}.sidebar-scrim{display:block;position:fixed;inset:0;z-index:25;border:0;background:#121a1280}.mobile-close,.mobile-menu{display:inline-grid}.sidebar-top{padding-bottom:22px}.main-area{margin-left:0}.topbar{height:58px;padding:0 14px;gap:8px}.topbar-left{gap:8px}.topbar-right{gap:9px}.today-label{display:none}.topbar-divider{display:none}.preview-pill{font-size:9px;padding:5px 7px}.page-content{padding:24px 14px 18px}.page-heading{align-items:flex-start;flex-direction:column;gap:14px;margin-bottom:19px}.page-heading h1{font-size:28px}.page-heading p{font-size:11px;line-height:1.6}.heading-actions,.heading-actions>.button-primary{width:100%}.demo-warning{align-items:flex-start;font-size:9px;margin-bottom:16px}.demo-warning button{font-size:9px;padding:0}.welcome-card{min-height:180px;padding:22px 19px;margin-bottom:22px}.welcome-copy{max-width:80%}.welcome-copy h2{font-size:20px}.welcome-copy p{line-height:1.6}.welcome-art{right:-70px;opacity:.32}.section-head{align-items:flex-start}.section-head h2{font-size:13px}.period-label{font-size:9px;padding:7px}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:17px}.metric-card{padding:13px 12px}.metric-top{font-size:9px;align-items:flex-start}.metric-icon{width:27px;height:27px;flex-shrink:0}.metric-value{font-size:25px;margin:12px 0 8px}.metric-bottom{font-size:8px;gap:4px}.overview-grid{gap:12px;margin-bottom:12px}.attendance-panel,.attention-panel,.recent-panel{padding:15px 13px}.surface-heading{gap:8px}.surface-heading h2{font-size:13px}.surface-heading p{font-size:9px;line-height:1.5}.subtle-select{font-size:9px}.chart-wrap{height:190px}.attention-row{gap:7px}.person-avatar{width:30px;height:30px;border-radius:9px;font-size:9px}.attention-copy b{font-size:9px}.attention-copy small{font-size:8px}.mini-tag{font-size:7px;padding:4px 5px}.page-footer{align-items:flex-start;flex-direction:column;font-size:9px}.directory-toolbar{align-items:stretch;flex-direction:column;padding:13px}.search-box{width:100%}.directory-filters{justify-content:space-between}.table-foot{flex-direction:column;gap:5px}.attendance-callout{align-items:flex-start;flex-wrap:wrap;padding:15px;gap:10px}.qr-illustration{width:40px;height:40px}.attendance-callout>div:nth-child(2){width:calc(100% - 55px);flex:auto}.attendance-callout h2{font-size:13px}.attendance-callout p{line-height:1.6}.attendance-callout>.button-primary{width:100%;margin-top:4px}.page-stack>.surface,.report-surface,.followup-list,.followup-side{padding:15px}.metric-grid-two{grid-template-columns:repeat(2,minmax(0,1fr))}.followup-card{gap:8px}.followup-card-copy>b{font-size:10px}.followup-card-copy>small{font-size:9px;line-height:1.5}.button-small{font-size:9px;padding:7px}.form-two{gap:8px}.member-modal{padding:19px}.modal-actions>*{flex:1}.report-note{align-items:flex-start;line-height:1.6}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
+/* Universal gym QR and phone OTP check-in */
+.universal-qr-panel{padding:18px 20px}
+.universal-qr-panel>.surface-heading{align-items:flex-start}
+.universal-qr-panel>.surface-heading h2,.attendance-history-heading h2{font:700 15px/1.35 Manrope,sans-serif;color:#343B36;margin:0}
+.universal-qr-panel>.surface-heading p,.attendance-history-heading p{font-size:11px;line-height:1.55;color:#68716B;margin:5px 0 0;max-width:640px}
+.universal-qr-panel>.surface-heading .button-primary{min-height:40px}
+.attendance-history-heading{padding:18px 20px;border-bottom:1px solid #E2E3DA}
+.qr-member-modal .modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:14px}
+.qr-member-modal .modal-header h2{font:700 22px/1.25 Manrope,sans-serif;letter-spacing:-.6px;color:#151817;margin:5px 0}
+.qr-member-modal .modal-header p:not(.auth-eyebrow){margin:0;color:#68716B;font-size:12px;text-transform:capitalize}
+.qr-code-stage{min-height:280px;display:grid;place-items:center;border:1px solid #E2E3DA;border-radius:8px;background:#FFFFFF}
+.qr-code-stage img{display:block;width:min(100%,280px);height:auto;image-rendering:pixelated}
+.qr-pass-note{font-size:12px;line-height:1.6;color:#68716B;text-align:center;margin:14px 4px 0}
+.qr-download-button{text-decoration:none}
+.universal-qr-heading{align-items:center!important}
+.universal-qr-note{display:flex;align-items:center;gap:18px;margin-top:18px;padding-top:14px;border-top:1px solid #E2E3DA}
+.universal-qr-note>span{color:#68716B;font-size:11px}
+.universal-qr-note>b{font-size:12px;color:#343B36;font-weight:700}
+.universal-qr-note>b i{font-style:normal;color:#8A987C;padding:0 7px}
+.universal-qr-note>small{margin-left:auto;color:#68716B;font-size:10px}
+.member-checkin-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:#F4F1E9;color:#151817}
+.member-checkin-card{width:min(100%,440px);padding:30px;background:#FFFFFF;border:1px solid #E2E3DA;border-radius:14px;box-shadow:0 16px 48px #1518170c}
+.member-checkin-brand{display:flex;align-items:center;gap:9px;margin-bottom:38px;font:700 18px Manrope,sans-serif;letter-spacing:-.6px}
+.member-checkin-brand>span{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#151817;color:#C5F36B}
+.member-checkin-brand b>span{color:#657067}
+.member-checkin-card .auth-eyebrow{margin:0 0 8px}
+.member-checkin-card h1{font:700 25px/1.2 Manrope,sans-serif;letter-spacing:-.8px;margin:0 0 10px;color:#151817}
+.member-checkin-copy{margin:0 0 20px;color:#68716B;font-size:13px;line-height:1.65}
+.member-checkin-form{display:flex;flex-direction:column;gap:15px}
+.member-checkin-form label{display:flex;flex-direction:column;gap:7px;color:#48514B;font-size:12px;font-weight:700}
+.member-checkin-form input{width:100%;padding:12px;border:1px solid #DDE2D8;border-radius:8px;background:white;color:#151817;font:400 14px Arial,sans-serif}
+.member-checkin-form input:focus{outline:3px solid #E7ECDD;border-color:#8A987C}
+.member-checkin-form .auth-submit{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px}
+.member-checkin-resend,.member-checkin-back{align-self:center;border:0;background:none;color:#343B36;text-decoration:underline;text-underline-offset:3px;font:600 12px Arial,sans-serif;cursor:pointer;padding:5px}
+.member-checkin-resend:disabled{opacity:.55;cursor:not-allowed}
+.member-checkin-back{margin:10px auto 0;display:block}
+.member-checkin-notice{padding:10px 12px;border-radius:7px;background:#F4F1E9;color:#343B36;font-size:12px;line-height:1.5}
+.member-checkin-privacy{display:flex;align-items:center;gap:7px;margin:24px 0 0;padding-top:15px;border-top:1px solid #E2E3DA;color:#68716B;font-size:11px;line-height:1.5}
+.member-checkin-privacy svg{flex-shrink:0;color:#526245}
+.member-checkin-success-mark{display:grid;place-items:center;width:52px;height:52px;margin:0 0 18px;border-radius:50%;background:#E7F1D7;color:#344B20}
+.member-checkin-time{padding:12px;border:1px solid #E2E3DA;border-radius:8px;color:#343B36;font-size:13px}
+@media(max-width:720px){.universal-qr-panel{padding:15px}.universal-qr-panel>.surface-heading{align-items:stretch;flex-direction:column}.universal-qr-panel>.surface-heading .button-primary{width:100%}.qr-code-stage{min-height:250px}.qr-code-stage img{width:min(100%,250px)}.attendance-history-heading{padding:15px}}
+@media(max-width:720px){.universal-qr-heading{align-items:stretch!important}.universal-qr-heading .button-primary{width:100%}.universal-qr-note{align-items:flex-start;flex-direction:column;gap:8px}.universal-qr-note>small{margin-left:0}.member-checkin-screen{padding:14px}.member-checkin-card{padding:23px 19px}.member-checkin-brand{margin-bottom:30px}}
+
 
 /* Authentication and first-run workspace setup */
 .auth-screen{min-height:100vh;display:grid;place-items:center;padding:28px 18px;background:#F8F7F4;color:#202124}

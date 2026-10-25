@@ -5,7 +5,7 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 ## MVP scope
 
 - Member management and membership expiry tracking.
-- Member-specific QR codes and QR attendance.
+- One universal QR code per gym with member phone OTP check-in.
 - Inactivity and renewal follow-ups.
 - Basic attendance and membership reports.
 - Multi-gym architecture with gym-level isolation enforced by PostgreSQL Row Level Security (RLS).
@@ -15,19 +15,13 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 - React + TypeScript + Vite
 - Responsive custom CSS design system (Tailwind remains configured for utility styling)
 - Supabase Auth + PostgreSQL + RLS
-- QR generation and browser camera scanning planned for the attendance stage
+- Universal gym QR links to a phone OTP check-in page; Supabase phone auth and an SMS provider must be configured.
 
 ## Current rebuild status
 
-The first rebuild commit introduces the LiftDesk interface foundation and responsive navigation. It currently uses clearly labelled sample preview records; the preview is **not connected to a database** and is not ready for real gym data. Actions in the preview must not be interpreted as persisted operations.
+The live application already has sign-in, gym workspace setup, member records, manual check-in, attendance history, saved follow-up display and basic counts. `/preview` is a separate sample-data walkthrough and is **not connected to a database**.
 
-Planned implementation order:
-1. Interface and responsive states.
-2. Supabase authentication and first-run gym setup.
-3. Tenant-isolated member management.
-4. Server-validated manual and QR attendance.
-5. Renewal/inactivity follow-ups and basic reports.
-6. Security, build and responsive QA before the pilot.
+The universal gym QR and member phone OTP flow is implemented in the current local working tree. It needs migration `0004_universal_gym_qr_checkin.sql`, Supabase phone auth/SMS setup, optional Turnstile keys, and real-device verification before production use. Local source changes are not automatically live.
 
 ## Local setup
 
@@ -42,7 +36,7 @@ Planned implementation order:
 - Every tenant-owned record must be associated with a `gym_id`.
 - PostgreSQL RLS, not frontend filtering, is the security boundary.
 - Every write must be authorized server-side and checked against the user's active gym membership and role.
-- QR attendance must validate the random token, gym, membership status, expiry date and duplicate-scan window in a database function.
+- Universal QR attendance must match a verified member phone to exactly one member in the gym, then validate membership status, expiry date and duplicate-check-in window in a database function.
 - Never put a Supabase service-role key in browser code or any `VITE_*` variable.
 - Before a pilot, test with two separate gym-owner accounts and verify that neither gym can read or mutate the other's records.
 
@@ -56,9 +50,10 @@ Planned implementation order:
 - [ ] Sign-up, email confirmation, sign-in and sign-out are tested.
 - [ ] Production build passes.
 - [ ] Layout checked at 320, 360, 375, 390px and desktop widths.
-- [ ] Camera QR scanning is tested on a real browser/device.
+- [ ] Printed universal gym QR is scanned on real phones and phone OTP check-in is verified end-to-end.
+- [ ] Supabase phone authentication, SMS provider, rate limits and CAPTCHA are configured and tested before enabling public member check-in.
 - [ ] No production member data is used until the checks above pass.
 
 ## Not yet implemented or verified
 
-This is an active rebuild, not a production-ready service. Authentication, database integration, QR scan processing, real reports, automated reminders, billing, exports, audit logs and production deployment require subsequent implementation and testing. No build or deployment success is claimed until a run confirms it.
+Automated inactivity/renewal reminder creation, richer reports, billing, exports and audit logs are not complete. The universal QR OTP flow has not yet been applied to the live database or tested with a configured SMS provider and real phone. Production deployment of the current local changes is also pending.

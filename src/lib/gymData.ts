@@ -14,7 +14,6 @@ export type GymMember = {
   membership_expires_on: string | null
   plan_name: string
   monthly_fee: number
-  qr_token: string
   created_at: string
 }
 export type AttendanceRecord = {
@@ -72,7 +71,7 @@ export async function createGymForCurrentUser(input: {
 export async function listMembers(gymId: string): Promise<GymMember[]> {
   const { data, error } = await requireSupabase()
     .from('members')
-    .select('id, gym_id, full_name, phone, email, status, joined_on, membership_expires_on, plan_name, monthly_fee, qr_token, created_at')
+    .select('id, gym_id, full_name, phone, email, status, joined_on, membership_expires_on, plan_name, monthly_fee, created_at')
     .eq('gym_id', gymId)
     .order('full_name', { ascending: true })
   if (error) throw error
@@ -98,7 +97,7 @@ export async function createMember(gymId: string, input: {
       monthly_fee: input.monthlyFee,
       membership_expires_on: input.membershipExpiresOn || null,
     })
-    .select('id, gym_id, full_name, phone, email, status, joined_on, membership_expires_on, plan_name, monthly_fee, qr_token, created_at')
+    .select('id, gym_id, full_name, phone, email, status, joined_on, membership_expires_on, plan_name, monthly_fee, created_at')
     .single()
   if (error) throw error
   return data as GymMember
