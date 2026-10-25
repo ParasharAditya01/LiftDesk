@@ -33,10 +33,9 @@ export default function AuthGate() {
       setBusy(false)
     })
     const { data: listener } = client.auth.onAuthStateChange((_event, nextSession) => {
+      // Token refreshes keep the same user. Preserve the loaded workspace unless
+      // the user identity changes; the session effect below reloads on sign-in/out.
       setSession(nextSession)
-      setWorkspace(null)
-      setNeedsWorkspace(false)
-      setError('')
     })
     return () => listener.subscription.unsubscribe()
   }, [])
