@@ -45,9 +45,14 @@ for (const [name, source] of [
     if (!header.includes("set search_path = ''")) failures.push(name + ' must pin an empty search_path')
   }
 }
-if (!/revoke all on function public\.record_manual_check_in\(uuid,uuid\) from public/i.test(manual)) failures.push('Manual check-in RPC must revoke PUBLIC execution')
-if (!/grant execute on function public\.record_manual_check_in\(uuid,uuid\) to authenticated/i.test(manual)) failures.push('Manual check-in RPC must grant execution only to authenticated users')
-if (/service_role|service-role/i.test(app)) failures.push('Do not reference a service-role key in browser Supabase client')
+if (!/revoke all on function public\\.record_manual_check_in\\(uuid,uuid\\) from public/i.test(manual)) failures.push('Manual check-in RPC must revoke PUBLIC execution')
+if (!/grant execute on function public\\.record_manual_check_in\\(uuid,uuid\\) to authenticated/i.test(manual)) failures.push('Manual check-in RPC must grant execution only to authenticated users')
+
+// Inspect executable configuration, not comments explaining what must never be done.
+if (/VITE_[A-Z0-9_]*(?:SERVICE_ROLE|SERVICE_KEY)/i.test(app) ||
+    /createClient\\s*\\([^)]*(?:SERVICE_ROLE_KEY|service_role)/is.test(app)) {
+  failures.push('Browser Supabase client must not be configured with a service-role credential')
+}
 
 if (failures.length) {
   console.error('LiftDesk security contract check failed:')
