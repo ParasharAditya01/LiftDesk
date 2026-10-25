@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 
 const initial = readFileSync('supabase/migrations/0001_initial_schema.sql', 'utf8')
 const manual = readFileSync('supabase/migrations/0002_secure_manual_checkin.sql', 'utf8')
+const membershipHardening = readFileSync('supabase/migrations/0003_harden_membership_writes.sql', 'utf8')
 const app = readFileSync('src/lib/supabase.ts', 'utf8')
 const failures = []
 const requiredTables = ['gyms', 'profiles', 'gym_memberships', 'members', 'attendance', 'follow_ups']
@@ -47,6 +48,7 @@ for (const [name, source] of [
 }
 if (!/revoke all on function public\.record_manual_check_in\(uuid,uuid\) from public/i.test(manual)) failures.push('Manual check-in RPC must revoke PUBLIC execution')
 if (!/grant execute on function public\.record_manual_check_in\(uuid,uuid\) to authenticated/i.test(manual)) failures.push('Manual check-in RPC must grant execution only to authenticated users')
+if (!/revoke insert, update, delete on table public\.gym_memberships from authenticated/i.test(membershipHardening)) failures.push('Browser clients must not directly write gym memberships or alter roles')
 
 // Inspect executable configuration, not comments explaining what must never be done.
 if (/VITE_[A-Z0-9_]*(?:SERVICE_ROLE|SERVICE_KEY)/i.test(app) ||
