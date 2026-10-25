@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { Activity, ArrowRight, Building2, LoaderCircle, ShieldCheck } from 'lucide-react'
 import { createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
 import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
-import App from './App'
+import LiveApp from './LiveApp'
 
 type Workspace = { gym: Gym; role: GymRole }
 type Mode = 'signin' | 'signup'
@@ -114,7 +114,7 @@ export default function AuthGate() {
     </form><button className="auth-signout" onClick={() => requireSupabase().auth.signOut()}>Sign out</button>
   </section></div>
 
-  if (workspace) return <><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><App /></>
+  if (workspace) return <><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></>
   return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button className="auth-submit" onClick={() => requireSupabase().auth.signOut()}>Sign out</button></section></div>
 }
 
