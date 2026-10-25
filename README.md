@@ -1,6 +1,6 @@
-# GymPulse
+# LiftDesk
 
-GymPulse is an India-first gym operations SaaS MVP for independent gyms. The initial scope is member management, attendance, inactivity/renewal follow-ups, and basic reports.
+LiftDesk is an India-first gym operations SaaS MVP for independent gyms. The initial scope is member management, attendance, inactivity/renewal follow-ups, and basic reports.
 
 ## Stack
 - React + TypeScript + Vite
@@ -52,6 +52,6 @@ Before inviting real gyms, run the isolation checks below with two separate acco
 ## Important limitations
 - QR generation and a browser camera-scanning interface are implemented in source, but camera permissions and end-to-end scanning have not been tested in a live browser.
 - Inactivity and expiry flags are calculated when the workspace is loaded; scheduled notifications are not configured.
-- Reports describe records stored in GymPulse. Listed monthly fees are not verified payments or revenue.
+- Reports describe records stored in LiftDesk. Listed monthly fees are not verified payments or revenue.
 - Subscription billing, gym invitations, automated email/WhatsApp reminders, exports, audit logs, and paid-plan enforcement are not implemented yet.
 - This repository has not yet been built or deployed in a live environment as part of this change. Treat it as an implementation in progress until the checklist is executed.
