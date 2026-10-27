@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { Activity, Bell, CalendarDays, ClipboardCheck, Download, LayoutDashboard, LoaderCircle, LogOut, Plus, QrCode, Search, Users, X } from 'lucide-react'
+import { Activity, Bell, CalendarDays, ClipboardCheck, LayoutDashboard, LoaderCircle, LogOut, Plus, Search, Users } from 'lucide-react'
 import { createMember, listAttendance, listFollowUps, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole } from './lib/gymData'
 import { requireSupabase } from './lib/supabase'
 
@@ -8,7 +8,7 @@ type Props = { gym: Gym; role: GymRole; user: User }
 type Section = 'Overview' | 'Members' | 'Attendance' | 'Follow-ups' | 'Reports'
 const sections: { name: Section; icon: typeof LayoutDashboard }[] = [
   { name: 'Overview', icon: LayoutDashboard }, { name: 'Members', icon: Users },
-  { name: 'Attendance', icon: QrCode }, { name: 'Follow-ups', icon: Bell }, { name: 'Reports', icon: CalendarDays },
+  { name: 'Attendance', icon: ClipboardCheck }, { name: 'Follow-ups', icon: Bell }, { name: 'Reports', icon: CalendarDays },
 ]
 const dateLabel = (value: string | null) => value ? new Date(value + (value.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not set'
 const timeLabel = (value: string) => new Date(value).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -26,7 +26,6 @@ export default function LiveApp({ gym, role, user }: Props) {
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
   const [showAdd, setShowAdd] = useState(false)
-  const [showGymQr, setShowGymQr] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '', plan: 'Monthly', fee: '999', expiry: '' })
 
   const refresh = useCallback(async () => {
@@ -90,39 +89,22 @@ export default function LiveApp({ gym, role, user }: Props) {
             <div className="section-head"><div><h2>The essentials</h2><p>Current records from your workspace.</p></div></div>
             <div className="metric-grid">
               <Metric label="Active members" value={String(active.length)} detail={members.length + ' total records'} icon={Users}/>
-              <Metric label="Visits today" value={String(visitsToday.length)} detail="Recorded check-ins" icon={QrCode}/>
+              <Metric label="Visits today" value={String(visitsToday.length)} detail="Recorded check-ins" icon={ClipboardCheck}/>
               <Metric label="Renewals soon" value={String(expiring.length)} detail="Next 7 days" icon={CalendarDays}/>
               <Metric label="Open follow-ups" value={String(openFollowUps.length)} detail={inactiveFollowUps.length + ' inactivity reminders'} icon={Bell}/>
             </div>
             <section className="surface recent-panel"><div className="surface-heading"><div><h2>Recent check-ins</h2><p>Latest attendance records from the last 30 days</p></div><button className="subtle-select" onClick={() => setSection('Attendance')}>View attendance ↗</button></div><RecordsTable attendance={attendance.slice(0,8)} members={members}/></section>
           </>}
           {section === 'Members' && <section className="surface directory-panel"><div className="directory-toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members by name or phone" aria-label="Search members"/></div><div className="directory-filters"><span>{filteredMembers.length} records</span></div></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>PLAN</th><th>STATUS</th><th>EXPIRES</th><th>MONTHLY FEE</th><th>ACTION</th></tr></thead><tbody>{filteredMembers.map(m => <tr key={m.id}><td><b>{m.full_name}</b><br/><small>{m.phone}</small></td><td>{m.plan_name}</td><td><Status status={m.status}/></td><td>{dateLabel(m.membership_expires_on)}</td><td>{money(Number(m.monthly_fee))}</td><td><button type="button" className="button-small" disabled={saving || m.status !== 'active'} onClick={() => void checkIn(m)}>Manual check-in</button></td></tr>)}</tbody></table>{filteredMembers.length === 0 && <div className="empty-state">No member records found.</div>}</div></section>}
-          {section === 'Attendance' && <div className="page-stack"><section className="surface universal-qr-panel"><div className="surface-heading universal-qr-heading"><div><h2>One QR for your whole gym</h2><p>Put this code at the entrance. Members scan it with their phones, verify their registered number with a WhatsApp code, and check in.</p></div><button type="button" className="button-primary" onClick={() => setShowGymQr(true)}><QrCode size={16}/>Show gym QR</button></div><div className="universal-qr-note"><span>Member check-in flow</span><b>Scan code <i>→</i> Verify phone <i>→</i> Attendance saved</b><small>WhatsApp OTP service must be enabled in Supabase before members can use this.</small></div></section><section className="surface directory-panel"><div className="surface-heading attendance-history-heading"><div><h2>Attendance history</h2><p>Latest 30-day records</p></div><span>{attendance.length} check-ins</span></div><RecordsTable attendance={attendance} members={members}/></section></div>}
+          {section === 'Attendance' && <div className="page-stack"><section className="surface manual-attendance-panel"><div className="manual-attendance-mark"><ClipboardCheck size={19}/></div><div className="manual-attendance-copy"><h2>Staff-recorded check-ins</h2><p>Member self-check-in by QR and WhatsApp code is turned off. A staff member should open Members, find the person, and select <b>Manual check-in</b>. LiftDesk checks the member’s gym, active status and membership expiry before saving attendance.</p></div><button type="button" className="button-primary" onClick={() => setSection('Members')}><Users size={16}/>Open members</button></section><section className="surface directory-panel"><div className="surface-heading attendance-history-heading"><div><h2>Attendance history</h2><p>Latest 30-day records</p></div><span>{attendance.length} check-ins</span></div><RecordsTable attendance={attendance} members={members}/></section></div>}
           {section === 'Follow-ups' && <section className="surface directory-panel"><div className="surface-heading"><div><h2>Follow-up queue</h2><p>Reminders currently stored for this gym</p></div><span>{openFollowUps.length} open</span></div><div className="table-scroll"><table><thead><tr><th>MEMBER ID</th><th>TYPE</th><th>DUE DATE</th><th>STATUS</th><th>NOTE</th></tr></thead><tbody>{followUps.map(f => <tr key={f.id}><td>{members.find(m => m.id === f.member_id)?.full_name || 'Member'}</td><td>{f.kind}</td><td>{dateLabel(f.due_on)}</td><td>{f.status}</td><td>{f.note || '—'}</td></tr>)}</tbody></table>{followUps.length === 0 && <div className="empty-state">No follow-ups have been created yet.</div>}</div></section>}
-          {section === 'Reports' && <div className="page-stack"><section className="surface report-surface"><h2>Workspace summary</h2><p>All figures are calculated from records accessible to this gym account.</p><div className="metric-grid metric-grid-two"><Metric label="Total members" value={String(members.length)} detail="All statuses" icon={Users}/><Metric label="Check-ins (30 days)" value={String(attendance.length)} detail="Attendance rows" icon={QrCode}/><Metric label="Active memberships" value={String(active.length)} detail="Status marked active" icon={Activity}/><Metric label="Open follow-ups" value={String(openFollowUps.length)} detail="Not resolved" icon={Bell}/></div></section></div>}
+          {section === 'Reports' && <div className="page-stack"><section className="surface report-surface"><h2>Workspace summary</h2><p>All figures are calculated from records accessible to this gym account.</p><div className="metric-grid metric-grid-two"><Metric label="Total members" value={String(members.length)} detail="All statuses" icon={Users}/><Metric label="Check-ins (30 days)" value={String(attendance.length)} detail="Attendance rows" icon={ClipboardCheck}/><Metric label="Active memberships" value={String(active.length)} detail="Status marked active" icon={Activity}/><Metric label="Open follow-ups" value={String(openFollowUps.length)} detail="Not resolved" icon={Bell}/></div></section></div>}
         </>}
         <div className="page-footer"><span>LiftDesk · {gym.name}</span><span>Signed in as {user.email}</span></div>
       </div>
     </main>
     {showAdd && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setShowAdd(false) }}><section className="member-modal" role="dialog" aria-modal="true" aria-labelledby="add-member-title"><div className="modal-header"><div><p className="auth-eyebrow">MEMBER MANAGEMENT</p><h2 id="add-member-title">Add a member</h2></div><button className="icon-button" onClick={() => setShowAdd(false)} aria-label="Close">×</button></div><form onSubmit={addMember}><label>Full name<input required minLength={2} maxLength={120} value={form.name} onChange={e => setForm({...form,name:e.target.value})}/></label><div className="form-two"><label>Phone<input required type="tel" value={form.phone} onChange={e => setForm({...form,phone:e.target.value})}/></label><label>Email (optional)<input type="email" value={form.email} onChange={e => setForm({...form,email:e.target.value})}/></label></div><div className="form-two"><label>Plan<input required value={form.plan} onChange={e => setForm({...form,plan:e.target.value})}/></label><label>Monthly fee (₹)<input required type="number" min="0" step="1" value={form.fee} onChange={e => setForm({...form,fee:e.target.value})}/></label></div><label>Membership expiry (optional)<input type="date" value={form.expiry} onChange={e => setForm({...form,expiry:e.target.value})}/></label><p className="modal-note"><Activity size={15}/> The member is saved to this gym's database and protected by Supabase access policies.</p>{error && <p className="auth-error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="button-secondary" onClick={() => setShowAdd(false)}>Cancel</button><button type="submit" className="button-primary" disabled={saving}>{saving ? 'Saving…' : 'Save member'}</button></div></form></section></div>}
-    {showGymQr && <GymQrDialog gymId={gym.id} gymName={gym.name} onClose={() => setShowGymQr(false)}/>}
   </div>
-}
-
-function GymQrDialog({ gymId, gymName, onClose }: { gymId: string; gymName: string; onClose: () => void }) {
-  const [image, setImage] = useState('')
-  const [error, setError] = useState('')
-  useEffect(() => {
-    let current = true
-    const payload = window.location.origin + '/?checkin=' + encodeURIComponent(gymId)
-    void import('qrcode').then(QRCode => QRCode.toDataURL(payload, { errorCorrectionLevel: 'M', margin: 2, width: 280, color: { dark: '#151817', light: '#FFFFFF' } }))
-      .then(value => { if (current) setImage(value) })
-      .catch(() => { if (current) setError('Could not create this member QR code.') })
-    return () => { current = false }
-  }, [gymId])
-
-  const filename = 'liftdesk-' + gymName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-gym-check-in.png'
-  return <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}><section className="member-modal qr-member-modal" role="dialog" aria-modal="true" aria-labelledby="gym-qr-title"><div className="modal-header"><div><p className="auth-eyebrow">UNIVERSAL GYM PASS</p><h2 id="gym-qr-title">{gymName}</h2><p>One check-in QR for every member</p></div><button className="icon-button" onClick={onClose} aria-label="Close gym QR"><X size={18}/></button></div><div className="qr-code-stage" aria-live="polite">{image ? <img src={image} alt={'Universal check-in QR code for ' + gymName}/> : error ? <p className="auth-error">{error}</p> : <LoaderCircle className="spin" size={22}/>}</div><p className="qr-pass-note">Print this code at your entrance. Members scan it with their phone camera, enter their registered phone number, and verify the WhatsApp code.</p><div className="modal-actions"><button type="button" className="button-secondary" onClick={onClose}>Close</button>{image && <a className="button-primary qr-download-button" href={image} download={filename}><Download size={15}/>Download gym QR</a>}</div></section></div>
 }
 
 function ShieldIcon() { return <Activity size={16}/> }

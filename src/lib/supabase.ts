@@ -36,21 +36,3 @@ export function requireSupabase(): SupabaseClient {
   }
   return supabase
 }
-
-/**
- * Phone check-in uses its own browser session so a member OTP never replaces
- * a gym staff owner's existing LiftDesk session on the same device.
- */
-export function createMemberCheckInClient(): SupabaseClient {
-  if (!isSupabaseConfigured) {
-    throw new Error('LiftDesk check-in is not configured yet. Please ask gym staff for help.')
-  }
-  return createClient(supabaseUrl!, supabaseAnonKey, {
-    auth: {
-      storageKey: 'liftdesk-member-check-in-auth',
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  })
-}

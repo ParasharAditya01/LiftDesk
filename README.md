@@ -5,7 +5,7 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 ## MVP scope
 
 - Member management and membership expiry tracking.
-- One universal QR code per gym with member phone OTP check-in.
+- Staff-recorded attendance with gym-scoped authorization.
 - Inactivity and renewal follow-ups.
 - Basic attendance and membership reports.
 - Multi-gym architecture with gym-level isolation enforced by PostgreSQL Row Level Security (RLS).
@@ -15,13 +15,12 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 - React + TypeScript + Vite
 - Responsive custom CSS design system (Tailwind remains configured for utility styling)
 - Supabase Auth + PostgreSQL + RLS
-- Universal gym QR links to a phone OTP check-in page; Supabase phone auth, a Twilio WhatsApp sender, and an approved WhatsApp authentication template must be configured.
 
 ## Current rebuild status
 
 The live application already has sign-in, gym workspace setup, member records, manual check-in, attendance history, saved follow-up display and basic counts. `/preview` is a separate sample-data walkthrough and is **not connected to a database**.
 
-The universal gym QR and member WhatsApp OTP flow is implemented in the current local working tree. It needs migration `0004_universal_gym_qr_checkin.sql`, Supabase phone auth/Twilio WhatsApp setup, an approved WhatsApp authentication template, optional Turnstile keys, and real-device verification before production use. Local source changes are not automatically live.
+Member QR/WhatsApp OTP check-in has been removed. Staff record attendance from the Members screen with the Manual check-in action. Migration `0006_disable_phone_otp_checkin.sql` revokes and removes the old phone-OTP RPC; apply it to Supabase to disable that database endpoint. Local source changes are not automatically live.
 
 ## Local setup
 
@@ -36,7 +35,7 @@ The universal gym QR and member WhatsApp OTP flow is implemented in the current 
 - Every tenant-owned record must be associated with a `gym_id`.
 - PostgreSQL RLS, not frontend filtering, is the security boundary.
 - Every write must be authorized server-side and checked against the user's active gym membership and role.
-- Universal QR attendance must match a verified member phone to exactly one member in the gym, then validate membership status, expiry date and duplicate-check-in window in a database function.
+- Manual attendance must authorize a staff role in the target gym, validate the selected member's gym, status and expiry date, and block rapid duplicate check-ins in a database function.
 - Never put a Supabase service-role key in browser code or any `VITE_*` variable.
 - Before a pilot, test with two separate gym-owner accounts and verify that neither gym can read or mutate the other's records.
 
@@ -50,10 +49,9 @@ The universal gym QR and member WhatsApp OTP flow is implemented in the current 
 - [ ] Sign-up, email confirmation, sign-in and sign-out are tested.
 - [ ] Production build passes.
 - [ ] Layout checked at 320, 360, 375, 390px and desktop widths.
-- [ ] Printed universal gym QR is scanned on real phones and WhatsApp OTP check-in is verified end-to-end.
-- [ ] Supabase phone authentication, Twilio WhatsApp sender/template, rate limits and CAPTCHA are configured and tested before enabling public member check-in.
+- [ ] Staff manual check-ins are verified against the member's gym, active status, expiry date and duplicate-check-in window.
 - [ ] No production member data is used until the checks above pass.
 
 ## Not yet implemented or verified
 
-Automated inactivity/renewal reminder creation, richer reports, billing, exports and audit logs are not complete. The database function has been applied, but the WhatsApp OTP flow has not yet been configured with a Twilio WhatsApp sender and approved template or tested with a real phone. Production deployment of the current local changes is also pending.
+Automated inactivity/renewal reminder creation, richer reports, billing, exports and audit logs are not complete. Apply migration `0006_disable_phone_otp_checkin.sql` to remove the former OTP RPC from Supabase, then deploy the current branch for the manual-only attendance interface to appear on the live site.

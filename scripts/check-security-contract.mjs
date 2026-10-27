@@ -6,11 +6,11 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const read = path => readFileSync(resolve(root, path), 'utf8')
 const stripComments = source => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\r\n]*/g, '')
 const compact = source => stripComments(source).toLowerCase().replace(/\s+/g, ' ').trim()
-const migrations = Object.fromEntries([1, 2, 3, 4, 5].map(version => {
+const migrations = Object.fromEntries([1, 2, 3, 4, 5, 6].map(version => {
   const id = String(version).padStart(4, '0')
   return [id, compact(read(`supabase/migrations/${id}_${[
     '', 'initial_schema', 'secure_manual_checkin', 'harden_membership_writes',
-    'universal_gym_qr_checkin', 'gym_themes',
+    'universal_gym_qr_checkin', 'gym_themes', 'disable_phone_otp_checkin',
   ][version]}.sql`))]
 }))
 const allSql = Object.values(migrations).join('\n')
@@ -153,6 +153,21 @@ if (phoneCheckIn && (!phoneCheckIn.body.includes('(select auth.uid()) is null') 
   fail('Phone OTP check-in must require an authenticated verified phone, match exactly one member within the QR gym, validate membership, prevent rapid duplicates, and record QR attendance')
 }
 
+const disabledPhoneCheckIn = migrations['0006']
+requireText(disabledPhoneCheckIn,
+  "execute 'revoke all on function public.check_in_with_phone_otp(uuid) from public, anon, authenticated'",
+  'Removed phone OTP check-in must revoke execution from all roles')
+requireText(disabledPhoneCheckIn,
+  'drop function if exists public.check_in_with_phone_otp(uuid)',
+  'Removed phone OTP check-in function must be dropped from the database')
+
+const appEntryPoints = compact([
+  read('src/main.tsx'), read('src/App.tsx'), read('src/LiveApp.tsx'), read('src/lib/supabase.ts'),
+].join('\n'))
+if (/membercheckin|createmembercheckinclient|signinwithotp|check_in_with_phone_otp|checkin=/.test(appEntryPoints)) {
+  fail('Member-facing QR/phone OTP check-in must not remain reachable from the application')
+}
+
 const themeMigration = migrations['0005']
 const legacyThemeCreator = requireFunction('create_gym_for_current_user', themeMigration).find(fn => !fn.header.includes('gym_theme text'))
 const themedCreator = functionsNamed(themeMigration, 'create_gym_for_current_user').find(fn => fn.header.includes('gym_theme text'))
@@ -188,7 +203,6 @@ const requiredRpcGrants = [
   ['public.create_gym_for_current_user(text,text,text,text,text)', themeMigration],
   ['public.check_in_with_qr(uuid,uuid)', baseline],
   ['public.record_manual_check_in(uuid,uuid)', migrations['0002']],
-  ['public.check_in_with_phone_otp(uuid)', migrations['0004']],
 ]
 for (const [signature, source] of requiredRpcGrants) {
   const escaped = signature.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -216,5 +230,5 @@ if (failures.length) {
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS predicates, membership authorization, attendance RPC protections, theme persistence, and function grants are present.')
+console.log('LiftDesk static security contract passed: tenant RLS predicates, manual attendance authorization, theme persistence, and RPC grants/removals are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')
