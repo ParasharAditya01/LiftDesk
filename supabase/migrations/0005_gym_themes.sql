@@ -2,11 +2,21 @@
 alter table public.gyms
   add column if not exists theme text not null default 'onyx-champagne';
 
-alter table public.gyms
-  add constraint gyms_theme_check check (theme in (
-    'fuchsia-grey', 'cream-black', 'red-black', 'green-ivory-yellow',
-    'beige-grey', 'navy-electric', 'gradient-blue', 'brown-beige', 'onyx-champagne'
-  ));
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'gyms_theme_check'
+      and conrelid = 'public.gyms'::regclass
+  ) then
+    alter table public.gyms
+      add constraint gyms_theme_check check (theme in (
+        'fuchsia-grey', 'cream-black', 'red-black', 'green-ivory-yellow',
+        'beige-grey', 'navy-electric', 'gradient-blue', 'brown-beige', 'onyx-champagne'
+      ));
+  end if;
+end;
+$$;
 
 -- New clients pass all five arguments. The four-argument RPC remains available
 -- to older clients and uses the default theme; no argument-count ambiguity exists.
