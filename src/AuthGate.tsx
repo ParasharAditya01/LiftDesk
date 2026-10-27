@@ -60,15 +60,30 @@ export default function AuthGate() {
     try {
       const client = requireSupabase()
       if (mode === 'signup') {
-        const { data, error: authError } = await client.auth.signUp({ email: email.trim(), password, options: { data: { full_name: ownerName.trim() } } })
+        const { data, error: authError } = await client.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            // Return the confirmation link to this app so Supabase can exchange
+            // its callback code and establish the first session here.
+            emailRedirectTo: new URL('/', window.location.origin).toString(),
+            data: { full_name: ownerName.trim() },
+          },
+        })
         if (authError) throw authError
         if (!data.session) {
-          setMessage('Account created. Check your email to confirm it, then sign in. Gym setup is available after confirmation.')
+          setMessage('Account created. Open the newest confirmation email to verify your address. The link will return you to LiftDesk. Check your spam folder if you do not see it.')
         } else {
           setSession(data.session)
         }
       } else {
         const { data, error: authError } = await client.auth.signInWithPassword({ email: email.trim(), password })
+        if (authError?.code === 'email_not_confirmed') {
+          throw new Error('Please confirm your email using the newest link we sent before signing in.')
+        }
+        if (authError?.code === 'invalid_credentials') {
+          throw new Error('Email or password was not accepted. If you just created this account, confirm your email first. Otherwise check the email address and password.')
+        }
         if (authError) throw authError
         setSession(data.session)
       }
