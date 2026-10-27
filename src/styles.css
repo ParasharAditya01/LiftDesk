@@ -41,6 +41,8 @@
 .auth-message{background:#F2F0EB;color:#292A2D}
 .auth-switch{font-size:12px;color:#77736B;text-align:center;margin:22px 0}
 .auth-switch button,.auth-signout{border:0;background:none;color:#202124;font:inherit;font-weight:800;cursor:pointer;padding:3px}
+.auth-resend{justify-self:start;border:0;background:none;color:#202124;font:inherit;font-size:12px;font-weight:800;text-decoration:underline;cursor:pointer;padding:2px 0}
+.auth-resend:disabled{opacity:.6;cursor:wait}
 .auth-security{display:flex;align-items:center;gap:8px;color:#77736B;font-size:11px;line-height:1.5;margin:20px 0 0}
 .auth-security svg{flex-shrink:0;color:#292A2D}
 .auth-instructions{display:grid;grid-template-columns:20px 1fr;gap:12px 10px;padding:16px;background:#F8F7F4;border-radius:12px;font-size:12px;line-height:1.6;color:#292A2D}
