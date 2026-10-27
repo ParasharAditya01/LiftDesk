@@ -15,13 +15,13 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 - React + TypeScript + Vite
 - Responsive custom CSS design system (Tailwind remains configured for utility styling)
 - Supabase Auth + PostgreSQL + RLS
-- Universal gym QR links to a phone OTP check-in page; Supabase phone auth and an SMS provider must be configured.
+- Universal gym QR links to a phone OTP check-in page; Supabase phone auth, a Twilio WhatsApp sender, and an approved WhatsApp authentication template must be configured.
 
 ## Current rebuild status
 
 The live application already has sign-in, gym workspace setup, member records, manual check-in, attendance history, saved follow-up display and basic counts. `/preview` is a separate sample-data walkthrough and is **not connected to a database**.
 
-The universal gym QR and member phone OTP flow is implemented in the current local working tree. It needs migration `0004_universal_gym_qr_checkin.sql`, Supabase phone auth/SMS setup, optional Turnstile keys, and real-device verification before production use. Local source changes are not automatically live.
+The universal gym QR and member WhatsApp OTP flow is implemented in the current local working tree. It needs migration `0004_universal_gym_qr_checkin.sql`, Supabase phone auth/Twilio WhatsApp setup, an approved WhatsApp authentication template, optional Turnstile keys, and real-device verification before production use. Local source changes are not automatically live.
 
 ## Local setup
 
@@ -50,10 +50,10 @@ The universal gym QR and member phone OTP flow is implemented in the current loc
 - [ ] Sign-up, email confirmation, sign-in and sign-out are tested.
 - [ ] Production build passes.
 - [ ] Layout checked at 320, 360, 375, 390px and desktop widths.
-- [ ] Printed universal gym QR is scanned on real phones and phone OTP check-in is verified end-to-end.
-- [ ] Supabase phone authentication, SMS provider, rate limits and CAPTCHA are configured and tested before enabling public member check-in.
+- [ ] Printed universal gym QR is scanned on real phones and WhatsApp OTP check-in is verified end-to-end.
+- [ ] Supabase phone authentication, Twilio WhatsApp sender/template, rate limits and CAPTCHA are configured and tested before enabling public member check-in.
 - [ ] No production member data is used until the checks above pass.
 
 ## Not yet implemented or verified
 
-Automated inactivity/renewal reminder creation, richer reports, billing, exports and audit logs are not complete. The universal QR OTP flow has not yet been applied to the live database or tested with a configured SMS provider and real phone. Production deployment of the current local changes is also pending.
+Automated inactivity/renewal reminder creation, richer reports, billing, exports and audit logs are not complete. The database function has been applied, but the WhatsApp OTP flow has not yet been configured with a Twilio WhatsApp sender and approved template or tested with a real phone. Production deployment of the current local changes is also pending.

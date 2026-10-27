@@ -92,12 +92,15 @@ export default function MemberCheckIn({ gymId }: Props) {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Mobile number check karein.'); return }
     setError(''); setNotice(''); setBusy(true)
     try {
-      const { error: authError } = await client.auth.signInWithOtp({ phone: authPhone, options: captchaToken ? { captchaToken } : undefined })
+      const { error: authError } = await client.auth.signInWithOtp({
+        phone: authPhone,
+        options: { channel: 'whatsapp', ...(captchaToken ? { captchaToken } : {}) },
+      })
       if (authError) throw authError
       setStep('otp')
-      setNotice('SMS code bhej diya hai. Apne phone par mila 6-digit code enter karein.')
+      setNotice('WhatsApp par verification code bhej diya hai. WhatsApp mein mila 6-digit code enter karein.')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'SMS code send nahi ho saka. Number check karke dobara try karein.')
+      setError(cause instanceof Error ? cause.message : 'WhatsApp code send nahi ho saka. Number check karke dobara try karein.')
     } finally { resetCaptcha(); setBusy(false) }
   }
 
@@ -132,9 +135,13 @@ export default function MemberCheckIn({ gymId }: Props) {
     if (turnstileSiteKey && !captchaToken) { setCaptchaError('Pehle human check complete karein.'); return }
     setError(''); setNotice(''); setBusy(true)
     try {
-      const { error: resendError } = await client.auth.resend({ type: 'sms', phone: phone.trim(), options: captchaToken ? { captchaToken } : undefined })
+      // Calling signInWithOtp again preserves the explicit WhatsApp channel.
+      const { error: resendError } = await client.auth.signInWithOtp({
+        phone: phone.trim(),
+        options: { channel: 'whatsapp', ...(captchaToken ? { captchaToken } : {}) },
+      })
       if (resendError) throw resendError
-      setNotice('Naya SMS code bhej diya hai.')
+      setNotice('Naya WhatsApp code bhej diya hai.')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Abhi naya code nahi bhej paye. Thodi der baad try karein.')
     } finally { resetCaptcha(); setBusy(false) }
@@ -157,12 +164,12 @@ export default function MemberCheckIn({ gymId }: Props) {
       </> : <>
         <p className="auth-eyebrow">GYM MEMBER CHECK-IN</p>
         <h1>{step === 'phone' ? 'Scan ke baad check in karein.' : 'Apna phone verify karein.'}</h1>
-        <p className="member-checkin-copy">{step === 'phone' ? 'Apne membership mein registered mobile number dalein. Hum us par one-time SMS code bhejenge.' : 'Aapke registered phone par aaya 6-digit SMS code enter karein.'}</p>
+        <p className="member-checkin-copy">{step === 'phone' ? 'Apne membership mein registered mobile number dalein. Hum WhatsApp par one-time verification code bhejenge.' : 'WhatsApp par aaya 6-digit verification code enter karein.'}</p>
         {step === 'phone' ? <form className="member-checkin-form" onSubmit={requestCode}>
           <label>Registered mobile number<input type="tel" autoComplete="tel" inputMode="tel" required value={phone} onChange={event => setPhone(event.target.value)} placeholder="+91 98765 43210" /></label>
-          <button className="auth-submit" type="submit" disabled={busy || Boolean(turnstileSiteKey && !captchaToken)}>{busy ? 'Code bhej rahe hain…' : 'SMS code bhejein'}</button>
+          <button className="auth-submit" type="submit" disabled={busy || Boolean(turnstileSiteKey && !captchaToken)}>{busy ? 'WhatsApp code bhej rahe hain…' : 'WhatsApp code bhejein'}</button>
         </form> : <form className="member-checkin-form" onSubmit={verifyAndCheckIn}>
-          <label>6-digit SMS code<input type="text" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={otp} onChange={event => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" /></label>
+          <label>6-digit WhatsApp code<input type="text" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={otp} onChange={event => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" /></label>
           <button className="auth-submit" type="submit" disabled={busy}>{busy ? <><LoaderCircle className="spin" size={16}/> Verify kar rahe hain…</> : 'Verify aur check in karein'}</button>
           <button className="member-checkin-resend" type="button" disabled={busy || Boolean(turnstileSiteKey && !captchaToken)} onClick={() => void resendCode()}>Code nahi mila? Dobara bhejein</button>
         </form>}

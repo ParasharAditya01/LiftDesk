@@ -89,6 +89,70 @@
 .workspace-session-strip button{border:0;background:transparent;color:#F8F7F4;font-size:11px;text-decoration:underline;cursor:pointer;margin-left:8px}
 @media(max-width:480px){.auth-card{border-radius:17px}.auth-brand{margin-bottom:30px}.workspace-session-strip{padding:0 12px;justify-content:flex-start}.workspace-session-strip button{margin-left:auto}}
 
+/* First-run gym theme selector */
+.auth-card-theme{width:min(100%,760px)}
+.gym-theme-fieldset{min-width:0;margin:2px 0 0;padding:0;border:0}
+.gym-theme-fieldset legend{padding:0;color:#343B36;font-size:14px;font-weight:700}
+.gym-theme-help{margin:6px 0 12px;color:#68716B;font-size:12px;line-height:1.5}
+.gym-theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.gym-theme-option{position:relative;display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px;border:1px solid #E2E3DA;border-radius:10px;background:#FFFFFF;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.gym-theme-option:has(input:checked){border-color:#68716B;box-shadow:0 0 0 2px #68716B20}
+.gym-theme-option:has(input:focus-visible){outline:3px solid #8A5B22;outline-offset:2px}
+.gym-theme-option input{position:absolute;width:1px;height:1px;opacity:0}
+.gym-theme-preview{height:52px;display:flex;overflow:hidden;border:1px solid #00000010;border-radius:6px;grid-column:1/-1}
+.gym-theme-preview-sidebar{width:22%;flex-shrink:0}
+.gym-theme-preview-main{flex:1;display:flex;flex-direction:column;gap:5px;padding:7px}
+.gym-theme-preview-main i{height:5px;width:75%;border-radius:3px;background:#00000018}
+.gym-theme-preview-main i:first-child{height:10px;width:42%}
+.gym-theme-option-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+.gym-theme-option-copy>b{font-size:11px;line-height:1.25;color:#343B36}
+.gym-theme-swatches{display:flex;gap:4px}
+.gym-theme-swatches i{width:13px;height:13px;border:1px solid #00000018;border-radius:50%}
+.gym-theme-check{width:19px;height:19px;display:grid;place-items:center;align-self:start;border:1px solid #D4D8D0;border-radius:50%;color:transparent}
+.gym-theme-option:has(input:checked) .gym-theme-check{background:#151817;border-color:#151817;color:#FFFFFF}
+@media(max-width:640px){.auth-card-theme{width:min(100%,460px)}.gym-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:380px){.gym-theme-grid{grid-template-columns:1fr}}
+
+/* Per-gym dashboard theme tokens and surfaces. Auth and member check-in screens remain independent. */
+.gym-theme-boundary{--theme-accent:#C5F36B;--theme-accent-fill:var(--theme-accent);--theme-accent-ink:#151817;--theme-sidebar:#151817;--theme-sidebar-ink:#F4F1E9;--theme-sidebar-muted:#C0C7C0;--theme-canvas:#F4F1E9;--theme-surface:#FFFFFF;--theme-ink:#151817;--theme-muted:#68716B;--theme-line:#E2E3DA;min-height:100vh;background:var(--theme-canvas);color:var(--theme-ink)}
+.gym-theme-boundary[data-theme="fuchsia-grey"]{--theme-accent:#D946A8;--theme-accent-ink:#FFFFFF;--theme-sidebar:#303038;--theme-sidebar-ink:#FFFFFF;--theme-sidebar-muted:#C7C4CC;--theme-canvas:#F7F5F8;--theme-surface:#FFFFFF;--theme-ink:#25232A;--theme-muted:#6E6874;--theme-line:#E6E1E9}
+.gym-theme-boundary[data-theme="cream-black"]{--theme-accent:#F3EBDD;--theme-accent-ink:#171717;--theme-sidebar:#171717;--theme-sidebar-ink:#FFFFFF;--theme-sidebar-muted:#C8C5C0;--theme-canvas:#FFFFFF;--theme-surface:#FFFFFF;--theme-ink:#171717;--theme-muted:#696969;--theme-line:#E8E5E0}
+.gym-theme-boundary[data-theme="red-black"]{--theme-accent:#D92D35;--theme-accent-ink:#FFFFFF;--theme-sidebar:#171717;--theme-sidebar-ink:#FFFFFF;--theme-sidebar-muted:#C8C5C5;--theme-canvas:#F5F5F5;--theme-surface:#FFFFFF;--theme-ink:#171717;--theme-muted:#696969;--theme-line:#E5E5E5}
+.gym-theme-boundary[data-theme="green-ivory-yellow"]{--theme-accent:#EACB48;--theme-accent-ink:#173D32;--theme-sidebar:#173D32;--theme-sidebar-ink:#F6F0E4;--theme-sidebar-muted:#D9DDCE;--theme-canvas:#F6F0E4;--theme-surface:#FFFCF5;--theme-ink:#173D32;--theme-muted:#68746C;--theme-line:#E4DECE}
+.gym-theme-boundary[data-theme="beige-grey"]{--theme-accent:#D9C6A5;--theme-accent-ink:#353535;--theme-sidebar:#353535;--theme-sidebar-ink:#FAF8F3;--theme-sidebar-muted:#C8C5BE;--theme-canvas:#FAF8F3;--theme-surface:#FFFFFF;--theme-ink:#292929;--theme-muted:#6F6B64;--theme-line:#E8E3D9}
+.gym-theme-boundary[data-theme="navy-electric"]{--theme-accent:#247BFF;--theme-accent-ink:#FFFFFF;--theme-sidebar:#101D3A;--theme-sidebar-ink:#F5F8FF;--theme-sidebar-muted:#BFCBE0;--theme-canvas:#F5F8FF;--theme-surface:#FFFFFF;--theme-ink:#10264B;--theme-muted:#62738D;--theme-line:#DCE5F2}
+.gym-theme-boundary[data-theme="gradient-blue"]{--theme-accent:#247BFF;--theme-accent-fill:linear-gradient(135deg,#7157F5,#247BFF);--theme-accent-ink:#FFFFFF;--theme-sidebar:#10264B;--theme-sidebar-ink:#FFFFFF;--theme-sidebar-muted:#C3D0E4;--theme-canvas:#FFFFFF;--theme-surface:#FFFFFF;--theme-ink:#10264B;--theme-muted:#62738D;--theme-line:#DCE5F2}
+.gym-theme-boundary[data-theme="brown-beige"]{--theme-accent:#70452F;--theme-accent-ink:#FFFFFF;--theme-sidebar:#DCC6A5;--theme-sidebar-ink:#38291F;--theme-sidebar-muted:#5D4C3C;--theme-canvas:#FAF5ED;--theme-surface:#FFFFFF;--theme-ink:#38291F;--theme-muted:#75685A;--theme-line:#E8DDCC}
+.gym-theme-boundary[data-theme="onyx-champagne"]{--theme-accent:#C5F36B;--theme-accent-ink:#151817;--theme-sidebar:#151817;--theme-sidebar-ink:#F4F1E9;--theme-sidebar-muted:#C0C7C0;--theme-canvas:#F4F1E9;--theme-surface:#FFFFFF;--theme-ink:#151817;--theme-muted:#68716B;--theme-line:#E2E3DA}
+.gym-theme-boundary .workspace-session-strip,.gym-theme-boundary .sidebar{background:var(--theme-sidebar);color:var(--theme-sidebar-ink)}
+.gym-theme-boundary .workspace-session-strip>svg,.gym-theme-boundary .workspace-role{color:var(--theme-accent)}
+.gym-theme-boundary .workspace-role{border-color:var(--theme-sidebar-muted)}
+.gym-theme-boundary .workspace-session-strip button{color:var(--theme-sidebar-ink)}
+.gym-theme-boundary .sidebar .brand-mark,.gym-theme-boundary .sidebar .workspace-avatar,.gym-theme-boundary .sidebar .nav-active{background:var(--theme-accent);color:var(--theme-accent-ink)}
+.gym-theme-boundary .sidebar .brand-name,.gym-theme-boundary .sidebar .profile-copy b{color:var(--theme-sidebar-ink)}
+.gym-theme-boundary .sidebar .brand-name>span,.gym-theme-boundary .sidebar .pilot-icon{color:var(--theme-accent)}
+.gym-theme-boundary .sidebar .workspace-switcher,.gym-theme-boundary .sidebar .sidebar-pilot{background:color-mix(in srgb,var(--theme-sidebar-ink) 9%,var(--theme-sidebar));border-color:color-mix(in srgb,var(--theme-sidebar-ink) 18%,var(--theme-sidebar))}
+.gym-theme-boundary .sidebar .workspace-copy span,.gym-theme-boundary .sidebar .nav-item,.gym-theme-boundary .sidebar .sidebar-pilot>p,.gym-theme-boundary .sidebar .profile-copy span{color:var(--theme-sidebar-muted)}
+.gym-theme-boundary .sidebar .nav-item:hover{background:color-mix(in srgb,var(--theme-sidebar-ink) 14%,var(--theme-sidebar));color:var(--theme-sidebar-ink)}
+.gym-theme-boundary .sidebar .nav-item.nav-active{color:var(--theme-accent-ink)}
+.gym-theme-boundary .sidebar .nav-active .nav-count{background:color-mix(in srgb,var(--theme-accent-ink) 13%,var(--theme-accent));color:var(--theme-accent-ink)}
+.gym-theme-boundary .main-area,.gym-theme-boundary .page-content{background:var(--theme-canvas);color:var(--theme-ink)}
+.gym-theme-boundary .topbar,.gym-theme-boundary .surface,.gym-theme-boundary .metric-card,.gym-theme-boundary .member-modal{background:var(--theme-surface);border-color:var(--theme-line);color:var(--theme-ink)}
+.gym-theme-boundary .welcome-card,.gym-theme-boundary .followup-side{background:color-mix(in srgb,var(--theme-accent) 18%,var(--theme-surface));border-color:color-mix(in srgb,var(--theme-accent) 28%,var(--theme-line))}
+.gym-theme-boundary .welcome-card h2,.gym-theme-boundary .surface-heading h2,.gym-theme-boundary .metric-value,.gym-theme-boundary .page-heading h1,.gym-theme-boundary .followup-side h2,.gym-theme-boundary .fee-cell,.gym-theme-boundary .table-scroll td b{color:var(--theme-ink)}
+.gym-theme-boundary .page-heading p,.gym-theme-boundary .surface-heading p,.gym-theme-boundary .metric-bottom,.gym-theme-boundary .breadcrumb-muted,.gym-theme-boundary .page-footer,.gym-theme-boundary .empty-state{color:var(--theme-muted)}
+.gym-theme-boundary .button-primary,.gym-theme-boundary .auth-submit{background:var(--theme-accent-fill)!important;border-color:var(--theme-accent)!important;color:var(--theme-accent-ink)!important}
+.gym-theme-boundary .button-primary:hover{filter:brightness(.94)}
+.gym-theme-boundary .metric-icon,.gym-theme-boundary .qr-illustration{background:var(--theme-accent);color:var(--theme-accent-ink)}
+.gym-theme-boundary[data-theme="gradient-blue"] .sidebar .brand-mark,.gym-theme-boundary[data-theme="gradient-blue"] .sidebar .workspace-avatar,.gym-theme-boundary[data-theme="gradient-blue"] .sidebar .nav-active,.gym-theme-boundary[data-theme="gradient-blue"] .metric-icon,.gym-theme-boundary[data-theme="gradient-blue"] .qr-illustration{background:var(--theme-accent-fill)}
+.gym-theme-boundary .text-action,.gym-theme-boundary .eyebrow,.gym-theme-boundary .metric-change,.gym-theme-boundary .positive{color:var(--theme-ink)}
+.gym-theme-boundary .attendance-panel .chart-gridlines line{stroke:var(--theme-line)}
+.gym-theme-boundary .chart-plot path,.gym-theme-boundary .legend-green,.gym-theme-boundary .report-bar-fill.fill-green{stroke:var(--theme-accent);background:var(--theme-accent)}
+.gym-theme-boundary .table-scroll th,.gym-theme-boundary .table-scroll td,.gym-theme-boundary .followup-card{border-color:var(--theme-line)}
+.gym-theme-boundary .directory-toolbar,.gym-theme-boundary .attendance-history-heading{border-color:var(--theme-line)}
+.gym-theme-boundary .member-modal input,.gym-theme-boundary .member-modal select{border-color:var(--theme-line);background:var(--theme-surface);color:var(--theme-ink)}
+.gym-theme-boundary :focus-visible{outline-color:var(--theme-accent)}
+
 
 /* LiftDesk Graphite & Ice theme: dark navigation, light content */
 :root{color-scheme:light}

@@ -1,8 +1,9 @@
 import type { User } from '@supabase/supabase-js'
 import { requireSupabase } from './supabase'
+import { DEFAULT_GYM_THEME, normalizeGymTheme, type GymThemeId } from './gymThemes'
 
 export type GymRole = 'owner' | 'admin' | 'staff'
-export type Gym = { id: string; name: string; city: string | null; phone: string | null }
+export type Gym = { id: string; name: string; city: string | null; phone: string | null; theme: GymThemeId }
 export type GymMember = {
   id: string
   gym_id: string
@@ -38,7 +39,7 @@ export async function getCurrentGym(user: User): Promise<{ gym: Gym; role: GymRo
   const client = requireSupabase()
   const { data, error } = await client
     .from('gym_memberships')
-    .select('gym_id, role, gyms!inner(id, name, city, phone)')
+    .select('gym_id, role, gyms!inner(id, name, city, phone, theme)')
     .eq('user_id', user.id)
     .eq('active', true)
     .limit(1)
@@ -46,8 +47,9 @@ export async function getCurrentGym(user: User): Promise<{ gym: Gym; role: GymRo
 
   if (error) throw error
   if (!data) return null
-  const joined = data.gyms as unknown as Gym
-  return { gym: joined, role: data.role as GymRole }
+  const joined = data.gyms as unknown as Omit<Gym, 'theme'> & { theme?: unknown }
+  const gym: Gym = { ...joined, theme: normalizeGymTheme(joined.theme) }
+  return { gym, role: data.role as GymRole }
 }
 
 export async function createGymForCurrentUser(input: {
@@ -55,6 +57,7 @@ export async function createGymForCurrentUser(input: {
   ownerName: string
   city?: string
   phone?: string
+  theme?: GymThemeId
 }): Promise<string> {
   const client = requireSupabase()
   const { data, error } = await client.rpc('create_gym_for_current_user', {
@@ -62,6 +65,7 @@ export async function createGymForCurrentUser(input: {
     owner_name: input.ownerName.trim(),
     gym_city: input.city?.trim() || null,
     gym_phone: input.phone?.trim() || null,
+    gym_theme: input.theme ?? DEFAULT_GYM_THEME,
   })
   if (error) throw error
   if (typeof data !== 'string') throw new Error('Gym creation did not return a workspace ID.')

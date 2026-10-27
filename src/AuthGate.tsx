@@ -4,6 +4,8 @@ import { Activity, ArrowRight, Building2, LoaderCircle, ShieldCheck } from 'luci
 import { createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
 import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
 import LiveApp from './LiveApp'
+import GymThemeSelector from './GymThemeSelector'
+import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 
 type Workspace = { gym: Gym; role: GymRole }
 type Mode = 'signin' | 'signup'
@@ -23,6 +25,7 @@ export default function AuthGate() {
   const [gymName, setGymName] = useState('')
   const [city, setCity] = useState('')
   const [phone, setPhone] = useState('')
+  const [gymTheme, setGymTheme] = useState<GymThemeId>(DEFAULT_GYM_THEME)
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setBusy(false); return }
@@ -78,7 +81,7 @@ export default function AuthGate() {
     if (!session?.user) return
     setError(''); setSaving(true)
     try {
-      await createGymForCurrentUser({ name: gymName, ownerName, city, phone })
+      await createGymForCurrentUser({ name: gymName, ownerName, city, phone, theme: gymTheme })
       const result = await getCurrentGym(session.user)
       if (!result) throw new Error('Gym was created but the membership could not be loaded. Refresh and try again.')
       setWorkspace(result); setNeedsWorkspace(false)
@@ -102,18 +105,19 @@ export default function AuthGate() {
     <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
   </section></div>
 
-  if (needsWorkspace) return <div className="auth-screen"><section className="auth-card"><BrandMark /><p className="auth-eyebrow">FIRST-TIME SETUP</p><h1>Set up your gym.</h1><p className="auth-intro">This creates a private workspace and assigns your account the owner role.</p>
+  if (needsWorkspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">FIRST-TIME SETUP</p><h1>Set up your gym.</h1><p className="auth-intro">This creates a private workspace and assigns your account the owner role.</p>
     <form className="auth-form" onSubmit={submitWorkspace}>
       <label>Gym name<input required minLength={2} maxLength={120} value={gymName} onChange={e => setGymName(e.target.value)} placeholder="e.g. Power Fitness Club" /></label>
       <label>Owner name<input required minLength={2} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>
       <label>City <span className="optional-label">Optional</span><input value={city} onChange={e => setCity(e.target.value)} placeholder="Pune" /></label>
       <label>Gym phone <span className="optional-label">Optional</span><input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91…" /></label>
+      <GymThemeSelector value={gymTheme} onChange={setGymTheme} />
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Creating workspace…' : 'Create gym workspace'} <ArrowRight size={16} /></button>
     </form><button className="auth-signout" onClick={() => requireSupabase().auth.signOut()}>Sign out</button>
   </section></div>
 
-  if (workspace) return <><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></>
+  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></div>
   return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button className="auth-submit" onClick={() => requireSupabase().auth.signOut()}>Sign out</button></section></div>
 }
 
