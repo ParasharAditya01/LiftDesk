@@ -10,7 +10,9 @@ const sections: { name: Section; icon: typeof LayoutDashboard }[] = [
   { name: 'Overview', icon: LayoutDashboard }, { name: 'Members', icon: Users },
   { name: 'Attendance', icon: ClipboardCheck }, { name: 'Follow-ups', icon: Bell }, { name: 'Reports', icon: CalendarDays },
 ]
-const dateLabel = (value: string | null) => value ? new Date(value + (value.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not set'
+const BUSINESS_TIME_ZONE = 'Asia/Kolkata'
+const indiaDateKey = (value: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(value)
+const dateLabel = (value: string | null) => value ? new Date(value + (value.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('en-IN', { timeZone: BUSINESS_TIME_ZONE, day: '2-digit', month: 'short', year: 'numeric' }) : 'Not set'
 const timeLabel = (value: string) => new Date(value).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 const initials = (name: string) => name.split(/\s+/).slice(0, 2).map(p => p[0] ?? '').join('').toUpperCase()
 const money = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value)
@@ -43,10 +45,11 @@ export default function LiveApp({ gym, role, user }: Props) {
   useEffect(() => { void refresh() }, [refresh])
 
   const filteredMembers = useMemo(() => members.filter(m => (m.full_name + ' ' + m.phone).toLowerCase().includes(query.toLowerCase())), [members, query])
-  const today = new Date().toLocaleDateString('en-CA')
-  const visitsToday = attendance.filter(a => new Date(a.checked_in_at).toLocaleDateString('en-CA') === today)
+  const today = indiaDateKey(new Date())
+  const renewalWindowEnd = indiaDateKey(new Date(Date.now() + 7 * 86400000))
+  const visitsToday = attendance.filter(a => indiaDateKey(new Date(a.checked_in_at)) === today)
   const active = members.filter(m => m.status === 'active')
-  const expiring = members.filter(m => m.membership_expires_on && m.membership_expires_on >= today && m.membership_expires_on <= new Date(Date.now() + 7 * 86400000).toLocaleDateString('en-CA'))
+  const expiring = members.filter(m => m.membership_expires_on && m.membership_expires_on >= today && m.membership_expires_on <= renewalWindowEnd)
   const inactiveFollowUps = followUps.filter(f => f.kind === 'inactive' && f.status !== 'resolved')
   const openFollowUps = followUps.filter(f => f.status !== 'resolved')
 
@@ -103,7 +106,7 @@ export default function LiveApp({ gym, role, user }: Props) {
         <div className="page-footer"><span>LiftDesk · {gym.name}</span><span>Signed in as {user.email}</span></div>
       </div>
     </main>
-    {showAdd && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setShowAdd(false) }}><section className="member-modal" role="dialog" aria-modal="true" aria-labelledby="add-member-title"><div className="modal-header"><div><p className="auth-eyebrow">MEMBER MANAGEMENT</p><h2 id="add-member-title">Add a member</h2></div><button className="icon-button" onClick={() => setShowAdd(false)} aria-label="Close">×</button></div><form onSubmit={addMember}><label>Full name<input required minLength={2} maxLength={120} value={form.name} onChange={e => setForm({...form,name:e.target.value})}/></label><div className="form-two"><label>Phone<input required type="tel" value={form.phone} onChange={e => setForm({...form,phone:e.target.value})}/></label><label>Email (optional)<input type="email" value={form.email} onChange={e => setForm({...form,email:e.target.value})}/></label></div><div className="form-two"><label>Plan<input required value={form.plan} onChange={e => setForm({...form,plan:e.target.value})}/></label><label>Monthly fee (₹)<input required type="number" min="0" step="1" value={form.fee} onChange={e => setForm({...form,fee:e.target.value})}/></label></div><label>Membership expiry (optional)<input type="date" value={form.expiry} onChange={e => setForm({...form,expiry:e.target.value})}/></label><p className="modal-note"><Activity size={15}/> The member is saved to this gym's database and protected by Supabase access policies.</p>{error && <p className="auth-error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="button-secondary" onClick={() => setShowAdd(false)}>Cancel</button><button type="submit" className="button-primary" disabled={saving}>{saving ? 'Saving…' : 'Save member'}</button></div></form></section></div>}
+    {showAdd && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setShowAdd(false) }}><section className="member-modal" role="dialog" aria-modal="true" aria-labelledby="add-member-title"><div className="modal-heading"><div><p className="auth-eyebrow">MEMBER MANAGEMENT</p><h2 id="add-member-title">Add a member</h2></div><button className="icon-button" onClick={() => setShowAdd(false)} aria-label="Close">×</button></div><form onSubmit={addMember}><label>Full name<input required minLength={2} maxLength={120} value={form.name} onChange={e => setForm({...form,name:e.target.value})}/></label><div className="form-two"><label>Phone<input required type="tel" value={form.phone} onChange={e => setForm({...form,phone:e.target.value})}/></label><label>Email (optional)<input type="email" value={form.email} onChange={e => setForm({...form,email:e.target.value})}/></label></div><div className="form-two"><label>Plan<input required value={form.plan} onChange={e => setForm({...form,plan:e.target.value})}/></label><label>Monthly fee (₹)<input required type="number" min="0" step="1" value={form.fee} onChange={e => setForm({...form,fee:e.target.value})}/></label></div><label>Membership expiry (optional)<input type="date" value={form.expiry} onChange={e => setForm({...form,expiry:e.target.value})}/></label><p className="modal-note"><Activity size={15}/> The member is saved to this gym's database and protected by Supabase access policies.</p>{error && <p className="auth-error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" className="button-secondary" onClick={() => setShowAdd(false)}>Cancel</button><button type="submit" className="button-primary" disabled={saving}>{saving ? 'Saving…' : 'Save member'}</button></div></form></section></div>}
   </div>
 }
 
