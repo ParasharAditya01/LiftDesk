@@ -5,6 +5,7 @@ import { createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from '
 import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
 import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
+import LiftDeskMark from './LiftDeskMark'
 import { userFacingError } from './lib/userFacingError'
 
 const LiveApp = lazy(() => import('./LiveApp'))
@@ -181,5 +182,5 @@ export default function AuthGate() {
 }
 
 function BrandMark() {
-  return <div className="auth-brand"><span><Activity size={19} strokeWidth={2.5} /></span><b>Lift<span>Desk</span></b></div>
+  return <div className="auth-brand"><LiftDeskMark size={38} /><b>Lift<span>Desk</span></b></div>
 }
