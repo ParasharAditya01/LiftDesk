@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">LiftDesk</title>
+  <rect width="64" height="64" rx="16" fill="#202124"/>
+  <rect x="7" y="7" width="50" height="50" rx="12" fill="#B7A17A"/>
+  <path d="M17 33h7l4-11 7 22 5-15 3 4h4" fill="none" stroke="#202124" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
