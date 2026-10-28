@@ -47,6 +47,7 @@ Member QR/WhatsApp OTP check-in has been removed from the interface. Staff recor
 - [ ] Expired and inactive member check-ins are rejected server-side.
 - [ ] Duplicate check-ins are rejected server-side.
 - [ ] Sign-up, email confirmation, sign-in and sign-out are tested.
+- [ ] Before public owner signup, configure verified custom SMTP and the production/local Auth redirect URLs using [the Supabase email setup guide](docs/SUPABASE_AUTH_EMAIL.md).
 - [ ] Production build passes.
 - [ ] Layout checked at 320, 360, 375, 390px and desktop widths.
 - [ ] Staff manual check-ins are verified against the member's gym, active status, expiry date and duplicate-check-in window.

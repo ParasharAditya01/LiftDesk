@@ -22,7 +22,7 @@ function NotFound() {
 
 function RoutedApp() {
   useEffect(() => {
-    const title = isPreview ? 'Preview workspace | LiftDesk' : 'Sign in | LiftDesk'
+    const title = isPreview ? 'Preview workspace | LiftDesk' : 'LiftDesk — Gym operations, simplified'
     document.title = title
     document.querySelector('meta[name="description"]')?.setAttribute('content', isPreview
       ? 'Explore the LiftDesk gym operations interface with clearly marked sample records.'

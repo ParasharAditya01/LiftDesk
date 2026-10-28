@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { Activity, ArrowRight, Building2, LoaderCircle, ShieldCheck } from 'lucide-react'
 import { createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
@@ -7,6 +7,7 @@ import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 import LiftDeskMark from './LiftDeskMark'
 import { userFacingError } from './lib/userFacingError'
+import { classifySignupResult, createRequestLock, requestOwnerSignup, requestSignupConfirmation } from './lib/authRegistration'
 
 const LiveApp = lazy(() => import('./LiveApp'))
 
@@ -24,6 +25,7 @@ export default function AuthGate() {
   const [message, setMessage] = useState('')
   const [showResendConfirmation, setShowResendConfirmation] = useState(false)
   const [resendingConfirmation, setResendingConfirmation] = useState(false)
+  const [emailWaitSeconds, setEmailWaitSeconds] = useState(0)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [ownerName, setOwnerName] = useState('')
@@ -31,6 +33,23 @@ export default function AuthGate() {
   const [city, setCity] = useState('')
   const [phone, setPhone] = useState('')
   const [gymTheme, setGymTheme] = useState<GymThemeId>(DEFAULT_GYM_THEME)
+  const authRequestLock = useRef(createRequestLock())
+
+  useEffect(() => {
+    if (emailWaitSeconds <= 0) return
+    const timer = window.setTimeout(() => setEmailWaitSeconds(seconds => Math.max(0, seconds - 1)), 1000)
+    return () => window.clearTimeout(timer)
+  }, [emailWaitSeconds])
+
+  function startEmailCooldown() { setEmailWaitSeconds(60) }
+
+  function logAuthCode(operation: string, value: unknown) {
+    const code = (value as { code?: unknown } | null)?.code
+    if (import.meta.env.DEV && typeof code === 'string') {
+      // Log only the provider code, never the email address, raw message, or tokens.
+      console.warn(`[LiftDesk auth] ${operation} failed`, { code })
+    }
+  }
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setBusy(false); return }
@@ -61,34 +80,41 @@ export default function AuthGate() {
 
   async function submitAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (mode === 'signup' && emailWaitSeconds > 0) return
+    if (!authRequestLock.current.tryAcquire()) return
     setError(''); setMessage(''); setSaving(true)
     try {
       const client = requireSupabase()
       if (mode === 'signup') {
-        const { data, error: authError } = await client.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            // Return the confirmation link to this app so Supabase can exchange
-            // its callback code and establish the first session here.
-            emailRedirectTo: new URL('/', window.location.origin).toString(),
-            data: { full_name: ownerName.trim() },
-          },
+        const { data, error: authError } = await requestOwnerSignup(client.auth, {
+          email: email.trim(), password, ownerName: ownerName.trim(), origin: window.location.origin,
         })
-        if (authError) throw authError
-        if (!data.session) {
-          const accountAlreadyExists = data.user?.identities?.length === 0
+        if (authError) {
+          logAuthCode('signup', authError)
+          if ((authError as { code?: string }).code === 'over_email_send_rate_limit') {
+            setShowResendConfirmation(true)
+            startEmailCooldown()
+          }
+          throw authError
+        }
+        const signup = classifySignupResult(data.user, data.session)
+        if (signup.kind === 'confirmation-pending' || signup.kind === 'existing-account') {
           setShowResendConfirmation(true)
-          setMessage(accountAlreadyExists
-            ? 'No new account was created for this email. It may already be registered. Switch to sign in, or resend a confirmation if you have not verified it yet.'
-            : 'Check your inbox and spam folder for the confirmation email. The newest link will return you to LiftDesk. If it does not arrive, you can request another below.')
+          startEmailCooldown()
+          setMessage(signup.kind === 'existing-account'
+            ? 'No new account was created. This email may already have an account. Try signing in; if it still needs confirmation, you can request another email below.'
+            : 'Supabase accepted the signup request, but LiftDesk cannot confirm delivery. Check your inbox and spam folder for the confirmation link. If it does not arrive, you can request one resend after the brief wait below.')
+        } else if (signup.kind === 'signed-in') {
+          setSession(signup.session)
         } else {
-          setSession(data.session)
+          throw new Error('Signup did not return an account or session. Please try again.')
         }
       } else {
         const { data, error: authError } = await client.auth.signInWithPassword({ email: email.trim(), password })
+        if (authError) logAuthCode('sign-in', authError)
         if (authError?.code === 'email_not_confirmed') {
-          throw new Error('Please confirm your email using the newest link we sent before signing in.')
+          setShowResendConfirmation(true)
+          throw new Error('This account still needs email confirmation. Use the resend button below if you do not have a confirmation email.')
         }
         if (authError?.code === 'invalid_credentials') {
           throw new Error('Email or password was not accepted. If you just created this account, confirm your email first. Otherwise check the email address and password.')
@@ -97,28 +123,33 @@ export default function AuthGate() {
         setSession(data.session)
       }
     } catch (err) { setError(userFacingError(err, 'Authentication failed. Check your details and try again.')) }
-    finally { setSaving(false) }
+    finally { authRequestLock.current.release(); setSaving(false) }
   }
 
   async function resendConfirmation() {
+    if (!authRequestLock.current.tryAcquire()) return
+    if (emailWaitSeconds > 0) { authRequestLock.current.release(); return }
     setError(''); setMessage(''); setResendingConfirmation(true)
     try {
-      const { error: resendError } = await requireSupabase().auth.resend({
-        type: 'signup',
-        email: email.trim(),
-        options: { emailRedirectTo: new URL('/', window.location.origin).toString() },
+      const { error: resendError } = await requestSignupConfirmation(requireSupabase().auth, {
+        email: email.trim(), origin: window.location.origin,
       })
+      if (resendError) logAuthCode('confirmation resend', resendError)
       if (resendError?.code === 'email_address_not_authorized') {
         throw new Error('Supabase is blocking this recipient because project email is not configured for general delivery. Configure custom SMTP in Supabase Authentication settings.')
       }
       if (resendError?.code === 'over_email_send_rate_limit') {
+        startEmailCooldown()
         throw new Error('Supabase has reached its email sending limit. Wait before requesting another confirmation email.')
       }
       if (resendError) throw resendError
-      setMessage('If this account still needs confirmation, Supabase has accepted a new email request. Check your inbox and spam folder. If you already confirmed the address, switch to sign in instead.')
+      setMessage('Supabase accepted the confirmation email request. Check your inbox and spam folder; delivery depends on the project email configuration. If you already confirmed, switch to sign in.')
+      startEmailCooldown()
     } catch (err) {
+      if ((err as { code?: string } | null)?.code === 'over_email_send_rate_limit') startEmailCooldown()
       setError(userFacingError(err, 'Could not request another confirmation email. Check your connection and try again.'))
     } finally {
+      authRequestLock.current.release()
       setResendingConfirmation(false)
     }
   }
@@ -157,10 +188,10 @@ export default function AuthGate() {
         <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
         <label>Password<input type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
         {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
-        {mode === 'signup' && showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={resendingConfirmation}>{resendingConfirmation ? 'Requesting email…' : 'Resend confirmation email'}</button>}
-        <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'} <ArrowRight size={16} /></button>
+        {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
+        <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || (mode === 'signup' && emailWaitSeconds > 0)}>{saving ? 'Please wait…' : mode === 'signup' && emailWaitSeconds > 0 ? `Please wait ${emailWaitSeconds}s…` : mode === 'signin' ? 'Sign in' : 'Create account'} <ArrowRight size={16} /></button>
       </form>
-      <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
+      <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
       <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
     </section><p className="auth-main-foot">LIFTDESK <span>·</span> GYM OPERATIONS, MADE CLEARER</p></main>
   </div>
