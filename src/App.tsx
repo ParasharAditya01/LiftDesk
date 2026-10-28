@@ -4,6 +4,7 @@ import {
   CircleHelp, Download, Dumbbell, FileBarChart, LayoutDashboard, Menu,
   Plus, ClipboardCheck, Search, Settings2, ShieldCheck, Sparkles, Users, X, Zap,
 } from 'lucide-react'
+import LiftDeskMark from './LiftDeskMark'
 
 type Section = 'Overview' | 'Members' | 'Attendance' | 'Follow-ups' | 'Reports'
 type MemberStatus = 'Active' | 'Expiring' | 'Inactive'
@@ -29,7 +30,7 @@ const navItems: { label: Section; icon: typeof LayoutDashboard }[] = [
 const money = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
 
 function Brand() {
-  return <div className="brand-lockup"><span className="brand-mark"><Activity size={19} strokeWidth={2.5} /></span><span className="brand-name">Lift<span>Desk</span><small>GYM OPERATIONS</small></span></div>
+  return <div className="brand-lockup"><LiftDeskMark size={35} className="brand-mark" /><span className="brand-name">Lift<span>Desk</span><small>GYM OPERATIONS</small></span></div>
 }
 
 function Status({ status }: { status: MemberStatus }) {
