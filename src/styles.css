@@ -153,7 +153,6 @@ input::placeholder,textarea::placeholder{color:#77736B}
 html {
   width: 100%;
   min-width: 320px;
-  overflow-x: clip;
 }
 body,
 #root {
@@ -327,4 +326,166 @@ svg {
   .member-modal {
     padding: 16px;
   }
+}
+
+
+/* Viewport-specific layout corrections for 320–390px phones and narrow tablets. */
+@media (max-width: 390px) {
+  .topbar {
+    justify-content: flex-start;
+  }
+  .topbar-left {
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+  .topbar-left .breadcrumb-muted,
+  .topbar-left .breadcrumb-slash {
+    display: none;
+  }
+  .topbar-left > b {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .topbar-right {
+    flex: 0 0 auto;
+  }
+  .preview-pill {
+    max-width: 34vw;
+    white-space: normal;
+    line-height: 1.25;
+  }
+  .page-heading h1 {
+    overflow-wrap: anywhere;
+    letter-spacing: -.7px;
+  }
+  .heading-actions,
+  .heading-actions > button,
+  .heading-actions > .button-primary,
+  .heading-actions > .button-secondary {
+    min-width: 0;
+    white-space: normal;
+  }
+  .section-head,
+  .surface-heading {
+    flex-wrap: wrap;
+  }
+  .metric-top {
+    min-width: 0;
+  }
+  .metric-top > span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .metric-value {
+    overflow-wrap: anywhere;
+  }
+  .welcome-card {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+  .welcome-copy {
+    max-width: 100%;
+  }
+  .welcome-copy h2,
+  .welcome-copy p {
+    overflow-wrap: anywhere;
+  }
+  .welcome-art {
+    right: -125px;
+    opacity: .12;
+  }
+  .directory-filters {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .search-box {
+    min-width: 0;
+  }
+  .search-box input {
+    min-width: 0;
+  }
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+  .modal-actions > * {
+    min-width: 0;
+    white-space: normal;
+  }
+  .member-modal {
+    width: 100%;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .auth-card {
+    width: 100%;
+    padding: 22px 18px;
+  }
+  .gym-theme-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workspace-session-strip {
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+  }
+  .workspace-session-strip button {
+    white-space: normal;
+  }
+}
+@media (max-width: 340px) {
+  .topbar {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+  .mobile-menu {
+    flex: 0 0 30px;
+    width: 30px;
+  }
+  .topbar-right {
+    gap: 4px;
+  }
+  .preview-pill {
+    max-width: 31vw;
+    padding: 4px 5px;
+    font-size: 8px;
+  }
+  .page-content {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+  .metric-grid,
+  .metric-grid-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .metric-card {
+    padding: 13px;
+  }
+  .form-two {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .modal-backdrop {
+    padding: 8px;
+  }
+  .member-modal {
+    padding: 14px;
+  }
+  .button-primary,
+  .button-secondary {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+/* A table may scroll within its own labelled region; the page itself must not. */
+.table-scroll {
+  min-width: 0;
+  max-width: 100%;
+}
+.table-scroll table {
+  width: max-content;
+  min-width: 100%;
+}
+.table-scroll th,
+.table-scroll td {
+  overflow-wrap: normal;
 }
