@@ -612,8 +612,8 @@ svg {
 /* Finishing details: deliberate entrance, real UI texture, and responsive motion */
 .auth-screen-premium{position:relative}
 .auth-showcase{background-color:#202629;background-image:linear-gradient(#ffffff06 1px,transparent 1px),linear-gradient(90deg,#ffffff06 1px,transparent 1px);background-size:46px 46px;background-position:center center}
-.auth-showcase:before{animation:showcase-orbit 24s ease-in-out infinite alternate}
-.auth-showcase:after{animation:showcase-glow 12s ease-in-out infinite alternate}
+.auth-showcase:before{animation:showcase-orbit 6s ease-in-out 1 both}
+.auth-showcase:after{animation:showcase-glow 7s ease-in-out 1 both}
 .showcase-top,.showcase-copy,.showcase-preview,.showcase-footer{animation:auth-enter .7s cubic-bezier(.2,.7,.2,1) both}
 .showcase-copy{animation-delay:.08s}
 .showcase-preview{animation-delay:.16s}
@@ -749,3 +749,19 @@ button,input,select,textarea{letter-spacing:inherit}
 @media(prefers-reduced-motion:reduce){
   .app-shell button{transition:none}
 }
+
+/* LiftDesk motion language: short tactile controls and one-time section reveals. */
+:root{--motion-ease:cubic-bezier(.22,.8,.3,1);--motion-fast:150ms;--motion-base:220ms;--motion-reveal:480ms}
+[data-motion-reveal].motion-entered{animation:lift-reveal var(--motion-reveal) var(--motion-ease)}
+.filter-button{transition:background-color var(--motion-base) ease,border-color var(--motion-base) ease,color var(--motion-base) ease}
+.button-primary:not(:disabled):hover,.button-secondary:not(:disabled):hover{transform:translateY(-1px)}
+.nav-item:not([aria-disabled="true"]):hover{transform:translateX(2px)}
+.icon-button:not(:disabled):hover{transform:scale(1.04)}
+.attention-row:hover .attention-arrow,.full-width-link:hover svg,.text-action:hover svg,.subtle-select:hover svg{transform:translateX(3px)}
+.attention-arrow,.full-width-link svg,.text-action svg,.subtle-select svg{transition:transform var(--motion-fast) var(--motion-ease)}
+.modal-backdrop{animation:lift-overlay-in 180ms ease-out both}
+.modal-backdrop .member-modal{animation:lift-modal-in 240ms var(--motion-ease) both}
+.sidebar-scrim{animation:lift-overlay-in 180ms ease-out both}
+@keyframes lift-reveal{from{opacity:.62;transform:translate3d(0,10px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes lift-overlay-in{from{opacity:0}to{opacity:1}}
+@keyframes lift-modal-in{from{opacity:.7;transform:translate3d(0,8px,0) scale(.99)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
