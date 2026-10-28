@@ -139,18 +139,30 @@ export default function AuthGate() {
 
   if (!isSupabaseConfigured) return <div className="auth-screen"><section className="auth-card"><BrandMark /><p className="auth-eyebrow">SETUP REQUIRED</p><h1>Connect your Supabase project</h1><p className="auth-intro">Authentication is disabled until the project URL and browser publishable key are configured.</p><div className="auth-instructions"><b>1.</b><span>Copy <code>.env.example</code> to a local file named <code>.env</code>.</span><b>2.</b><span>Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>.</span><b>3.</b><span>Run the SQL migrations in your Supabase SQL Editor, then restart Vite.</span></div><p className="auth-security"><ShieldCheck size={16} /> Never use a service-role key in browser settings.</p></section></div>
 
-  if (!session) return <div className="auth-screen"><section className="auth-card"><BrandMark /><p className="auth-eyebrow">GYM OPERATIONS, MADE CLEARER</p><h1>{mode === 'signin' ? 'Welcome back.' : 'Create your owner account.'}</h1><p className="auth-intro">{mode === 'signin' ? 'Sign in to access your gym workspace.' : 'Start with an account for the person responsible for the gym.'}</p>
-    <form className="auth-form" onSubmit={submitAuth}>
-      {mode === 'signup' && <label>Owner name<input autoComplete="name" required minLength={2} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>}
-      <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
-      <label>Password<input type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
-      {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
-      {mode === 'signup' && showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={resendingConfirmation}>{resendingConfirmation ? 'Requesting email…' : 'Resend confirmation email'}</button>}
-      <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'} <ArrowRight size={16} /></button>
-    </form>
-    <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
-    <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
-  </section></div>
+  if (!session) return <div className="auth-screen auth-screen-premium">
+    <aside className="auth-showcase" aria-label="LiftDesk product introduction">
+      <div className="showcase-top"><BrandMark /><span className="showcase-status"><i /> BUILT FOR GYM OWNERS</span></div>
+      <div className="showcase-copy"><p className="showcase-kicker">LESS ADMIN. MORE MOMENTUM.</p><h2>Your gym,<br /><span>running in rhythm.</span></h2><p>One clear workspace for memberships, attendance, and the follow-ups that keep members coming back.</p></div>
+      <div className="showcase-preview" aria-label="Illustrative product preview">
+        <div className="preview-window-top"><span className="preview-window-mark"><Activity size={13}/></span><b>Workspace overview</b><span className="preview-window-label">PRODUCT PREVIEW</span></div>
+        <div className="preview-stat-row"><div className="preview-stat"><span>MEMBERS</span><b>At a glance</b><i className="preview-line preview-line-long"/></div><div className="preview-stat"><span>ATTENDANCE</span><b>Track visits</b><div className="preview-bars"><i/><i/><i/><i/><i/><i/><i/></div></div></div>
+        <div className="preview-followup"><span className="preview-followup-icon"><ShieldCheck size={15}/></span><div><b>Stay ahead of renewals</b><span>Know what needs attention next.</span></div><ArrowRight size={15}/></div>
+      </div>
+      <div className="showcase-footer"><span>BUILT FOR THE EVERYDAY BUSINESS OF FITNESS</span><span>01 / OPERATIONS</span></div>
+    </aside>
+    <main className="auth-main"><section className="auth-card auth-card-premium"><div className="auth-mobile-brand"><BrandMark /></div><p className="auth-eyebrow">{mode === 'signin' ? 'YOUR WORKSPACE AWAITS' : 'START WITH A CLEARER WORKSPACE'}</p><h1>{mode === 'signin' ? 'Welcome back.' : 'Create your owner account.'}</h1><p className="auth-intro">{mode === 'signin' ? 'Sign in to pick up where your gym left off.' : 'Set up an account for the person responsible for the gym.'}</p>
+      <form className="auth-form" onSubmit={submitAuth}>
+        {mode === 'signup' && <label>Owner name<input autoComplete="name" required minLength={2} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>}
+        <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
+        <label>Password<input type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
+        {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
+        {mode === 'signup' && showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={resendingConfirmation}>{resendingConfirmation ? 'Requesting email…' : 'Resend confirmation email'}</button>}
+        <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'} <ArrowRight size={16} /></button>
+      </form>
+      <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
+      <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
+    </section><p className="auth-main-foot">LIFTDESK <span>·</span> GYM OPERATIONS, MADE CLEARER</p></main>
+  </div>
 
   if (needsWorkspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">FIRST-TIME SETUP</p><h1>Set up your gym.</h1><p className="auth-intro">This creates a private workspace and assigns your account the owner role.</p>
     <form className="auth-form" onSubmit={submitWorkspace}>
