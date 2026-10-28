@@ -4,6 +4,7 @@ import { Activity, Bell, CalendarDays, ClipboardCheck, LayoutDashboard, LoaderCi
 import { createMember, listAttendance, listFollowUps, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole } from './lib/gymData'
 import { requireSupabase } from './lib/supabase'
 import { userFacingError } from './lib/userFacingError'
+import LiftDeskMark from './LiftDeskMark'
 
 type Props = { gym: Gym; role: GymRole; user: User }
 type Section = 'Overview' | 'Members' | 'Attendance' | 'Follow-ups' | 'Reports'
@@ -136,7 +137,7 @@ export default function LiveApp({ gym, role, user }: Props) {
   return <div className="app-shell">
     {mobileNavOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => closeMenu(true)} />}
     <aside ref={sidebarRef} id="workspace-navigation" className={'sidebar ' + (mobileNavOpen ? 'sidebar-open' : '')}>
-      <div className="sidebar-top"><button type="button" className="brand-lockup brand-home" aria-label="LiftDesk home, Overview" onClick={() => navigate('Overview')}><span className="brand-mark"><Activity size={19}/></span><span className="brand-name">Lift<span>Desk</span><small>GYM OPERATIONS</small></span></button><button type="button" className="icon-button mobile-close" aria-label="Close navigation" onClick={() => closeMenu(true)}><X size={18}/></button></div>
+      <div className="sidebar-top"><button type="button" className="brand-lockup brand-home" aria-label="LiftDesk home, Overview" onClick={() => navigate('Overview')}><LiftDeskMark size={35} className="brand-mark" /><span className="brand-name">Lift<span>Desk</span><small>GYM OPERATIONS</small></span></button><button type="button" className="icon-button mobile-close" aria-label="Close navigation" onClick={() => closeMenu(true)}><X size={18}/></button></div>
       <div className="workspace-switcher"><div className="workspace-avatar">{initials(gym.name).slice(0,2)}</div><div className="workspace-copy"><b>{gym.name}</b><span>{role} workspace</span></div></div>
       <div className="nav-caption">WORKSPACE</div>
       <nav className="primary-nav" aria-label="Main navigation">{sections.map(({name, icon: Icon}) => <button type="button" key={name} className={'nav-item ' + (section === name ? 'nav-active' : '')} aria-current={section === name ? 'page' : undefined} onClick={() => navigate(name)}><Icon size={18}/><span>{name}</span>{name === 'Follow-ups' && openFollowUps.length > 0 && <span className="nav-count">{openFollowUps.length}</span>}</button>)}</nav>
