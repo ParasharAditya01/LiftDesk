@@ -1,11 +1,13 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { Activity, ArrowRight, Building2, LoaderCircle, ShieldCheck } from 'lucide-react'
 import { createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
 import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
-import LiveApp from './LiveApp'
 import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
+import { userFacingError } from './lib/userFacingError'
+
+const LiveApp = lazy(() => import('./LiveApp'))
 
 type Workspace = { gym: Gym; role: GymRole }
 type Mode = 'signin' | 'signup'
@@ -33,7 +35,7 @@ export default function AuthGate() {
     if (!isSupabaseConfigured) { setBusy(false); return }
     const client = requireSupabase()
     client.auth.getSession().then(({ data, error: sessionError }) => {
-      if (sessionError) setError(sessionError.message)
+      if (sessionError) setError(userFacingError(sessionError, 'Could not check your sign-in session. Refresh the page and try again.'))
       setSession(data.session)
       setBusy(false)
     })
@@ -51,7 +53,7 @@ export default function AuthGate() {
     setBusy(true)
     getCurrentGym(session.user)
       .then(result => { if (alive) { setWorkspace(result); setNeedsWorkspace(!result) } })
-      .catch(err => { if (alive) setError(err instanceof Error ? err.message : 'Could not load your gym workspace.') })
+      .catch(err => { if (alive) setError(userFacingError(err, 'Could not load your gym workspace. Check your connection and try again.')) })
       .finally(() => { if (alive) setBusy(false) })
     return () => { alive = false }
   }, [session?.user.id])
@@ -93,7 +95,7 @@ export default function AuthGate() {
         if (authError) throw authError
         setSession(data.session)
       }
-    } catch (err) { setError(err instanceof Error ? err.message : 'Authentication failed.') }
+    } catch (err) { setError(userFacingError(err, 'Authentication failed. Check your details and try again.')) }
     finally { setSaving(false) }
   }
 
@@ -114,7 +116,7 @@ export default function AuthGate() {
       if (resendError) throw resendError
       setMessage('If this account still needs confirmation, Supabase has accepted a new email request. Check your inbox and spam folder. If you already confirmed the address, switch to sign in instead.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not request another confirmation email.')
+      setError(userFacingError(err, 'Could not request another confirmation email. Check your connection and try again.'))
     } finally {
       setResendingConfirmation(false)
     }
@@ -129,7 +131,7 @@ export default function AuthGate() {
       const result = await getCurrentGym(session.user)
       if (!result) throw new Error('Gym was created but the membership could not be loaded. Refresh and try again.')
       setWorkspace(result); setNeedsWorkspace(false)
-    } catch (err) { setError(err instanceof Error ? err.message : 'Could not create the gym workspace.') }
+    } catch (err) { setError(userFacingError(err, 'Could not create the gym workspace. Check the details and try again.')) }
     finally { setSaving(false) }
   }
 
@@ -162,7 +164,7 @@ export default function AuthGate() {
     </form><button className="auth-signout" onClick={() => requireSupabase().auth.signOut()}>Sign out</button>
   </section></div>
 
-  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></div>
+  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
   return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button className="auth-submit" onClick={() => requireSupabase().auth.signOut()}>Sign out</button></section></div>
 }
 

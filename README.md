@@ -18,9 +18,9 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 
 ## Current rebuild status
 
-The live application already has sign-in, gym workspace setup, member records, manual check-in, attendance history, saved follow-up display and basic counts. `/preview` is a separate sample-data walkthrough and is **not connected to a database**.
+The current branch contains sign-in, gym workspace setup, member records, manual check-in, attendance history, saved follow-up display and basic counts. `/preview` is a separate sample-data walkthrough and is **not connected to a database**. The current production deployment must be checked separately; source code on this branch does not prove what is live.
 
-Member QR/WhatsApp OTP check-in has been removed. Staff record attendance from the Members screen with the Manual check-in action. Migration `0006_disable_phone_otp_checkin.sql` revokes and removes the old phone-OTP RPC; apply it to Supabase to disable that database endpoint. Local source changes are not automatically live.
+Member QR/WhatsApp OTP check-in has been removed from the interface. Staff record attendance from the Members screen with the Manual check-in action. Migration `0006_disable_phone_otp_checkin.sql` revokes and removes the old phone-OTP RPC; its production application status must be verified separately. Local source changes are not automatically live.
 
 ## Local setup
 
@@ -54,4 +54,14 @@ Member QR/WhatsApp OTP check-in has been removed. Staff record attendance from t
 
 ## Not yet implemented or verified
 
-Automated inactivity/renewal reminder creation, richer reports, billing, exports and audit logs are not complete. Apply migration `0006_disable_phone_otp_checkin.sql` to remove the former OTP RPC from Supabase, then deploy the current branch for the manual-only attendance interface to appear on the live site.
+Automated inactivity/renewal reminder creation, richer live reports, billing, and audit logs are not complete. Preview CSV export contains sample data only. Do not claim that the OTP RPC is removed from production until migration `0006_disable_phone_otp_checkin.sql` has been verified there.
+
+## Routes, indexing and static assets
+
+- `/` is the owner sign-in and workspace setup application.
+- `/preview` is a sample-data walkthrough, not a customer-facing marketing page and never writes to Supabase.
+- Both application routes are marked `noindex, nofollow`; `robots.txt` disallows crawling because this repository currently has no public, indexable product pages. No sitemap is published until such pages exist.
+- Cloudflare Pages serves the top-level `404.html` for unmatched file routes; the React router also renders a branded 404 view if an unknown path reaches the app shell.
+- The favicon is the LiftDesk activity mark in `public/favicon.svg`.
+
+There is not enough verified owner, contact, retention, cookie, or legal information in the repository to publish a privacy policy or terms page. Customer testimonials, social profiles, and public support contacts have not been supplied. GA4 is not configured because no Measurement ID or consent requirements were provided. Turnstile/WAF deployment is not claimed: the Cloudflare account configuration and server-side verification credentials are not part of the repository.
