@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import './liftdesk-mark.css'
 
 type LiftDeskMarkProps = { className?: string; size?: number; style?: CSSProperties }
 
