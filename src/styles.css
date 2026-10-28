@@ -17,6 +17,10 @@
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .nav-item[aria-disabled="true"]{cursor:default;background:transparent}
 .nav-item[aria-disabled="true"]:hover{background:transparent;color:inherit}
+.liftdesk-logo{display:inline-flex;align-items:center;gap:10px;min-width:0;vertical-align:middle}
+.liftdesk-logo-compact{gap:6px}
+.liftdesk-logo-compact .brand-name{font-size:12px;letter-spacing:-.4px}
+.footer-home .liftdesk-logo{line-height:1}
 .not-found-actions{display:flex;flex-wrap:wrap;gap:10px}
 .not-found-actions .auth-submit,.not-found-actions .button-secondary{width:auto;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none}
 .not-found-actions .button-secondary{border:1px solid #E7E3DB;background:#FFFFFF;color:#202124}
