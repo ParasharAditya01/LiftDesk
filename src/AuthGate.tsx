@@ -142,11 +142,11 @@ export default function AuthGate() {
   if (!session) return <div className="auth-screen auth-screen-premium">
     <aside className="auth-showcase" aria-label="LiftDesk product introduction">
       <div className="showcase-top"><BrandMark /><span className="showcase-status"><i /> BUILT FOR GYM OWNERS</span></div>
-      <div className="showcase-copy"><p className="showcase-kicker">LESS ADMIN. MORE MOMENTUM.</p><h2>Your gym,<br /><span>running in rhythm.</span></h2><p>One clear workspace for memberships, attendance, and the follow-ups that keep members coming back.</p></div>
+      <div className="showcase-copy"><p className="showcase-kicker">LESS ADMIN. MORE MOMENTUM.</p><h2>Your gym,<br /><span>running in rhythm.</span></h2><p>A clearer way to manage memberships, track attendance, and stay ahead of renewals.</p></div>
       <div className="showcase-preview" aria-label="Illustrative product preview">
         <div className="preview-window-top"><span className="preview-window-mark"><Activity size={13}/></span><b>Workspace overview</b><span className="preview-window-label">PRODUCT PREVIEW</span></div>
-        <div className="preview-stat-row"><div className="preview-stat"><span>MEMBERS</span><b>At a glance</b><i className="preview-line preview-line-long"/></div><div className="preview-stat"><span>ATTENDANCE</span><b>Track visits</b><div className="preview-bars"><i/><i/><i/><i/><i/><i/><i/></div></div></div>
-        <div className="preview-followup"><span className="preview-followup-icon"><ShieldCheck size={15}/></span><div><b>Stay ahead of renewals</b><span>Know what needs attention next.</span></div><ArrowRight size={15}/></div>
+        <div className="preview-stat-row"><div className="preview-stat"><span>MEMBER DIRECTORY</span><b>Everything in one place</b><div className="preview-member-lines"><i/><i/><i/></div></div><div className="preview-stat"><span>ATTENDANCE ACTIVITY</span><b>See the bigger picture</b><div className="preview-bars"><i/><i/><i/><i/><i/><i/><i/></div></div></div>
+        <div className="preview-followup"><span className="preview-followup-icon"><ShieldCheck size={15}/></span><div><b>Renewals, without the guesswork</b><span>A clear view of what needs attention.</span></div><ArrowRight size={15}/></div>
       </div>
       <div className="showcase-footer"><span>BUILT FOR THE EVERYDAY BUSINESS OF FITNESS</span><span>01 / OPERATIONS</span></div>
     </aside>
