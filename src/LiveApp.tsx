@@ -28,6 +28,7 @@ const telHref = (value: string) => {
 }
 
 export default function LiveApp({ gym, role }: Props) {
+  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1)
   const [section, setSection] = useState<Section>('Overview')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -143,12 +144,12 @@ export default function LiveApp({ gym, role }: Props) {
     {mobileNavOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => closeMenu(true)} />}
     <aside ref={sidebarRef} id="workspace-navigation" className={'sidebar ' + (mobileNavOpen ? 'sidebar-open' : '')}>
       <div className="sidebar-top"><button type="button" className="brand-lockup brand-home" aria-label="LiftDesk home, Overview" onClick={() => navigate('Overview')}><LiftDeskMark size={35} className="brand-mark" /><span className="brand-name">Lift<span>Desk</span><small>GYM OPERATIONS</small></span></button><button type="button" className="icon-button mobile-close" aria-label="Close navigation" onClick={() => closeMenu(true)}><X size={18}/></button></div>
-      <div className="workspace-switcher"><div className="workspace-avatar">{initials(gym.name).slice(0,2)}</div><div className="workspace-copy"><b>{gym.name}</b><span>{role} workspace</span></div></div>
+      <div className="workspace-switcher"><div className="workspace-avatar">{initials(gym.name).slice(0,2)}</div><div className="workspace-copy"><b>{gym.name}</b><span>{roleLabel} workspace</span></div></div>
       <div className="nav-caption">WORKSPACE</div>
       <nav className="primary-nav" aria-label="Main navigation">{sections.map(({name, icon: Icon}) => <button type="button" key={name} className={'nav-item ' + (section === name ? 'nav-active' : '')} aria-current={section === name ? 'page' : undefined} onClick={() => navigate(name)}><Icon size={18}/><span>{name}</span>{name === 'Follow-ups' && openFollowUps.length > 0 && <span className="nav-count">{openFollowUps.length}</span>}</button>)}</nav>
       <div className="sidebar-spacer"/>
       <div className="sidebar-pilot"><div className="pilot-icon"><ShieldIcon/></div><b>Private workspace</b><p>Records are loaded from your gym database.</p><span>LIVE DATABASE</span></div>
-      <div className="sidebar-bottom"><div className="profile-row"><div className="profile-avatar">{initials(gym.name || 'Gym')}</div><div className="profile-copy"><b>{gym.name}</b><span>Gym workspace · {role}</span></div><button className="icon-button" aria-label="Sign out" onClick={() => void requireSupabase().auth.signOut()}><LogOut size={16}/></button></div></div>
+      <div className="sidebar-bottom"><div className="profile-row"><div className="profile-avatar">{initials(gym.name || 'Gym')}</div><div className="profile-copy"><b>{gym.name}</b><span>Gym workspace · {roleLabel}</span></div><button className="icon-button" aria-label="Sign out" onClick={() => void requireSupabase().auth.signOut()}><LogOut size={16}/></button></div></div>
     </aside>
     <main className="main-area">
       <header className="topbar"><div className="topbar-left"><button ref={menuButtonRef} type="button" className="icon-button mobile-menu" aria-label="Open main navigation" aria-controls="workspace-navigation" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="breadcrumb-muted">{gym.name}</span><span className="breadcrumb-slash">/</span><b>{section}</b></div><div className="topbar-right"><span className="preview-pill live-pill"><span/> Live data</span><span className="topbar-divider"/><span className="today-label"><CalendarDays size={15}/> {new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span></div></header>

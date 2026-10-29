@@ -208,7 +208,7 @@ export default function AuthGate() {
     </form><button className="auth-signout" onClick={() => requireSupabase().auth.signOut()}>Sign out</button>
   </section></div>
 
-  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
+  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
   return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button className="auth-submit" onClick={() => requireSupabase().auth.signOut()}>Sign out</button></section></div>
 }
 

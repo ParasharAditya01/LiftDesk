@@ -6,11 +6,11 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const read = path => readFileSync(resolve(root, path), 'utf8')
 const stripComments = source => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\r\n]*/g, '')
 const compact = source => stripComments(source).toLowerCase().replace(/\s+/g, ' ').trim()
-const migrations = Object.fromEntries([1, 2, 3, 4, 5, 6].map(version => {
+const migrations = Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map(version => {
   const id = String(version).padStart(4, '0')
   return [id, compact(read(`supabase/migrations/${id}_${[
     '', 'initial_schema', 'secure_manual_checkin', 'harden_membership_writes',
-    'universal_gym_qr_checkin', 'gym_themes', 'disable_phone_otp_checkin',
+    'universal_gym_qr_checkin', 'gym_themes', 'disable_phone_otp_checkin', 'gym_roles_trainer_member',
   ][version]}.sql`))]
 }))
 const allSql = Object.values(migrations).join('\n')
@@ -95,6 +95,17 @@ requireFunction('has_gym_role', baseline)
 const roleFunctions = functionsNamed(baseline, 'has_gym_role')
 if (!roleFunctions.some(fn => fn.body.includes('gm.gym_id = target_gym') && fn.body.includes('gm.user_id = (select auth.uid())') && fn.body.includes('gm.active') && fn.body.includes('gm.role = any(allowed)'))) {
   fail('has_gym_role must check the authenticated user, active gym membership, and requested role')
+}
+
+// Role evolution must preserve existing memberships and keep the future member role least-privileged.
+const roleMigration = migrations['0007']
+requireText(roleMigration, "alter type public.gym_role rename value 'staff' to 'trainer'", 'Existing staff role must be renamed to trainer')
+requireText(roleMigration, "alter type public.gym_role add value if not exists 'member'", 'Member role must be present in the database enum')
+requireText(roleMigration, "gm.role in ('owner', 'admin', 'trainer')", 'Member role must not inherit general workspace read access')
+requireText(roleMigration, "array['owner','admin','trainer']::public.gym_role[]", 'Attendance and operational writes must authorize trainer instead of staff')
+const restrictedMembershipHelper = functionsNamed(roleMigration, 'is_gym_member')
+if (!restrictedMembershipHelper.some(fn => fn.body.includes("gm.role in ('owner', 'admin', 'trainer')") && !fn.body.includes("'member'"))) {
+  fail('The future member role must remain blocked from general workspace access until its permissions are defined')
 }
 
 // Membership table grants are hardened after the baseline's initial grants.

@@ -2,7 +2,7 @@ import type { User } from '@supabase/supabase-js'
 import { requireSupabase } from './supabase'
 import { DEFAULT_GYM_THEME, normalizeGymTheme, type GymThemeId } from './gymThemes'
 
-export type GymRole = 'owner' | 'admin' | 'staff'
+export type GymRole = 'owner' | 'admin' | 'trainer' | 'member'
 export type Gym = { id: string; name: string; city: string | null; phone: string | null; theme: GymThemeId }
 export type GymMember = {
   id: string

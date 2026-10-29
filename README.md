@@ -5,10 +5,19 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 ## MVP scope
 
 - Member management and membership expiry tracking.
-- Staff-recorded attendance with gym-scoped authorization.
+- Trainer-recorded attendance with gym-scoped authorization.
 - Inactivity and renewal follow-ups.
 - Basic attendance and membership reports.
 - Multi-gym architecture with gym-level isolation enforced by PostgreSQL Row Level Security (RLS).
+
+## Roles
+
+- **Owner**: owns and controls their own gym workspace.
+- **Admin**: existing operational administrator role; permissions remain as currently enforced.
+- **Trainer**: replaces the former `staff` role for staff-assisted attendance and permitted gym operations.
+- **Member**: role value is reserved in the schema, but member-facing access is intentionally blocked until its permissions are explicitly defined. A member role must not inherit trainer access or expose other members' records.
+
+Existing `staff` memberships are migrated in place to `trainer`; user accounts and gym membership rows are preserved.
 
 ## Stack
 
@@ -20,7 +29,7 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 
 The current branch contains sign-in, gym workspace setup, member records, manual check-in, attendance history, saved follow-up display and basic counts. `/preview` is a separate sample-data walkthrough and is **not connected to a database**. The current production deployment must be checked separately; source code on this branch does not prove what is live.
 
-Member QR/WhatsApp OTP check-in has been removed from the interface. Staff record attendance from the Members screen with the Manual check-in action. Migration `0006_disable_phone_otp_checkin.sql` revokes and removes the old phone-OTP RPC; its production application status must be verified separately. Local source changes are not automatically live.
+Member QR/WhatsApp OTP check-in has been removed from the interface. Trainers record attendance from the Members screen with the Manual check-in action. Migration `0006_disable_phone_otp_checkin.sql` revokes and removes the old phone-OTP RPC; its production application status must be verified separately. Local source changes are not automatically live.
 
 ## Local setup
 
@@ -35,7 +44,7 @@ Member QR/WhatsApp OTP check-in has been removed from the interface. Staff recor
 - Every tenant-owned record must be associated with a `gym_id`.
 - PostgreSQL RLS, not frontend filtering, is the security boundary.
 - Every write must be authorized server-side and checked against the user's active gym membership and role.
-- Manual attendance must authorize a staff role in the target gym, validate the selected member's gym, status and expiry date, and block rapid duplicate check-ins in a database function.
+- Manual attendance must authorize a trainer role in the target gym, validate the selected member's gym, status and expiry date, and block rapid duplicate check-ins in a database function.
 - Never put a Supabase service-role key in browser code or any `VITE_*` variable.
 - Before a pilot, test with two separate gym-owner accounts and verify that neither gym can read or mutate the other's records.
 
@@ -50,7 +59,7 @@ Member QR/WhatsApp OTP check-in has been removed from the interface. Staff recor
 - [ ] Before public owner signup, configure verified custom SMTP and the production/local Auth redirect URLs using [the Supabase email setup guide](docs/SUPABASE_AUTH_EMAIL.md).
 - [ ] Production build passes.
 - [ ] Layout checked at 320, 360, 375, 390px and desktop widths.
-- [ ] Staff manual check-ins are verified against the member's gym, active status, expiry date and duplicate-check-in window.
+- [ ] Trainer manual check-ins are verified against the member's gym, active status, expiry date and duplicate-check-in window.
 - [ ] No production member data is used until the checks above pass.
 
 ## Not yet implemented or verified
