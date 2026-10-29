@@ -12,6 +12,9 @@ export function userFacingError(value: unknown, fallback: string): string {
   const code = authErrorCode(error) ?? ''
   const message = typeof error?.message === 'string' ? error.message.toLowerCase() : ''
 
+  if (/already checked in today|checked in moments ago/.test(message)) {
+    return 'This member has already checked in today.'
+  }
   if (error?.name === 'AuthRetryableFetchError' || /network|fetch|failed to connect|load failed/.test(message)) {
     return 'A network error interrupted the request. Check your connection and try again.'
   }
