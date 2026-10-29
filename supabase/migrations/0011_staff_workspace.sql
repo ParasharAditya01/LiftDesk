@@ -44,21 +44,33 @@ create index if not exists gym_staff_attendance_staff_date_idx
 
 create or replace function public.set_gym_staff_audit_fields()
 returns trigger language plpgsql set search_path = ''
-as $$
+as $
 begin
-  if tg_op = 'INSERT' then
-    new.created_by := (select auth.uid());
-    new.updated_by := (select auth.uid());
-    new.created_at := now();
+  if tg_table_name = 'gym_staff_attendance' then
+    if tg_op = 'INSERT' then
+      new.marked_by := (select auth.uid());
+      new.updated_by := (select auth.uid());
+      new.created_at := now();
+    else
+      new.marked_by := old.marked_by;
+      new.created_at := old.created_at;
+      new.updated_by := (select auth.uid());
+    end if;
   else
-    new.created_by := old.created_by;
-    new.created_at := old.created_at;
-    new.updated_by := (select auth.uid());
+    if tg_op = 'INSERT' then
+      new.created_by := (select auth.uid());
+      new.updated_by := (select auth.uid());
+      new.created_at := now();
+    else
+      new.created_by := old.created_by;
+      new.created_at := old.created_at;
+      new.updated_by := (select auth.uid());
+    end if;
   end if;
   new.updated_at := now();
   return new;
 end;
-$$;
+$;
 
 drop trigger if exists gym_staff_audit_fields on public.gym_staff;
 create trigger gym_staff_audit_fields
