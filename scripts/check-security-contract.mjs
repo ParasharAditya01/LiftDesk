@@ -253,6 +253,37 @@ requireFunction('accept_member_invitation', memberMigration, found => {
 requireText(memberMigration, 'revoke all on function public.create_member_invitation(uuid) from public, anon', 'Invitation creation RPC must not be public or anonymous')
 requireText(memberMigration, 'revoke all on function public.accept_member_invitation(text,text,text,text,integer,numeric,numeric) from public, anon', 'Invitation acceptance RPC must not be public or anonymous')
 
+// Coaching feature policy contract. These are static source assertions; live RLS still needs a database test.
+const coachingMigration = compact(read('supabase/migrations/0012_member_coaching_workspace.sql'))
+for (const table of ['diet_plans', 'workout_plans', 'member_progress', 'coaching_notes']) {
+  requireText(coachingMigration, `alter table public.${table} enable row level security`, `RLS must be enabled for ${table}`)
+  requireText(coachingMigration, `foreign key (gym_id, member_id) references public.members(gym_id, id)`, `${table} must use member+gym composite tenant binding`)
+}
+const coachingRoles = "public.has_gym_role(gym_id, array['owner','admin','trainer']::public.gym_role[])"
+for (const table of ['diet_plans', 'workout_plans']) {
+  for (const command of ['select', 'insert', 'update']) {
+    const expression = new RegExp(`create policy "[^"]+" on public\\.${table} for ${command} to authenticated([\\s\\S]*?);`)
+    const match = coachingMigration.match(expression)
+    if (!match || !match[1].includes(coachingRoles)) fail(`${table} ${command} must authorize only active staff roles in its own gym`)
+  }
+  const createPolicy = coachingMigration.match(new RegExp(`create policy "[^"]+" on public\\.${table} for insert to authenticated([\\s\\S]*?);`))
+  if (!createPolicy?.[1].includes('created_by = (select auth.uid())')) fail(`${table} creation must bind the creator to the authenticated user`)
+}
+requireText(coachingMigration, "status in ('active','completed') and exists ( select 1 from public.members m where m.id = diet_plans.member_id and m.gym_id = diet_plans.gym_id and m.member_user_id = (select auth.uid())", 'Members must read only their linked active/completed diet plans')
+requireText(coachingMigration, "status in ('active','completed') and exists ( select 1 from public.members m where m.id = workout_plans.member_id and m.gym_id = workout_plans.gym_id and m.member_user_id = (select auth.uid())", 'Members must read only their linked active/completed workout plans')
+requireText(coachingMigration, 'member_user_id = (select auth.uid())', 'Member progress reads must match the linked member user')
+if (/create\s+policy\s+[^;]+on\s+public\.coaching_notes\s+for\s+(?:update|delete|all)\b/i.test(stripComments(coachingMigration))) fail('Coaching notes must remain append-only')
+if (/grant\s+(?:all|select\s*,\s*insert\s*,\s*update)[^;]*on\s+public\.member_progress\s+to\s+authenticated/i.test(stripComments(coachingMigration))) fail('Members and staff must not receive direct progress update/delete privileges')
+requireText(coachingMigration, 'new.created_by is distinct from old.created_by', 'Plan creator attribution must be immutable')
+requireText(coachingMigration, 'alter table public.coaching_plan_templates enable row level security', 'Reusable templates must have RLS enabled')
+requireText(coachingMigration, 'create policy "coaching staff manage templates" on public.coaching_plan_templates for select to authenticated using (public.has_gym_role(gym_id, array[\'owner\',\'admin\',\'trainer\']::public.gym_role[]))', 'Reusable templates must be private to gym staff')
+requireText(coachingMigration, 'create trigger coaching_template_creator_immutable', 'Template creator attribution must be immutable')
+requireText(coachingMigration, 'create table public.coaching_plan_revisions', 'Plan history snapshots must be persisted')
+requireText(coachingMigration, 'create trigger diet_plan_history before update', 'Diet plan changes must retain a prior version')
+requireText(coachingMigration, 'create trigger workout_plan_history before update', 'Workout plan changes must retain a prior version')
+requireText(coachingMigration, 'grant select on public.coaching_plan_revisions to authenticated', 'Plan revisions must be read-only to authenticated clients')
+if (/create\s+policy\s+[^;]+on\s+public\.(?:diet_plans|workout_plans|coaching_plan_templates|coaching_plan_revisions)\s+for\s+delete\b/i.test(stripComments(coachingMigration))) fail('Coaching history and templates must not expose hard-delete policies')
+
 const browserClient = read('src/lib/supabase.ts')
 if (/VITE_[A-Z0-9_]*(?:SERVICE_ROLE|SERVICE_KEY)/i.test(browserClient) ||
     /createClient\s*\([^)]*(?:SERVICE_ROLE_KEY|service_role)/is.test(browserClient)) {
@@ -286,5 +317,5 @@ if (failures.length) {
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, and single-use member invitation controls are present.')
+console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member invitation controls, and coaching/template data scope assertions are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')
