@@ -101,19 +101,20 @@ begin
   end if;
 
   normalized := public.normalize_gym_contact_number(new.phone);
+  if normalized = '' then
+    raise exception 'Enter a valid phone/WhatsApp number.' using errcode = '22023';
+  end if;
 
   delete from public.gym_contact_number_registry
   where source_table = tg_table_name and source_id = new.id;
 
-  if normalized <> '' then
-    begin
-      insert into public.gym_contact_number_registry (gym_id, normalized_phone, source_table, source_id)
-      values (new.gym_id, normalized, tg_table_name, new.id);
-    exception when unique_violation then
-      raise exception 'This phone/WhatsApp number is already used by another person in this gym.'
-        using errcode = '23505', constraint = 'gym_contact_number_registry_gym_phone_key';
-    end;
-  end if;
+  begin
+    insert into public.gym_contact_number_registry (gym_id, normalized_phone, source_table, source_id)
+    values (new.gym_id, normalized, tg_table_name, new.id);
+  exception when unique_violation then
+    raise exception 'This phone/WhatsApp number is already used by another person in this gym.'
+      using errcode = '23505', constraint = 'gym_contact_number_registry_gym_phone_key';
+  end;
 
   return new;
 end;
