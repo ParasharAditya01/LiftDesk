@@ -138,9 +138,9 @@ export default function AuthGate() {
         if (signup.kind === 'confirmation-pending' || signup.kind === 'existing-account') {
           setShowResendConfirmation(true)
           startEmailCooldown()
-          setMessage(signup.kind === 'existing-account'
-            ? 'No new account was created. This email may already have an account. Try signing in; if it still needs confirmation, you can request another email below.'
-            : 'Check your inbox for a confirmation link. If it does not arrive, you can request another email after the wait below.')
+          if (signup.kind === 'existing-account') {
+            setMessage('No new account was created. This email may already have an account. Try signing in; if it still needs confirmation, you can request another email below.')
+          }
         } else if (signup.kind === 'signed-in') {
           setSession(signup.session)
         } else {
