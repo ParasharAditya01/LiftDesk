@@ -14,7 +14,7 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 
 - **Owner**: owns and controls their own gym workspace.
 - **Admin**: existing operational administrator role; permissions remain as currently enforced.
-- **Trainer**: replaces the former `staff` role for staff-assisted attendance and permitted gym operations.
+- **Trainer**: the active role for trainer-assisted attendance and permitted gym operations. The former `staff` enum value is renamed to `trainer` by migration `0007`; existing memberships are preserved.
 - **Member**: role value is reserved in the schema, but member-facing access is intentionally blocked until its permissions are explicitly defined. A member role must not inherit trainer access or expose other members' records.
 
 Existing `staff` memberships are migrated in place to `trainer`; user accounts and gym membership rows are preserved.
