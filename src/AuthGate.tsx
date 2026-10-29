@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { Activity, ArrowRight, Building2, LoaderCircle, ShieldCheck } from 'lucide-react'
-import { createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
+import { acceptMemberInvitation, createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
 import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
 import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
@@ -10,12 +10,21 @@ import { userFacingError } from './lib/userFacingError'
 import { classifySignupResult, createRequestLock, requestOwnerSignup, requestSignupConfirmation } from './lib/authRegistration'
 
 const LiveApp = lazy(() => import('./LiveApp'))
+const MemberPortal = lazy(() => import('./MemberPortal'))
 
 type Workspace = { gym: Gym; role: GymRole }
 type Mode = 'signin' | 'signup'
 
 export default function AuthGate() {
   const [session, setSession] = useState<Session | null>(null)
+  const [inviteToken, setInviteToken] = useState(() => new URLSearchParams(window.location.search).get('invite') || '')
+  const [memberFullName, setMemberFullName] = useState('')
+  const [memberPhone, setMemberPhone] = useState('')
+  const [memberWhatsApp, setMemberWhatsApp] = useState('')
+  const [memberAge, setMemberAge] = useState('')
+  const [memberWeight, setMemberWeight] = useState('')
+  const [memberHeight, setMemberHeight] = useState('')
+  const invitationAttempt = useRef('')
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
   const [needsWorkspace, setNeedsWorkspace] = useState(false)
   const [mode, setMode] = useState<Mode>('signin')
@@ -71,10 +80,38 @@ export default function AuthGate() {
     if (!session?.user) { setWorkspace(null); setNeedsWorkspace(false); return }
     let alive = true
     setBusy(true)
-    getCurrentGym(session.user)
-      .then(result => { if (alive) { setWorkspace(result); setNeedsWorkspace(!result) } })
-      .catch(err => { if (alive) setError(userFacingError(err, 'Could not load your gym workspace. Check your connection and try again.')) })
-      .finally(() => { if (alive) setBusy(false) })
+    async function loadWorkspace() {
+      try {
+        if (inviteToken) {
+          const key = session!.user.id + ':' + inviteToken
+          if (invitationAttempt.current !== key) {
+            invitationAttempt.current = key
+            const meta = session!.user.user_metadata ?? {}
+            if (!meta.member_full_name || !meta.member_phone || !meta.member_whatsapp || !meta.member_age || !meta.member_weight || !meta.member_height) {
+              throw new Error('This invitation must be used to create a new member account. Sign out and open the invitation link again.')
+            }
+            await acceptMemberInvitation({
+              token: inviteToken,
+              fullName: String(meta.member_full_name),
+              phone: String(meta.member_phone),
+              whatsappNumber: String(meta.member_whatsapp),
+              age: Number(meta.member_age),
+              weightKg: Number(meta.member_weight),
+              heightCm: Number(meta.member_height),
+            })
+          }
+          window.history.replaceState({}, '', window.location.pathname)
+          if (alive) setInviteToken('')
+        }
+        const result = await getCurrentGym(session!.user)
+        if (alive) { setWorkspace(result); setNeedsWorkspace(!result) }
+      } catch (err) {
+        if (alive) setError(userFacingError(err, 'Could not load your gym workspace. Check your connection and try again.'))
+      } finally {
+        if (alive) setBusy(false)
+      }
+    }
+    void loadWorkspace()
     return () => { alive = false }
   }, [session?.user.id])
 
@@ -126,6 +163,44 @@ export default function AuthGate() {
     finally { authRequestLock.current.release(); setSaving(false) }
   }
 
+  async function submitMemberSignup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!inviteToken || emailWaitSeconds > 0 || !authRequestLock.current.tryAcquire()) return
+    setError(''); setMessage(''); setSaving(true)
+    try {
+      const redirect = new URL('/', window.location.origin)
+      redirect.searchParams.set('invite', inviteToken)
+      const { data, error: authError } = await requireSupabase().auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          emailRedirectTo: redirect.toString(),
+          data: {
+            full_name: memberFullName.trim(),
+            member_full_name: memberFullName.trim(),
+            member_phone: memberPhone.trim(),
+            member_whatsapp: memberWhatsApp.trim(),
+            member_age: Number(memberAge),
+            member_weight: Number(memberWeight),
+            member_height: Number(memberHeight),
+          },
+        },
+      })
+      if (authError) {
+        logAuthCode('member signup', authError)
+        if ((authError as { code?: string }).code === 'over_email_send_rate_limit') startEmailCooldown()
+        throw authError
+      }
+      const signup = classifySignupResult(data.user, data.session)
+      if (signup.kind === 'signed-in') setSession(signup.session)
+      else if (signup.kind === 'confirmation-pending' || signup.kind === 'existing-account') {
+        setMessage('Check your email to confirm the account. The invitation link will be included in the confirmation redirect. If this email already has an account, sign in with that account only if it was created for this member invitation.')
+        startEmailCooldown()
+      } else throw new Error('Signup did not return an account. Please try again.')
+    } catch (err) { setError(userFacingError(err, 'Could not create your member account. Check the details and try again.')) }
+    finally { authRequestLock.current.release(); setSaving(false) }
+  }
+
   async function resendConfirmation() {
     if (!authRequestLock.current.tryAcquire()) return
     if (emailWaitSeconds > 0) { authRequestLock.current.release(); return }
@@ -171,6 +246,21 @@ export default function AuthGate() {
 
   if (!isSupabaseConfigured) return <div className="auth-screen"><section className="auth-card"><BrandMark /><p className="auth-eyebrow">SETUP REQUIRED</p><h1>Connect your Supabase project</h1><p className="auth-intro">Authentication is disabled until the project URL and browser publishable key are configured.</p><div className="auth-instructions"><b>1.</b><span>Copy <code>.env.example</code> to a local file named <code>.env</code>.</span><b>2.</b><span>Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>.</span><b>3.</b><span>Run the SQL migrations in your Supabase SQL Editor, then restart Vite.</span></div><p className="auth-security"><ShieldCheck size={16} /> Never use a service-role key in browser settings.</p></section></div>
 
+  if (!session && inviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Create your member account.</h1><p className="auth-intro">Complete your details to join the gym that invited you. Your profile will be read-only after registration.</p>
+    <form className="auth-form" onSubmit={submitMemberSignup}>
+      <label>Full name<input autoComplete="name" required minLength={2} maxLength={120} value={memberFullName} onChange={e => setMemberFullName(e.target.value)} placeholder="Your full name" /></label>
+      <label>Phone number<input autoComplete="tel" type="tel" required minLength={5} maxLength={30} value={memberPhone} onChange={e => setMemberPhone(e.target.value)} placeholder="+91…" /></label>
+      <label>WhatsApp number<input type="tel" required minLength={5} maxLength={30} value={memberWhatsApp} onChange={e => setMemberWhatsApp(e.target.value)} placeholder="+91…" /></label>
+      <div className="form-two"><label>Age<input type="number" required min="13" max="120" value={memberAge} onChange={e => setMemberAge(e.target.value)} /></label><label>Weight (kg)<input type="number" required min="20" max="500" step="0.1" value={memberWeight} onChange={e => setMemberWeight(e.target.value)} /></label></div>
+      <label>Height (cm)<input type="number" required min="80" max="260" step="0.1" value={memberHeight} onChange={e => setMemberHeight(e.target.value)} /></label>
+      <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
+      <label>Password<input type="password" autoComplete="new-password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
+      {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
+      <button className="auth-submit" type="submit" disabled={saving || emailWaitSeconds > 0}>{saving ? 'Creating account…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s…` : 'Create member account'} <ArrowRight size={16} /></button>
+    </form>
+    <p className="auth-security"><ShieldCheck size={16} /> This invitation is gym-specific, expires after 48 hours, and can be used once.</p>
+  </section></div>
+
   if (!session) return <div className="auth-screen auth-screen-premium">
     <aside className="auth-showcase" aria-label="LiftDesk product introduction">
       <div className="showcase-top"><BrandMark /><span className="showcase-status"><i /> BUILT FOR GYM OWNERS</span></div>
@@ -207,6 +297,8 @@ export default function AuthGate() {
       <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Creating workspace…' : 'Create gym workspace'} <ArrowRight size={16} /></button>
     </form><button className="auth-signout" onClick={() => requireSupabase().auth.signOut()}>Sign out</button>
   </section></div>
+
+  if (workspace?.role === 'member') return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">Member</span><button onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your member portal…</p></div></div>}><MemberPortal gym={workspace.gym} user={session!.user} /></Suspense></div>
 
   if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
   return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button className="auth-submit" onClick={() => requireSupabase().auth.signOut()}>Sign out</button></section></div>
