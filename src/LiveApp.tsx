@@ -27,7 +27,7 @@ const telHref = (value: string) => {
   return digits.length >= 8 && digits.length <= 15 ? `tel:${number}` : null
 }
 
-export default function LiveApp({ gym, role, user }: Props) {
+export default function LiveApp({ gym, role }: Props) {
   const [section, setSection] = useState<Section>('Overview')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
