@@ -261,6 +261,26 @@ if (/VITE_[A-Z0-9_]*(?:SERVICE_ROLE|SERVICE_KEY)/i.test(browserClient) ||
 const gymData = compact(read('src/lib/gymData.ts'))
 requireText(gymData, 'normalizegymtheme(joined.theme)', 'Unexpected or missing database themes must use the safe frontend fallback')
 
+const staffMigration = compact(read('supabase/migrations/0011_staff_workspace.sql'))
+for (const table of ['gym_staff', 'gym_staff_attendance']) {
+  requireText(staffMigration, `create table if not exists public.${table} (`, `Staff migration must create ${table}`)
+  requireText(staffMigration, `alter table public.${table} enable row level security`, `Staff migration must enable RLS on ${table}`)
+}
+requireText(staffMigration, "role public.gym_role not null check (role in ('admin', 'trainer'))", 'Staff directory must reuse the existing gym_role enum and exclude owner/member directory roles')
+requireText(staffMigration, 'unique (gym_id, staff_code)', 'Staff IDs must be unique within each gym')
+requireText(staffMigration, 'constraint gym_staff_attendance_one_per_day unique (gym_id, staff_id, attendance_date)', 'Staff attendance must prevent duplicate daily rows at database level')
+requireText(staffMigration, 'foreign key (staff_id, gym_id) references public.gym_staff(id, gym_id)', 'Staff attendance must validate the staff/gym relationship')
+requireText(staffMigration, "role = 'trainer' and public.has_gym_role(gym_id, array['admin']::public.gym_role[])", 'Admin staff-directory access must be limited to trainer records')
+requireText(staffMigration, "s.role = 'trainer' and public.has_gym_role(s.gym_id, array['admin']::public.gym_role[])", 'Admin staff-attendance access must be limited to trainer records')
+requireText(staffMigration, 'new.marked_by := (select auth.uid())', 'Attendance marker identity must be assigned by the database')
+requireText(staffMigration, 'new.updated_by := (select auth.uid())', 'Attendance correction actor must be assigned by the database')
+requireText(staffMigration, 'new.updated_at := now()', 'Staff and attendance updates must record a database timestamp')
+const staffUi = compact(read('src/StaffWorkspace.tsx'))
+requireText(staffUi, "role === 'owner' || role === 'admin'", 'Staff workspace must deny frontend access to trainers and members')
+requireText(staffUi, "owner || person.role === 'trainer'", 'Admin-facing directory results must not include owner/admin records')
+const liveApp = compact(read('src/LiveApp.tsx'))
+requireText(liveApp, "name !== 'staff' || role === 'owner' || role === 'admin'", 'Staff navigation must be hidden from trainers and members')
+
 if (failures.length) {
   console.error('LiftDesk security contract check failed:')
   for (const failure of failures) console.error(' - ' + failure)
