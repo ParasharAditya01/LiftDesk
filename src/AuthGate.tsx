@@ -168,6 +168,9 @@ export default function AuthGate() {
     if (!inviteToken || emailWaitSeconds > 0 || !authRequestLock.current.tryAcquire()) return
     setError(''); setMessage(''); setSaving(true)
     try {
+      if (!/^\d{10}$/.test(memberPhone) || !/^\d{10}$/.test(memberWhatsApp)) {
+        throw new Error('Phone and WhatsApp numbers must each contain exactly 10 digits.')
+      }
       const redirect = new URL('/', window.location.origin)
       redirect.searchParams.set('invite', inviteToken)
       const { data, error: authError } = await requireSupabase().auth.signUp({
@@ -194,7 +197,8 @@ export default function AuthGate() {
       const signup = classifySignupResult(data.user, data.session)
       if (signup.kind === 'signed-in') setSession(signup.session)
       else if (signup.kind === 'confirmation-pending' || signup.kind === 'existing-account') {
-        setMessage('Check your email to confirm the account. The invitation link will be included in the confirmation redirect. If this email already has an account, sign in with that account only if it was created for this member invitation.')
+        setShowResendConfirmation(true)
+        setMessage('Check your email to confirm the account. The invitation link will be included in the confirmation redirect. If the email does not arrive, you can request another confirmation email below.')
         startEmailCooldown()
       } else throw new Error('Signup did not return an account. Please try again.')
     } catch (err) { setError(userFacingError(err, 'Could not create your member account. Check the details and try again.')) }
@@ -206,8 +210,10 @@ export default function AuthGate() {
     if (emailWaitSeconds > 0) { authRequestLock.current.release(); return }
     setError(''); setMessage(''); setResendingConfirmation(true)
     try {
+      const redirect = new URL('/', window.location.origin)
+      if (inviteToken) redirect.searchParams.set('invite', inviteToken)
       const { error: resendError } = await requestSignupConfirmation(requireSupabase().auth, {
-        email: email.trim(), origin: window.location.origin,
+        email: email.trim(), origin: window.location.origin, redirectTo: redirect.toString(),
       })
       if (resendError) logAuthCode('confirmation resend', resendError)
       if (resendError?.code === 'email_address_not_authorized') {
@@ -249,14 +255,15 @@ export default function AuthGate() {
   if (!session && inviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Create your member account.</h1><p className="auth-intro">Complete your details to join the gym that invited you. Your profile will be read-only after registration.</p>
     <form className="auth-form" onSubmit={submitMemberSignup}>
       <label>Full name<input autoComplete="name" required minLength={2} maxLength={120} value={memberFullName} onChange={e => setMemberFullName(e.target.value)} placeholder="Your full name" /></label>
-      <label>Phone number<input autoComplete="tel" type="tel" required minLength={5} maxLength={30} value={memberPhone} onChange={e => setMemberPhone(e.target.value)} placeholder="+91…" /></label>
-      <label>WhatsApp number<input type="tel" required minLength={5} maxLength={30} value={memberWhatsApp} onChange={e => setMemberWhatsApp(e.target.value)} placeholder="+91…" /></label>
+      <label>Phone number<input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberPhone} onChange={e => setMemberPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit mobile number" /></label>
+      <label>WhatsApp number<input type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberWhatsApp} onChange={e => setMemberWhatsApp(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit WhatsApp number" /></label>
       <div className="form-two"><label>Age<input type="number" required min="13" max="120" value={memberAge} onChange={e => setMemberAge(e.target.value)} /></label><label>Weight (kg)<input type="number" required min="20" max="500" step="0.1" value={memberWeight} onChange={e => setMemberWeight(e.target.value)} /></label></div>
       <label>Height (cm)<input type="number" required min="80" max="260" step="0.1" value={memberHeight} onChange={e => setMemberHeight(e.target.value)} /></label>
       <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
       <label>Password<input type="password" autoComplete="new-password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
       {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
-      <button className="auth-submit" type="submit" disabled={saving || emailWaitSeconds > 0}>{saving ? 'Creating account…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s…` : 'Create member account'} <ArrowRight size={16} /></button>
+      {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
+      <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{saving ? 'Creating account…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s…` : 'Create member account'} <ArrowRight size={16} /></button>
     </form>
     <p className="auth-security"><ShieldCheck size={16} /> This invitation is gym-specific, expires after 48 hours, and can be used once.</p>
   </section></div>
