@@ -7,7 +7,7 @@ import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 import LiftDeskMark from './LiftDeskMark'
 import { userFacingError } from './lib/userFacingError'
-import { classifySignupResult, createRequestLock, requestOwnerSignup, requestSignupConfirmation } from './lib/authRegistration'
+import { authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation } from './lib/authRegistration'
 
 const LiveApp = lazy(() => import('./LiveApp'))
 const MemberPortal = lazy(() => import('./MemberPortal'))
@@ -124,7 +124,7 @@ export default function AuthGate() {
       const client = requireSupabase()
       if (mode === 'signup') {
         const { data, error: authError } = await requestOwnerSignup(client.auth, {
-          email: email.trim(), password, ownerName: ownerName.trim(), origin: window.location.origin,
+          email: email.trim(), password, ownerName: ownerName.trim(), origin: window.location.origin, isDevelopment: import.meta.env.DEV,
         })
         if (authError) {
           logAuthCode('signup', authError)
@@ -177,7 +177,7 @@ export default function AuthGate() {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: redirect.toString(),
+          emailRedirectTo: authRedirectUrl(window.location.origin, import.meta.env.DEV, redirect.toString()),
           data: {
             full_name: memberFullName.trim(),
             member_full_name: memberFullName.trim(),
@@ -198,7 +198,7 @@ export default function AuthGate() {
       if (signup.kind === 'signed-in') setSession(signup.session)
       else if (signup.kind === 'confirmation-pending' || signup.kind === 'existing-account') {
         setShowResendConfirmation(true)
-        setMessage('Check your email to confirm the account. The invitation link will be included in the confirmation redirect. If the email does not arrive, you can request another confirmation email below.')
+        setMessage(`${CONFIRMATION_REQUEST_ACCEPTED_MESSAGE} The invitation link will be preserved if you resend.`)
         startEmailCooldown()
       } else throw new Error('Signup did not return an account. Please try again.')
     } catch (err) { setError(userFacingError(err, 'Could not create your member account. Check the details and try again.')) }
@@ -213,7 +213,7 @@ export default function AuthGate() {
       const redirect = new URL('/', window.location.origin)
       if (inviteToken) redirect.searchParams.set('invite', inviteToken)
       const { error: resendError } = await requestSignupConfirmation(requireSupabase().auth, {
-        email: email.trim(), origin: window.location.origin, redirectTo: redirect.toString(),
+        email: email.trim(), origin: window.location.origin, redirectTo: redirect.toString(), isDevelopment: import.meta.env.DEV,
       })
       if (resendError) logAuthCode('confirmation resend', resendError)
       if (resendError?.code === 'email_address_not_authorized') {
@@ -224,11 +224,11 @@ export default function AuthGate() {
         throw new Error('Supabase has reached its email sending limit. Wait before requesting another confirmation email.')
       }
       if (resendError) throw resendError
-      setMessage('Supabase accepted the confirmation email request. Check your inbox and spam folder; delivery depends on the project email configuration. If you already confirmed, switch to sign in.')
+      setMessage(CONFIRMATION_REQUEST_ACCEPTED_MESSAGE)
       startEmailCooldown()
     } catch (err) {
       if ((err as { code?: string } | null)?.code === 'over_email_send_rate_limit') startEmailCooldown()
-      setError(userFacingError(err, 'Could not request another confirmation email. Check your connection and try again.'))
+      setError(userFacingError(err, 'Unable to request confirmation email. Please try again later.'))
     } finally {
       authRequestLock.current.release()
       setResendingConfirmation(false)
