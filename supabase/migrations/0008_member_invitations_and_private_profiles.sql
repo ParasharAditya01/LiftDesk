@@ -35,6 +35,9 @@ drop policy if exists "gym members read workspace memberships" on public.gym_mem
 create policy "gym members read workspace memberships" on public.gym_memberships for select to authenticated
   using (public.is_gym_member(gym_id) or user_id = (select auth.uid()));
 
+drop policy if exists "users update own profile" on public.profiles;
+revoke update on public.profiles from authenticated;
+
 drop policy if exists "gym staff read members" on public.members;
 create policy "gym staff read members" on public.members for select to authenticated
   using (
