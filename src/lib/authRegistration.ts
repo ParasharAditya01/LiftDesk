@@ -48,11 +48,11 @@ export async function requestOwnerSignup(
 
 export async function requestSignupConfirmation(
   auth: AuthApi,
-  input: { email: string; origin: string },
+  input: { email: string; origin: string; redirectTo?: string },
 ) {
   return auth.resend({
     type: 'signup',
     email: input.email,
-    options: { emailRedirectTo: authRedirectUrl(input.origin) },
+    options: { emailRedirectTo: input.redirectTo ?? authRedirectUrl(input.origin) },
   })
 }
