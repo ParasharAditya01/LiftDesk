@@ -12,6 +12,9 @@ export function userFacingError(value: unknown, fallback: string): string {
   const code = authErrorCode(error) ?? ''
   const message = typeof error?.message === 'string' ? error.message.toLowerCase() : ''
 
+  if (/gym_contact_number_registry_gym_phone_key|phone\/whatsapp number is already used|phone number already in use/.test(message)) {
+    return 'This phone/WhatsApp number is already used by another person in this gym. Enter a different number.'
+  }
   if (/already checked in today|checked in moments ago/.test(message)) {
     return 'This member has already checked in today.'
   }
