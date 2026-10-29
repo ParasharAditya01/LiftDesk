@@ -5,7 +5,7 @@ create table if not exists public.gym_staff (
   gym_id uuid not null references public.gyms(id) on delete cascade,
   staff_code text not null check (char_length(trim(staff_code)) between 2 and 32),
   full_name text not null check (char_length(trim(full_name)) between 2 and 120),
-  role text not null check (role in ('admin', 'trainer')),
+  role public.gym_role not null check (role in ('admin', 'trainer')),
   phone text not null check (char_length(trim(phone)) between 5 and 30),
   email text,
   joining_date date not null default (now() at time zone 'Asia/Kolkata')::date,
