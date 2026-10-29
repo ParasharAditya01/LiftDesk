@@ -142,3 +142,59 @@ export async function listFollowUps(gymId: string): Promise<FollowUp[]> {
   if (error) throw error
   return (data ?? []) as FollowUp[]
 }
+
+
+export async function createMemberInvitation(gymId: string): Promise<string> {
+  const { data, error } = await requireSupabase().rpc('create_member_invitation', { target_gym: gymId })
+  if (error) throw error
+  if (typeof data !== 'string' || data.length !== 64) throw new Error('Could not create a valid member invitation.')
+  return data
+}
+
+export type MemberProfile = {
+  id: string
+  gym_id: string
+  full_name: string
+  phone: string
+  email: string | null
+  whatsapp_number: string | null
+  age: number | null
+  weight_kg: number | null
+  height_cm: number | null
+  plan_name: string
+  membership_expires_on: string | null
+  status: 'active' | 'inactive' | 'paused'
+}
+
+export async function acceptMemberInvitation(input: {
+  token: string
+  fullName: string
+  phone: string
+  whatsappNumber: string
+  age: number
+  weightKg: number
+  heightCm: number
+}): Promise<string> {
+  const { data, error } = await requireSupabase().rpc('accept_member_invitation', {
+    invitation_token: input.token,
+    full_name: input.fullName,
+    phone_number: input.phone,
+    whatsapp_number: input.whatsappNumber,
+    member_age: input.age,
+    weight_kg: input.weightKg,
+    height_cm: input.heightCm,
+  })
+  if (error) throw error
+  if (typeof data !== 'string') throw new Error('The invitation could not be accepted.')
+  return data
+}
+
+export async function getOwnMemberProfile(userId: string): Promise<MemberProfile> {
+  const { data, error } = await requireSupabase()
+    .from('members')
+    .select('id, gym_id, full_name, phone, email, whatsapp_number, age, weight_kg, height_cm, plan_name, membership_expires_on, status')
+    .eq('member_user_id', userId)
+    .single()
+  if (error) throw error
+  return data as MemberProfile
+}
