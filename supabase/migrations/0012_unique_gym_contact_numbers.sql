@@ -123,12 +123,12 @@ revoke all on function public.enforce_unique_gym_contact_number() from public, a
 
 drop trigger if exists members_unique_contact_number on public.members;
 create trigger members_unique_contact_number
-before insert or update of gym_id, phone or delete on public.members
+before insert or update or delete on public.members
 for each row execute function public.enforce_unique_gym_contact_number();
 
 drop trigger if exists gym_staff_unique_contact_number on public.gym_staff;
 create trigger gym_staff_unique_contact_number
-before insert or update of gym_id, phone or delete on public.gym_staff
+before insert or update or delete on public.gym_staff
 for each row execute function public.enforce_unique_gym_contact_number();
 
 comment on table public.gym_contact_number_registry is
