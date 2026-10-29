@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { Activity, Bell, CalendarDays, ClipboardCheck, LayoutDashboard, LoaderCircle, LogOut, Menu, Plus, Search, Users, X } from 'lucide-react'
-import { createMember, listAttendance, listFollowUps, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole } from './lib/gymData'
+import { createMember, createMemberInvitation, listAttendance, listFollowUps, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole } from './lib/gymData'
 import { requireSupabase } from './lib/supabase'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
@@ -74,6 +74,7 @@ export default function LiveApp({ gym, role }: Props) {
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [creatingInvite, setCreatingInvite] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '', plan: 'Monthly', fee: '999', expiry: '' })
 
   useScrollMotion(pageContentRef, `${section}:${loading}`)
@@ -133,6 +134,24 @@ export default function LiveApp({ gym, role }: Props) {
     finally { setSaving(false) }
   }
 
+  async function inviteMember() {
+    setCreatingInvite(true); setError(''); setNotice('')
+    try {
+      const token = await createMemberInvitation(gym.id)
+      const link = new URL('/', window.location.origin)
+      link.searchParams.set('invite', token)
+      const invitationUrl = link.toString()
+      try {
+        await navigator.clipboard.writeText(invitationUrl)
+        setNotice('A single-use member invitation link was copied. Share it privately; it expires in 48 hours.')
+      } catch {
+        window.prompt('Copy this private member invitation link. It expires in 48 hours:', invitationUrl)
+        setNotice('Member invitation created. Share the link privately; it expires in 48 hours.')
+      }
+    } catch (e) { setError(userFacingError(e, 'Could not create an invitation. Check your permissions and try again.')) }
+    finally { setCreatingInvite(false) }
+  }
+
   async function checkIn(member: GymMember) {
     setSaving(true); setError(''); setNotice('')
     try { await recordManualCheckIn(gym.id, member.id); setNotice('Attendance recorded for ' + member.full_name + '.'); await refresh(); setSection('Attendance') }
@@ -154,7 +173,7 @@ export default function LiveApp({ gym, role }: Props) {
     <main className="main-area">
       <header className="topbar"><div className="topbar-left"><button ref={menuButtonRef} type="button" className="icon-button mobile-menu" aria-label="Open main navigation" aria-controls="workspace-navigation" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="breadcrumb-muted">{gym.name}</span><span className="breadcrumb-slash">/</span><b>{section}</b></div><div className="topbar-right"><span className="preview-pill live-pill"><span/> Live data</span><span className="topbar-divider"/><span className="today-label"><CalendarDays size={15}/> {new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span></div></header>
       <div className="page-content" ref={pageContentRef}>
-        <div className="page-heading"><div><div className="eyebrow">{gym.city ? gym.city.toUpperCase() + ' / ' : ''}{gym.name.toUpperCase()}</div><h1 ref={headingRef} tabIndex={-1}>{section === 'Overview' ? 'Your gym, at a glance.' : section}</h1><p>{section === 'Overview' ? 'A live view of your members, attendance and follow-ups.' : section === 'Members' ? 'Manage the member records stored for this gym.' : section === 'Attendance' ? 'Check-in history recorded for your gym.' : section === 'Follow-ups' ? 'Review open reminders and membership attention items.' : 'A summary of activity recorded in your workspace.'}</p></div>{section === 'Members' && <button ref={addMemberButtonRef} className="button-primary" onClick={() => setShowAdd(true)}><Plus size={17}/> Add member</button>}</div>
+        <div className="page-heading"><div><div className="eyebrow">{gym.city ? gym.city.toUpperCase() + ' / ' : ''}{gym.name.toUpperCase()}</div><h1 ref={headingRef} tabIndex={-1}>{section === 'Overview' ? 'Your gym, at a glance.' : section}</h1><p>{section === 'Overview' ? 'A live view of your members, attendance and follow-ups.' : section === 'Members' ? 'Manage the member records stored for this gym.' : section === 'Attendance' ? 'Check-in history recorded for your gym.' : section === 'Follow-ups' ? 'Review open reminders and membership attention items.' : 'A summary of activity recorded in your workspace.'}</p></div>{section === 'Members' && <div className="heading-actions"><button type="button" className="button-secondary" disabled={creatingInvite || saving} onClick={() => void inviteMember()}>{creatingInvite ? 'Creating link…' : 'Invite member'}</button><button ref={addMemberButtonRef} className="button-primary" onClick={() => setShowAdd(true)}><Plus size={17}/> Add member</button></div>}</div>
         {error && <div className="notice-banner error-banner" role="alert"><span>{error}</span><button onClick={() => void refresh()}>Retry</button></div>}
         {notice && <div className="notice-banner" role="status"><ClipboardCheck size={17}/><span>{notice}</span><button onClick={() => setNotice('')}>Dismiss</button></div>}
         {loading ? <div className="surface live-loading"><LoaderCircle className="spin" size={22}/><p>Loading your gym records…</p></div> : <>
