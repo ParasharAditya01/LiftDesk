@@ -228,6 +228,31 @@ for (const [signature, source] of requiredRpcGrants) {
   }
 }
 
+// Member invitations must be single-use, time-limited, gym-scoped, and least-privileged.
+const memberMigration = compact(read('supabase/migrations/0008_member_invitations_and_private_profiles.sql'))
+requireText(memberMigration, 'create table if not exists public.member_invitations', 'Member invitation storage must exist')
+requireText(memberMigration, 'token_hash bytea not null unique', 'Invitation tokens must be stored as unique hashes, not plaintext')
+requireText(memberMigration, "default (now() + interval '48 hours')", 'Member invitations must expire after 48 hours')
+requireText(memberMigration, 'mi.used_at is null and mi.expires_at > now()', 'Invitation acceptance must reject used or expired tokens')
+requireText(memberMigration, "values (invite.gym_id, (select auth.uid()), 'member', true)", 'Invitation acceptance must assign only the member role in the invited gym')
+requireText(memberMigration, 'member_user_id = (select auth.uid())', 'Member profile reads must be restricted to the linked authenticated user')
+requireText(memberMigration, 'user_id = (select auth.uid())', 'A member must be able to discover only their own membership')
+requireText(memberMigration, 'revoke update on public.profiles from authenticated', 'Member accounts must not self-edit profile metadata')
+requireFunction('create_member_invitation', memberMigration, found => {
+  if (!found.some(fn => fn.body.includes("array['owner','admin','trainer']::public.gym_role[]") && fn.body.includes('extensions.digest(raw_token, \'sha256\')'))) {
+    fail('Invitation creation must authorize gym staff and store only a token hash')
+  }
+})
+requireFunction('accept_member_invitation', memberMigration, found => {
+  if (!found.some(fn => fn.body.includes('(select auth.uid()) is null') && fn.body.includes('mi.used_at is null') &&
+      fn.body.includes('mi.expires_at > now()') && fn.body.includes('insert into public.members') &&
+      fn.body.includes('insert into public.gym_memberships') && fn.body.includes('update public.member_invitations set used_at = now()'))) {
+    fail('Invitation acceptance must authenticate, validate expiry/use, create a linked profile, assign the member role, and consume the token atomically')
+  }
+})
+requireText(memberMigration, 'revoke all on function public.create_member_invitation(uuid) from public, anon', 'Invitation creation RPC must not be public or anonymous')
+requireText(memberMigration, 'revoke all on function public.accept_member_invitation(text,text,text,text,integer,numeric,numeric) from public, anon', 'Invitation acceptance RPC must not be public or anonymous')
+
 const browserClient = read('src/lib/supabase.ts')
 if (/VITE_[A-Z0-9_]*(?:SERVICE_ROLE|SERVICE_KEY)/i.test(browserClient) ||
     /createClient\s*\([^)]*(?:SERVICE_ROLE_KEY|service_role)/is.test(browserClient)) {
@@ -241,5 +266,5 @@ if (failures.length) {
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS predicates, manual attendance authorization, theme persistence, and RPC grants/removals are present.')
+console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, and single-use member invitation controls are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')
