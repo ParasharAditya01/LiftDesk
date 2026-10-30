@@ -1394,6 +1394,24 @@ svg {
 .welcome-card .welcome-copy{max-width:min(600px,66%);z-index:2}
 .welcome-card .welcome-art{display:none}
 @media(max-width:600px){
-  .welcome-card .welcome-photo{width:100%;opacity:.12;mask-image:none;-webkit-mask-image:none}
-  .welcome-card .welcome-copy{max-width:100%}
+  .welcome-card{min-height:190px}
+  .welcome-card .welcome-photo{
+    width:100%;
+    height:100%;
+    opacity:.34;
+    object-position:center 48%;
+    mask-image:linear-gradient(90deg,rgba(0,0,0,.72),#000 42%);
+    -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.72),#000 42%);
+  }
+  .welcome-card .welcome-copy{
+    max-width:100%;
+    position:relative;
+    z-index:2;
+  }
+  .welcome-card .welcome-label,
+  .welcome-card .welcome-copy h2,
+  .welcome-card .welcome-copy p,
+  .welcome-card .welcome-copy .text-action{
+    text-shadow:0 1px 8px rgba(248,246,241,.72);
+  }
 }
