@@ -1430,3 +1430,48 @@ svg {
 @media(max-width:900px){.app-shell .section-photo{min-height:118px;margin-bottom:20px;border-radius:16px}}
 @media(max-width:600px){.app-shell .section-photo{min-height:104px;margin:0 0 18px;border-radius:14px}.app-shell .section-photo span{margin:0 15px 13px;font-size:10px;letter-spacing:.14em}}
 @media(max-width:380px){.app-shell .section-photo{min-height:92px}}
+
+
+/* Restore the desktop photo treatment; mobile gets a taller, carefully framed banner. */
+.welcome-card .welcome-photo{
+  object-fit:cover;
+  object-position:center 48%;
+  background:transparent;
+  opacity:.88;
+  mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+}
+.app-shell .section-photo img{
+  object-fit:cover;
+  background:transparent;
+}
+.app-shell .section-photo-shade{
+  background:linear-gradient(90deg,rgba(25,25,22,.58),rgba(25,25,22,.12) 72%),linear-gradient(0deg,rgba(15,15,13,.24),transparent 65%);
+}
+@media(max-width:600px){
+  .app-shell .section-photo{
+    min-height:164px;
+    height:clamp(148px,44vw,180px);
+  }
+  .app-shell .section-photo img{
+    object-fit:cover;
+    object-position:center;
+  }
+  .app-shell .section-photo-shade{
+    background:linear-gradient(90deg,rgba(25,25,22,.40),rgba(25,25,22,.06) 76%),linear-gradient(0deg,rgba(15,15,13,.22),transparent 65%);
+  }
+  .welcome-card .welcome-photo{
+    width:54%;
+    object-fit:cover;
+    object-position:center 48%;
+    opacity:.92;
+    mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.45) 18%,#000 52%);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.45) 18%,#000 52%);
+  }
+}
+@media(max-width:380px){
+  .app-shell .section-photo{
+    min-height:150px;
+    height:clamp(150px,48vw,168px);
+  }
+}
