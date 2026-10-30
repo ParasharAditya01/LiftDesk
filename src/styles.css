@@ -1373,3 +1373,27 @@ svg {
     opacity: 1;
   }
 }
+
+
+/* Unsplash photography for the overview welcome panels. */
+.welcome-card{isolation:isolate}
+.welcome-card .welcome-photo{
+  position:absolute;
+  z-index:0;
+  top:0;
+  right:0;
+  width:42%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 48%;
+  opacity:.88;
+  mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+  pointer-events:none;
+}
+.welcome-card .welcome-copy{max-width:min(600px,66%);z-index:2}
+.welcome-card .welcome-art{display:none}
+@media(max-width:600px){
+  .welcome-card .welcome-photo{width:100%;opacity:.12;mask-image:none;-webkit-mask-image:none}
+  .welcome-card .welcome-copy{max-width:100%}
+}
