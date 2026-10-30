@@ -1375,7 +1375,7 @@ svg {
 }
 
 
-/* Unsplash photography for the overview welcome panels. */
+/* Overview photography: show the complete source image instead of aggressively cropping it. */
 .welcome-card{isolation:isolate}
 .welcome-card .welcome-photo{
   position:absolute;
@@ -1384,11 +1384,10 @@ svg {
   right:0;
   width:42%;
   height:100%;
-  object-fit:cover;
-  object-position:center 48%;
-  opacity:.88;
-  mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
-  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+  object-fit:contain;
+  object-position:center;
+  background:rgba(226,220,207,.42);
+  opacity:1;
   pointer-events:none;
 }
 .welcome-card .welcome-copy{max-width:min(600px,66%);z-index:2}
@@ -1402,10 +1401,8 @@ svg {
     right:0;
     width:49%;
     height:100%;
-    opacity:1;
+    object-fit:contain;
     object-position:center;
-    mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.55) 22%,#000 55%);
-    -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.55) 22%,#000 55%);
   }
   .welcome-card .welcome-copy{
     max-width:74%;
@@ -1425,11 +1422,56 @@ svg {
 }
 
 
-/* Responsive photography strip shared by every non-overview workspace section. */
+/* Responsive section photography: contain the full image on every screen size. */
 .app-shell .section-photo{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:132px;margin:0 0 24px;overflow:hidden;border:1px solid rgba(124,105,75,.16);border-radius:18px;background:#d8d2c6}
-.app-shell .section-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
-.app-shell .section-photo-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(25,25,22,.58),rgba(25,25,22,.12) 72%),linear-gradient(0deg,rgba(15,15,13,.24),transparent 65%)}
+.app-shell .section-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:#d8d2c6}
+.app-shell .section-photo-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(25,25,22,.34),rgba(25,25,22,.04) 72%),linear-gradient(0deg,rgba(15,15,13,.18),transparent 65%)}
 .app-shell .section-photo span{position:relative;z-index:1;margin:0 20px 17px;color:#fff;font-size:11px;font-weight:750;letter-spacing:.16em;line-height:1.2;text-transform:uppercase;text-shadow:0 1px 8px rgba(0,0,0,.32)}
 @media(max-width:900px){.app-shell .section-photo{min-height:118px;margin-bottom:20px;border-radius:16px}}
 @media(max-width:600px){.app-shell .section-photo{min-height:104px;margin:0 0 18px;border-radius:14px}.app-shell .section-photo span{margin:0 15px 13px;font-size:10px;letter-spacing:.14em}}
 @media(max-width:380px){.app-shell .section-photo{min-height:92px}}
+
+
+/* Restore the desktop photo treatment; mobile gets a taller, carefully framed banner. */
+.welcome-card .welcome-photo{
+  object-fit:cover;
+  object-position:center 48%;
+  background:transparent;
+  opacity:.88;
+  mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+}
+.app-shell .section-photo img{
+  object-fit:cover;
+  background:transparent;
+}
+.app-shell .section-photo-shade{
+  background:linear-gradient(90deg,rgba(25,25,22,.58),rgba(25,25,22,.12) 72%),linear-gradient(0deg,rgba(15,15,13,.24),transparent 65%);
+}
+@media(max-width:600px){
+  .app-shell .section-photo{
+    min-height:164px;
+    height:clamp(148px,44vw,180px);
+  }
+  .app-shell .section-photo img{
+    object-fit:cover;
+    object-position:center;
+  }
+  .app-shell .section-photo-shade{
+    background:linear-gradient(90deg,rgba(25,25,22,.40),rgba(25,25,22,.06) 76%),linear-gradient(0deg,rgba(15,15,13,.22),transparent 65%);
+  }
+  .welcome-card .welcome-photo{
+    width:54%;
+    object-fit:cover;
+    object-position:center 48%;
+    opacity:.92;
+    mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.45) 18%,#000 52%);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.45) 18%,#000 52%);
+  }
+}
+@media(max-width:380px){
+  .app-shell .section-photo{
+    min-height:150px;
+    height:clamp(150px,48vw,168px);
+  }
+}
