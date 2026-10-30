@@ -1563,3 +1563,64 @@ svg {
 @media(max-width:380px){
   .app-shell .section-photo{height:152px;min-height:152px}
 }
+
+
+/* One shared sidebar palette: match the phone reference on laptop and mobile. */
+.app-shell .sidebar{
+  background:#faf7f0 !important;
+  color:#292720 !important;
+  border-right:1px solid rgba(111,94,67,.14) !important;
+}
+.app-shell .sidebar .brand-name{color:#f5f3ed !important;-webkit-text-fill-color:#f5f3ed}
+.app-shell .sidebar .brand-name>span{color:#b8ef58 !important;-webkit-text-fill-color:#b8ef58}
+.app-shell .sidebar .brand-name small{color:#9a8b73 !important;-webkit-text-fill-color:#9a8b73}
+.app-shell .sidebar .workspace-switcher{
+  background:#292a2b !important;
+  border:1px solid #414241 !important;
+  color:#f7f5ef !important;
+}
+.app-shell .sidebar .workspace-avatar{
+  background:#b8ef58 !important;
+  color:#252720 !important;
+}
+.app-shell .sidebar .workspace-copy b{color:#f7f5ef !important;-webkit-text-fill-color:#f7f5ef}
+.app-shell .sidebar .workspace-copy span{color:#c5c9c3 !important;-webkit-text-fill-color:#c5c9c3}
+.app-shell .sidebar .nav-caption{color:#9b907d !important;-webkit-text-fill-color:#9b907d}
+.app-shell .sidebar .nav-item{
+  color:#bdc7c1 !important;
+  background:transparent !important;
+  font-weight:550;
+}
+.app-shell .sidebar .nav-item svg{color:#bdc7c1 !important}
+.app-shell .sidebar .nav-item:hover{
+  background:rgba(255,255,255,.68) !important;
+  color:#292720 !important;
+}
+.app-shell .sidebar .nav-item:hover svg{color:#a58d64 !important}
+.app-shell .sidebar .nav-item.nav-active{
+  background:#fff !important;
+  color:#20211e !important;
+  box-shadow:0 8px 24px rgba(64,54,39,.07) !important;
+  font-weight:700;
+}
+.app-shell .sidebar .nav-item.nav-active svg{color:#b49a6d !important}
+.app-shell .sidebar .nav-active:before{background:#b49a6d !important}
+.app-shell .sidebar .sidebar-pilot{
+  background:#292a2b !important;
+  border:1px solid #414241 !important;
+  color:#c5c9c3 !important;
+}
+.app-shell .sidebar .pilot-icon{color:#b8ef58 !important}
+.app-shell .sidebar .sidebar-pilot>b{color:#777164 !important}
+.app-shell .sidebar .sidebar-pilot>p{color:#c5c9c3 !important}
+.app-shell .sidebar .sidebar-pilot>span{color:#9b907d !important}
+.app-shell .sidebar .profile-row{border-color:rgba(111,94,67,.16) !important}
+.app-shell .sidebar .profile-copy b{color:#302d27 !important}
+.app-shell .sidebar .profile-copy span{color:#756b5b !important}
+.app-shell .sidebar .mobile-close,
+.app-shell .sidebar .profile-row .icon-button{color:#514938 !important}
+@media(max-width:720px){
+  .app-shell .sidebar{background:#faf7f0 !important}
+  .app-shell .sidebar .nav-item{font-size:13px}
+  .app-shell .sidebar .nav-item.nav-active{background:#fff !important;color:#20211e !important}
+}
