@@ -1423,3 +1423,13 @@ svg {
     text-shadow:0 1px 8px rgba(242,240,235,.9);
   }
 }
+
+
+/* Responsive photography strip shared by every non-overview workspace section. */
+.app-shell .section-photo{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:132px;margin:0 0 24px;overflow:hidden;border:1px solid rgba(124,105,75,.16);border-radius:18px;background:#d8d2c6}
+.app-shell .section-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.app-shell .section-photo-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(25,25,22,.58),rgba(25,25,22,.12) 72%),linear-gradient(0deg,rgba(15,15,13,.24),transparent 65%)}
+.app-shell .section-photo span{position:relative;z-index:1;margin:0 20px 17px;color:#fff;font-size:11px;font-weight:750;letter-spacing:.16em;line-height:1.2;text-transform:uppercase;text-shadow:0 1px 8px rgba(0,0,0,.32)}
+@media(max-width:900px){.app-shell .section-photo{min-height:118px;margin-bottom:20px;border-radius:16px}}
+@media(max-width:600px){.app-shell .section-photo{min-height:104px;margin:0 0 18px;border-radius:14px}.app-shell .section-photo span{margin:0 15px 13px;font-size:10px;letter-spacing:.14em}}
+@media(max-width:380px){.app-shell .section-photo{min-height:92px}}
