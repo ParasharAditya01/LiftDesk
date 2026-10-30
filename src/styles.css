@@ -1363,3 +1363,11 @@ svg {
     color: #514938;
   }
 }
+
+
+/* Keep the gym name readable inside the mobile workspace switcher. */
+@media (max-width: 720px) {
+  .app-shell .sidebar .workspace-switcher .workspace-copy b {
+    color: var(--theme-sidebar-ink, #F4F1E9);
+  }
+}
