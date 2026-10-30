@@ -180,7 +180,7 @@ export default function LiveApp({ gym, role, user }: Props) {
         {notice && <div className="notice-banner" role="status"><ClipboardCheck size={17}/><span>{notice}</span><button onClick={() => setNotice('')}>Dismiss</button></div>}
         {loading ? <div className="surface live-loading"><LoaderCircle className="spin" size={22}/><p>Loading your gym records…</p></div> : <>
           {section === 'Overview' && <>
-            <div className="welcome-card" data-motion-reveal><div className="welcome-copy"><div className="welcome-label"><Activity size={14}/> LIVE WORKSPACE</div><h2>Welcome to {gym.name}.</h2><p>These figures come from your gym's database, not sample records.</p><button className="text-action" onClick={() => setSection('Members')}>Manage members <Users size={15}/></button></div></div>
+            <div className="welcome-card" data-motion-reveal><img className="welcome-photo" src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1100&q=82" alt="Modern gym interior with strength-training equipment" loading="lazy" /><div className="welcome-copy"><div className="welcome-label"><Activity size={14}/> LIVE WORKSPACE</div><h2>Welcome to {gym.name}.</h2><p>These figures come from your gym's database, not sample records.</p><button className="text-action" onClick={() => setSection('Members')}>Manage members <Users size={15}/></button></div></div>
             <div className="section-head"><div><h2>The essentials</h2><p>Current records from your workspace.</p></div></div>
             <div className="metric-grid" data-motion-reveal>
               <Metric label="Active members" value={String(active.length)} detail={members.length + ' total records'} icon={Users}/>

@@ -1373,3 +1373,53 @@ svg {
     opacity: 1;
   }
 }
+
+
+/* Unsplash photography for the overview welcome panels. */
+.welcome-card{isolation:isolate}
+.welcome-card .welcome-photo{
+  position:absolute;
+  z-index:0;
+  top:0;
+  right:0;
+  width:42%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 48%;
+  opacity:.88;
+  mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 31%);
+  pointer-events:none;
+}
+.welcome-card .welcome-copy{max-width:min(600px,66%);z-index:2}
+.welcome-card .welcome-art{display:none}
+@media(max-width:600px){
+  .welcome-card{
+    min-height:210px;
+    padding:22px 17px;
+  }
+  .welcome-card .welcome-photo{
+    right:0;
+    width:49%;
+    height:100%;
+    opacity:1;
+    object-position:center;
+    mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.55) 22%,#000 55%);
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.55) 22%,#000 55%);
+  }
+  .welcome-card .welcome-copy{
+    max-width:74%;
+    position:relative;
+    z-index:2;
+  }
+  .welcome-card .welcome-copy h2{
+    font-size:19px;
+    line-height:1.25;
+    text-shadow:0 1px 10px rgba(242,240,235,.9);
+  }
+  .welcome-card .welcome-label,
+  .welcome-card .welcome-copy p,
+  .welcome-card .welcome-copy .text-action{
+    text-shadow:0 1px 8px rgba(242,240,235,.9);
+  }
+}
