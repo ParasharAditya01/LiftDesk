@@ -1475,3 +1475,91 @@ svg {
     height:clamp(150px,48vw,168px);
   }
 }
+
+
+/* LiftDesk responsive consistency pass: one navigation palette at every breakpoint. */
+.app-shell .sidebar{
+  background:#f5f1e9 !important;
+  color:#292720 !important;
+  border-right:1px solid rgba(111,94,67,.14);
+}
+.app-shell .sidebar .brand-name,
+.app-shell .sidebar .brand-name>span{color:#292720 !important;-webkit-text-fill-color:#292720}
+.app-shell .sidebar .brand-name>span{color:#9a8058 !important;-webkit-text-fill-color:#9a8058}
+.app-shell .sidebar .brand-name small{color:#756b5b !important}
+.app-shell .sidebar .workspace-switcher{
+  background:#292a2d !important;
+  border-color:#292a2d !important;
+}
+.app-shell .sidebar .workspace-copy b{color:#f8f7f4 !important;-webkit-text-fill-color:#f8f7f4}
+.app-shell .sidebar .workspace-copy span{color:#d4c4a4 !important}
+.app-shell .sidebar .nav-caption{color:#81745f !important}
+.app-shell .sidebar .nav-item{
+  color:#514938 !important;
+  background:transparent;
+  font-size:12px;
+  font-weight:550;
+}
+.app-shell .sidebar .nav-item svg{color:#75684f !important}
+.app-shell .sidebar .nav-item:hover{
+  color:#292720 !important;
+  background:rgba(255,255,255,.72) !important;
+  transform:none;
+}
+.app-shell .sidebar .nav-item.nav-active{
+  background:#292a2d !important;
+  color:#fff !important;
+  font-weight:700;
+  box-shadow:0 4px 14px rgba(41,42,45,.14) !important;
+}
+.app-shell .sidebar .nav-item.nav-active svg{color:#d5bd91 !important}
+.app-shell .sidebar .nav-active:before{background:#9a8058}
+.app-shell .sidebar .sidebar-pilot{
+  background:rgba(255,255,255,.58) !important;
+  border:1px solid rgba(124,105,75,.16) !important;
+  color:#514938 !important;
+}
+.app-shell .sidebar .sidebar-pilot>b{color:#514938 !important}
+.app-shell .sidebar .sidebar-pilot>p{color:#756b5b !important}
+.app-shell .sidebar .sidebar-pilot>span{color:#81745f !important}
+.app-shell .sidebar .profile-row{border-color:rgba(111,94,67,.16) !important}
+.app-shell .sidebar .profile-copy b{color:#302d27 !important}
+.app-shell .sidebar .profile-copy span{color:#756b5b !important}
+.app-shell .sidebar .mobile-close{color:#514938 !important}
+
+/* Give section photography enough vertical room on laptop and phone.
+   Keep the full subject visible with a restrained crop, not a thin strip. */
+.app-shell .section-photo{
+  height:190px;
+  min-height:190px;
+  border-radius:18px;
+  background:#d8d2c6;
+}
+.app-shell .section-photo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 45%;
+}
+.app-shell .section-photo-shade{
+  background:linear-gradient(90deg,rgba(25,25,22,.30),rgba(25,25,22,.02) 78%),linear-gradient(0deg,rgba(15,15,13,.20),transparent 62%);
+}
+@media(max-width:900px){
+  .app-shell .section-photo{height:176px;min-height:176px}
+}
+@media(max-width:720px){
+  .app-shell .sidebar{width:min(88vw,360px)}
+  .app-shell .sidebar .nav-item{font-size:13px;min-height:44px}
+}
+@media(max-width:600px){
+  .app-shell .section-photo{
+    height:164px;
+    min-height:164px;
+    margin-bottom:18px;
+    border-radius:15px;
+  }
+  .app-shell .section-photo img{object-position:center 43%}
+}
+@media(max-width:380px){
+  .app-shell .section-photo{height:152px;min-height:152px}
+}
