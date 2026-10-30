@@ -984,3 +984,220 @@ svg {
 .app-shell .coaching-plan-card{border-radius:12px;padding:15px}
 .app-shell .coaching-plan-head,.app-shell .coaching-panel-heading{color:#302d27}
 .app-shell .coaching-detail-grid>*,.app-shell .coaching-overview-grid>*{min-width:0}
+
+
+/* Mobile dashboard refinement: reduce chrome and tighten the first-screen rhythm. */
+@media (max-width: 600px) {
+  .gym-theme-boundary .workspace-session-strip {
+    min-height: 38px;
+    gap: 8px;
+    padding-inline: 14px;
+    font-size: 10px;
+  }
+  .gym-theme-boundary .workspace-session-strip .workspace-role {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+  .gym-theme-boundary .workspace-session-strip button {
+    font-size: 10px;
+    margin-left: auto;
+  }
+  .gym-theme-boundary .topbar {
+    height: 56px;
+    min-height: 56px;
+    padding-inline: 12px;
+    gap: 8px;
+  }
+  .gym-theme-boundary .topbar-left {
+    gap: 7px;
+    font-size: 11px;
+  }
+  .gym-theme-boundary .topbar-left .breadcrumb-muted {
+    max-width: 38vw;
+  }
+  .gym-theme-boundary .topbar-left > b {
+    max-width: 25vw;
+  }
+  .gym-theme-boundary .topbar-right {
+    gap: 0;
+  }
+  .gym-theme-boundary .today-label,
+  .gym-theme-boundary .topbar-divider {
+    display: none;
+  }
+  .gym-theme-boundary .preview-pill {
+    padding: 6px 9px;
+    font-size: 10px;
+  }
+  .gym-theme-boundary .page-content {
+    padding: 24px 16px max(22px, env(safe-area-inset-bottom));
+  }
+  .gym-theme-boundary .page-heading {
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .gym-theme-boundary .page-heading h1 {
+    margin: 8px 0 6px;
+    font-size: clamp(26px, 7.2vw, 32px);
+    line-height: 1.12;
+    letter-spacing: -.045em;
+  }
+  .gym-theme-boundary .page-heading p {
+    max-width: 42ch;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .gym-theme-boundary .eyebrow {
+    font-size: 9px;
+    letter-spacing: .15em;
+  }
+  .gym-theme-boundary .welcome-card {
+    min-height: 0;
+    margin-bottom: 22px;
+    padding: 20px 19px;
+    border-radius: 20px;
+  }
+  .gym-theme-boundary .welcome-copy {
+    max-width: 100%;
+  }
+  .gym-theme-boundary .welcome-copy h2 {
+    margin: 11px 0 7px;
+    font-size: clamp(19px, 5.5vw, 23px);
+    line-height: 1.25;
+    letter-spacing: -.035em;
+    overflow-wrap: anywhere;
+  }
+  .gym-theme-boundary .welcome-copy p {
+    max-width: 38ch;
+    margin-bottom: 11px;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+  .gym-theme-boundary .welcome-copy .text-action {
+    min-height: 40px;
+  }
+  .gym-theme-boundary .section-head {
+    align-items: flex-end;
+    margin-bottom: 12px;
+  }
+  .gym-theme-boundary .section-head h2 {
+    font-size: 18px;
+  }
+  .gym-theme-boundary .section-head p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .gym-theme-boundary .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .gym-theme-boundary .metric-card {
+    min-height: 132px;
+    padding: 13px 13px 12px;
+    border-radius: 16px;
+  }
+  .gym-theme-boundary .metric-top {
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+  .gym-theme-boundary .metric-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    border-radius: 10px;
+  }
+  .gym-theme-boundary .metric-value {
+    margin: 9px 0 5px;
+    font-size: 27px;
+    line-height: 1.1;
+  }
+  .gym-theme-boundary .metric-bottom {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+  .gym-theme-boundary .attendance-trend-panel,
+  .gym-theme-boundary .recent-panel,
+  .gym-theme-boundary .page-stack > .surface,
+  .gym-theme-boundary .report-surface {
+    padding: 16px 14px;
+  }
+  .gym-theme-boundary .surface-heading {
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .gym-theme-boundary .surface-heading h2 {
+    font-size: 14px;
+  }
+  .gym-theme-boundary .surface-heading p {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .gym-theme-boundary .page-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+    padding-top: 14px;
+    line-height: 1.5;
+  }
+  .gym-theme-boundary .directory-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 13px;
+  }
+  .gym-theme-boundary .directory-toolbar .search-box {
+    width: 100%;
+    min-width: 0;
+  }
+  .gym-theme-boundary .directory-filters {
+    justify-content: space-between;
+  }
+  .gym-theme-boundary .table-scroll {
+    max-width: 100%;
+    border-radius: 0 0 14px 14px;
+  }
+  .gym-theme-boundary .table-scroll table {
+    min-width: 620px;
+  }
+  .gym-theme-boundary .member-modal {
+    width: min(100%, 490px);
+    padding: 19px;
+    border-radius: 19px;
+  }
+}
+
+@media (max-width: 380px) {
+  .gym-theme-boundary .page-content {
+    padding-inline: 13px;
+  }
+  .gym-theme-boundary .topbar-left .breadcrumb-muted,
+  .gym-theme-boundary .topbar-left .breadcrumb-slash {
+    display: none;
+  }
+  .gym-theme-boundary .topbar-left > b {
+    max-width: 36vw;
+  }
+  .gym-theme-boundary .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .gym-theme-boundary .metric-card {
+    min-height: 126px;
+    padding: 11px 10px;
+  }
+  .gym-theme-boundary .metric-top {
+    font-size: 9px;
+  }
+  .gym-theme-boundary .metric-icon {
+    width: 29px;
+    height: 29px;
+    flex-basis: 29px;
+  }
+  .gym-theme-boundary .metric-bottom {
+    font-size: 9px;
+  }
+}
