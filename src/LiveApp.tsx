@@ -9,6 +9,7 @@ import LiftDeskLogo from './LiftDeskLogo'
 import StaffWorkspace from './StaffWorkspace'
 import { useScrollMotion } from './lib/useScrollMotion'
 import CoachingWorkspace from './CoachingWorkspace'
+import SectionPhoto from './SectionPhoto'
 
 type Props = { gym: Gym; role: GymRole; user: User }
 type Section = 'Overview' | 'Members' | 'Coaching' | 'Attendance' | 'Follow-ups' | 'Reports' | 'Staff'
@@ -176,7 +177,8 @@ export default function LiveApp({ gym, role, user }: Props) {
       <header className="topbar"><div className="topbar-left"><button ref={menuButtonRef} type="button" className="icon-button mobile-menu" aria-label="Open main navigation" aria-controls="workspace-navigation" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="breadcrumb-muted">{gym.name}</span><span className="breadcrumb-slash">/</span><b>{section}</b></div><div className="topbar-right"><span className="preview-pill live-pill"><span/> Live data</span><span className="topbar-divider"/><span className="today-label"><CalendarDays size={15}/> {new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span></div></header>
       <div className="page-content" ref={pageContentRef}>
         <div className="page-heading"><div><div className="eyebrow">{gym.city ? gym.city.toUpperCase() + ' / ' : ''}{gym.name.toUpperCase()}</div><h1 ref={headingRef} tabIndex={-1}>{section === 'Overview' ? 'Your gym, at a glance.' : section}</h1><p>{section === 'Overview' ? 'A live view of your members, attendance and follow-ups.' : section === 'Members' ? 'Manage the member records stored for this gym.' : section === 'Attendance' ? 'Check-in history recorded for your gym.' : section === 'Follow-ups' ? 'Review open reminders and membership attention items.' : section === 'Staff' ? 'Manage employee records and daily staff attendance.' : 'A summary of activity recorded in your workspace.'}</p></div>{section === 'Members' && <div className="heading-actions"><button type="button" className="button-secondary" disabled={creatingInvite || saving} onClick={() => void inviteMember()}>{creatingInvite ? 'Creating link…' : 'Invite member'}</button><button ref={addMemberButtonRef} className="button-primary" onClick={() => setShowAdd(true)}><Plus size={17}/> Add member</button></div>}</div>
-        {error && <div className="notice-banner error-banner" role="alert"><span>{error}</span><button onClick={() => void refresh()}>Retry</button></div>}
+        <SectionPhoto section={section} />
+         {error && <div className="notice-banner error-banner" role="alert"><span>{error}</span><button onClick={() => void refresh()}>Retry</button></div>}
         {notice && <div className="notice-banner" role="status"><ClipboardCheck size={17}/><span>{notice}</span><button onClick={() => setNotice('')}>Dismiss</button></div>}
         {loading ? <div className="surface live-loading"><LoaderCircle className="spin" size={22}/><p>Loading your gym records…</p></div> : <>
           {section === 'Overview' && <>
