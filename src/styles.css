@@ -1624,3 +1624,50 @@ svg {
   .app-shell .sidebar .nav-item{font-size:13px}
   .app-shell .sidebar .nav-item.nav-active{background:#fff !important;color:#20211e !important}
 }
+
+
+/* Final section-photo fit: preserve the full photograph while keeping the banner visually filled. */
+.app-shell .section-photo{
+  position:relative;
+  height:236px;
+  min-height:236px;
+  overflow:hidden;
+  isolation:isolate;
+  background:#d8d2c6;
+}
+.app-shell .section-photo img.section-photo-backdrop{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  filter:blur(16px) brightness(.72);
+  transform:scale(1.08);
+  opacity:.72;
+}
+.app-shell .section-photo img.section-photo-main{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+  padding:5px 0;
+}
+.app-shell .section-photo .section-photo-shade{
+  z-index:2;
+  background:linear-gradient(90deg,rgba(20,20,18,.34),rgba(20,20,18,.04) 76%),linear-gradient(0deg,rgba(15,15,13,.26),transparent 58%);
+}
+.app-shell .section-photo>span{z-index:3}
+@media(max-width:900px){
+  .app-shell .section-photo{height:210px;min-height:210px}
+}
+@media(max-width:720px){
+  .app-shell .section-photo{height:190px;min-height:190px}
+}
+@media(max-width:380px){
+  .app-shell .section-photo{height:174px;min-height:174px}
+}
