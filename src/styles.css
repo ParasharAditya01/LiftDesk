@@ -1671,3 +1671,48 @@ svg {
 @media(max-width:380px){
   .app-shell .section-photo{height:174px;min-height:174px}
 }
+
+
+/* Premium banner treatment: one image, edge-to-edge, with deliberate focal cropping. */
+.app-shell .section-photo{
+  height:220px;
+  min-height:220px;
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  background:#d8d2c6;
+}
+.app-shell .section-photo img.section-photo-image{
+  position:absolute;
+  inset:0;
+  display:block;
+  width:100%;
+  height:100%;
+  padding:0;
+  object-fit:cover;
+  object-position:center 45%;
+  transform:none;
+  filter:none;
+}
+.app-shell .section-photo .section-photo-shade{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background:linear-gradient(90deg,rgba(18,19,17,.38),rgba(18,19,17,.04) 72%),linear-gradient(0deg,rgba(15,15,13,.30),transparent 62%);
+}
+.app-shell .section-photo>span{position:relative;z-index:2}
+@media(max-width:900px){
+  .app-shell .section-photo{height:200px;min-height:200px}
+}
+@media(max-width:600px){
+  .app-shell .section-photo{
+    height:184px;
+    min-height:184px;
+    margin-bottom:18px;
+    border-radius:15px;
+  }
+  .app-shell .section-photo img.section-photo-image{object-position:center 45%}
+}
+@media(max-width:380px){
+  .app-shell .section-photo{height:172px;min-height:172px}
+}
