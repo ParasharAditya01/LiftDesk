@@ -957,3 +957,30 @@ svg {
 .app-shell .trend-day b{font-size:12px;color:#514938;font-weight:700}
 .app-shell .trend-day span{font-size:11px;color:#8a8173}
 @media(max-width:600px){.app-shell .attendance-trend-panel{padding:17px 14px}.app-shell .attendance-trend{gap:8px;height:148px;padding-left:0;padding-right:0}.app-shell .trend-bar-track{height:94px;width:min(100%,30px)}}
+
+/* Warm glass treatment for the existing coaching and staff workspaces */
+.app-shell .staff-date-bar,.app-shell .staff-directory,.app-shell .staff-detail-panel,.app-shell .staff-form-modal,
+.app-shell .coaching-directory,.app-shell .coaching-profile-heading,.app-shell .coaching-plan-modal,
+.app-shell .coaching-overview-card,.app-shell .coaching-history,.app-shell .coaching-plan-card{
+  background:var(--ld-glass);
+  border-color:var(--ld-warm-line);
+  box-shadow:0 12px 32px rgba(77,61,39,.055),inset 0 1px rgba(255,255,255,.86);
+}
+.app-shell .coaching-toolbar,.app-shell .coaching-member-row,.app-shell .coaching-tabs,
+.app-shell .staff-attendance-editor,.app-shell .staff-profile-grid,.app-shell .staff-history-list{
+  background:rgba(255,253,249,.48);
+  border-color:var(--ld-warm-line);
+}
+.app-shell .coaching-member-row{color:#514b40}
+.app-shell .coaching-member-row:hover{background:rgba(255,255,255,.82)}
+.app-shell .coaching-member-copy b,.app-shell .coaching-plan-head h4{color:#302d27}
+.app-shell .coaching-member-copy span,.app-shell .coaching-recent,.app-shell .coaching-plan-copy p{color:#82796c}
+.app-shell .coaching-avatar,.app-shell .staff-avatar{background:#e9dfcc;color:#554a38}
+.app-shell .coaching-tabs button[aria-selected=true],.app-shell .coaching-tabs button.active{color:#55452e;border-color:#b7a787}
+.app-shell .staff-name-button{color:#403b32}
+.app-shell .staff-email,.app-shell .staff-audit-note{color:#82796c}
+.app-shell .coaching-medical-note{background:rgba(235,226,211,.55);color:#716755;border-color:#a89472}
+.app-shell .coaching-message{background:rgba(255,255,255,.66);border-color:var(--ld-warm-line)}
+.app-shell .coaching-plan-card{border-radius:12px;padding:15px}
+.app-shell .coaching-plan-head,.app-shell .coaching-panel-heading{color:#302d27}
+.app-shell .coaching-detail-grid>*,.app-shell .coaching-overview-grid>*{min-width:0}
