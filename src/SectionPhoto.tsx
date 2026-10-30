@@ -15,8 +15,7 @@ export default function SectionPhoto({ section }: Props) {
   const photo = photography[section]
   if (!photo) return null
   return <div className="section-photo" aria-label={section + ' section photograph'}>
-    <img className="section-photo-backdrop" src={photo.src} alt="" aria-hidden="true" loading="lazy" decoding="async" />
-    <img className="section-photo-main" src={photo.src} alt={photo.alt} loading="lazy" decoding="async" style={{ objectPosition: photo.position } as CSSProperties} />
+    <img className="section-photo-image" src={photo.src} alt={photo.alt} loading="lazy" decoding="async" style={{ objectPosition: photo.position } as CSSProperties} />
     <div className="section-photo-shade" aria-hidden="true" />
     <span>{section}</span>
   </div>
