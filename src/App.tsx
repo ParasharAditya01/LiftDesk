@@ -7,7 +7,6 @@ import {
 import LiftDeskMark from './LiftDeskMark'
 import LiftDeskLogo from './LiftDeskLogo'
 import { useScrollMotion } from './lib/useScrollMotion'
-import SectionPhoto from './SectionPhoto'
 
 type Section = 'Overview' | 'Members' | 'Attendance' | 'Follow-ups' | 'Reports'
 type MemberStatus = 'Active' | 'Expiring' | 'Inactive'
@@ -174,7 +173,6 @@ function App() {
             <div><div className="eyebrow">{section === 'Overview' ? 'SUNDAY, 25 OCTOBER 2026' : 'POWER FITNESS CLUB  /  WORKSPACE'}</div><h1 ref={headingRef} tabIndex={-1}>{section === 'Overview' ? 'Your gym, at a glance.' : section === 'Members' ? 'Members' : section === 'Attendance' ? 'Attendance' : section === 'Follow-ups' ? 'Follow-ups' : 'Reports'}</h1><p>{section === 'Overview' ? 'A little more clarity for the work you do every day.' : section === 'Members' ? 'Keep member details and memberships in one place.' : section === 'Attendance' ? 'A clear record of who walked through the door.' : section === 'Follow-ups' ? 'Small reminders that help keep members connected.' : 'Understand attendance, membership and retention at a glance.'}</p></div>
             <div className="heading-actions">{section === 'Members' && <button ref={addMemberButtonRef} type="button" className="button-primary" onClick={() => setModalOpen(true)}><Plus size={17} /> Add member</button>}{section === 'Reports' && <button type="button" className="button-secondary" onClick={downloadReport}><Download size={16} /> Export preview CSV</button>}</div>
           </div>
-          <SectionPhoto section={section} />
           {notice && <div className="notice-banner" role="status"><ShieldCheck size={17} /><span>{notice}</span><button className="icon-button" aria-label="Dismiss notice" onClick={() => setNotice('')}><X size={16} /></button></div>}
           <div className="demo-warning"><span className="demo-dot" /><span><b>Preview data</b> — these sample records are for interface testing only. Changes are not stored in a database.</span><button type="button" onClick={() => setNotice('Preview changes stay in this browser session only. Sign in from the home page to access your gym’s live, access-controlled records.')}>What’s this?</button></div>
 
