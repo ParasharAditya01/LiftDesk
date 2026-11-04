@@ -1670,3 +1670,33 @@ svg {
   .app-shell .section-photo{height:172px;min-height:172px}
 }
 .staff-invite-button{border-color:var(--line);color:var(--ink);background:var(--canvas)}.staff-invite-button:hover{border-color:var(--accent);color:var(--ink)}.staff-invitation-modal>.modal-note{margin:0 0 15px}.staff-invitation-modal .modal-header p:not(.auth-eyebrow){font-size:11px;color:var(--muted);margin:0}.staff-invitation-link-label{display:grid;gap:7px;color:var(--muted);font-size:10px}.staff-form-modal .staff-invitation-link{font-size:11px;overflow:hidden;text-overflow:ellipsis}.staff-invitation-modal .modal-actions .button-primary{display:inline-flex;align-items:center;gap:7px}.staff-copy-feedback{color:var(--muted);font-size:11px;margin:10px 0}.staff-invitation-modal .staff-audit-note{margin:16px 0 0}
+
+/* Sidebar contrast and mobile drawer fit. */
+.app-shell .sidebar .brand-name{color:#292720 !important;-webkit-text-fill-color:#292720}
+.app-shell .sidebar .brand-name>span{color:#4c5f26 !important;-webkit-text-fill-color:#4c5f26}
+.app-shell .sidebar .brand-name small{color:#655b4b !important;-webkit-text-fill-color:#655b4b}
+.app-shell .sidebar .nav-caption{color:#655b4b !important;-webkit-text-fill-color:#655b4b}
+.app-shell .sidebar .nav-item{color:#514938 !important}
+.app-shell .sidebar .nav-item svg{color:#655b4b !important}
+.app-shell .sidebar .nav-item.nav-active{background:#292a2d !important;color:#f8f7f4 !important}
+.app-shell .sidebar .nav-item.nav-active svg{color:#d5bd91 !important}
+.app-shell .sidebar .sidebar-pilot>b{color:#f5f3ed !important}
+.app-shell .sidebar .sidebar-pilot>p{color:#d4d5d0 !important}
+.app-shell .sidebar .sidebar-pilot>span{color:#d4c4a4 !important}
+@media(max-width:720px){
+  .app-shell .sidebar{width:min(88vw,360px);overflow-x:hidden;overflow-y:auto}
+  .app-shell .sidebar-top{gap:8px;padding:0 4px 13px}
+  .app-shell .sidebar .brand-lockup{flex:1;min-width:0;gap:9px}
+  .app-shell .sidebar .brand-name{white-space:nowrap;font-size:20px;letter-spacing:-.8px}
+  .app-shell .sidebar .brand-name small{font-size:8px;letter-spacing:1.35px}
+  .app-shell .sidebar .mobile-close{display:inline-grid;flex:0 0 44px;width:44px;height:44px;border:1px solid rgba(93,76,52,.18);border-radius:12px;background:rgba(255,255,255,.72);color:#292720 !important}
+  .app-shell .sidebar .workspace-switcher{margin-bottom:15px}
+  .app-shell .sidebar .nav-caption{padding-bottom:7px;font-size:10px;letter-spacing:1.3px}
+  .app-shell .sidebar .primary-nav{gap:3px}
+  .app-shell .sidebar .nav-item{min-height:46px;padding:9px 12px;font-size:14px;line-height:1.25}
+  .app-shell .sidebar .sidebar-spacer{flex:1 1 8px;min-height:8px}
+  .app-shell .sidebar .sidebar-pilot{flex:0 0 auto;margin:10px 2px 12px;padding:12px 13px}
+  .app-shell .sidebar .sidebar-pilot>b{font-size:12px}
+  .app-shell .sidebar .sidebar-pilot>p{font-size:11px;line-height:1.45}
+  .app-shell .sidebar .sidebar-bottom{flex:0 0 auto}
+}
