@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { Activity, ArrowRight, Building2, LoaderCircle, ShieldCheck } from 'lucide-react'
+import { Activity, ArrowRight, Building2, CalendarDays, Check, ClipboardCheck, Clock3, LoaderCircle, ShieldCheck } from 'lucide-react'
 import { acceptMemberInvitation, createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
 import { acceptGymStaffInvitation } from './lib/staffData'
 import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
@@ -303,16 +303,31 @@ export default function AuthGate() {
 
   if (!session) return <div className="auth-screen auth-screen-premium">
     <aside className="auth-showcase" aria-label="LiftDesk product introduction">
-      <div className="showcase-top"><BrandMark /><span className="showcase-status"><i /> BUILT FOR GYM OWNERS</span></div>
-      <div className="showcase-copy"><p className="showcase-kicker">LESS ADMIN. MORE MOMENTUM.</p><h2>Your gym,<br /><span>running in rhythm.</span></h2><p>A clearer way to manage memberships, track attendance, and stay ahead of renewals.</p></div>
-      <div className="showcase-preview" aria-label="Illustrative product preview">
-        <div className="preview-window-top"><span className="preview-window-mark"><Activity size={13}/></span><b>Workspace overview</b><span className="preview-window-label">PRODUCT PREVIEW</span></div>
-        <div className="preview-stat-row"><div className="preview-stat"><span>MEMBER DIRECTORY</span><b>Everything in one place</b><div className="preview-member-lines"><i/><i/><i/></div></div><div className="preview-stat"><span>ATTENDANCE ACTIVITY</span><b>See the bigger picture</b><div className="preview-bars"><i/><i/><i/><i/><i/><i/><i/></div></div></div>
-        <div className="preview-followup"><span className="preview-followup-icon"><ShieldCheck size={15}/></span><div><b>Renewals, without the guesswork</b><span>A clear view of what needs attention.</span></div><ArrowRight size={15}/></div>
-      </div>
-      <div className="showcase-footer"><span>BUILT FOR THE EVERYDAY BUSINESS OF FITNESS</span><span>01 / OPERATIONS</span></div>
+      <div className="showcase-top"><BrandMark /><span className="showcase-status">Gym management for owner-run teams</span></div>
+      <div className="showcase-copy"><p className="showcase-kicker">Members · attendance · renewals</p><h2>Know who came in.<br /><span>Know what comes next.</span></h2><p>Keep membership records, check-ins, renewals, and follow-ups in one private workspace.</p></div>
+      <section className="showcase-preview" aria-label="Sample LiftDesk workspace">
+        <header className="preview-window-top"><span className="preview-window-mark"><Activity size={15}/></span><div className="preview-window-title"><b>Gym overview</b><span>Sample workspace</span></div><span className="preview-window-label">Sample data</span></header>
+        <div className="preview-metrics" aria-label="Example workspace summary">
+          <div className="preview-metric"><span>Active members</span><b>128</b></div>
+          <div className="preview-metric"><span>Check-ins today</span><b>24</b></div>
+          <div className="preview-metric preview-metric-accent"><span>Renewals due</span><b>6</b><small>Next 7 days</small></div>
+        </div>
+        <div className="preview-details">
+          <section className="preview-list" aria-label="Recent check-ins">
+            <h3><ClipboardCheck size={14}/> Recent check-ins</h3>
+            <div className="preview-list-row"><span className="preview-person-mark">AS</span><span className="preview-row-copy"><b>Arjun S.</b><small>Checked in</small></span><time><Clock3 size={12}/> 08:42</time></div>
+            <div className="preview-list-row"><span className="preview-person-mark">NP</span><span className="preview-row-copy"><b>Nisha P.</b><small>Checked in</small></span><time><Clock3 size={12}/> 08:16</time></div>
+          </section>
+          <section className="preview-list preview-renewals" aria-label="Upcoming renewals">
+            <h3><CalendarDays size={14}/> Renewal watch</h3>
+            <div className="preview-renewal-count"><b>6</b><span>members need a follow-up this week</span></div>
+            <div className="preview-renewal-note"><Check size={13}/> Dates stay visible in your workspace</div>
+          </section>
+        </div>
+      </section>
+      <div className="showcase-footer"><span>Members</span><span>Attendance</span><span>Follow-ups</span></div>
     </aside>
-    <main className="auth-main"><section className="auth-card auth-card-premium"><div className="auth-mobile-brand"><BrandMark /></div><p className="auth-eyebrow">{mode === 'signin' ? 'YOUR WORKSPACE AWAITS' : 'START WITH A CLEARER WORKSPACE'}</p><h1>{mode === 'signin' ? 'Welcome back.' : 'Create your owner account.'}</h1><p className="auth-intro">{mode === 'signin' ? 'Sign in to pick up where your gym left off.' : 'Set up an account for the person responsible for the gym.'}</p>
+    <main className="auth-main"><section className="auth-card auth-card-premium"><div className="auth-mobile-brand"><BrandMark /></div><p className="auth-eyebrow">{mode === 'signin' ? 'Gym workspace' : 'Owner account'}</p><h1>{mode === 'signin' ? 'Sign in to LiftDesk' : 'Create your owner account'}</h1><p className="auth-intro">{mode === 'signin' ? 'Open your gym workspace.' : 'Set up an account for the person responsible for the gym.'}</p>
       <form className="auth-form" onSubmit={submitAuth}>
         {mode === 'signup' && <label>Owner name<input autoComplete="name" required minLength={2} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>}
         <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
@@ -323,7 +338,7 @@ export default function AuthGate() {
       </form>
       <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
       <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
-    </section><p className="auth-main-foot">LIFTDESK <span>·</span> GYM OPERATIONS, MADE CLEARER</p></main>
+    </section><p className="auth-main-foot">LiftDesk <span>·</span> Gym operations, made clearer</p></main>
   </div>
 
   if (needsWorkspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">FIRST-TIME SETUP</p><h1>Set up your gym.</h1><p className="auth-intro">This creates a private workspace and assigns your account the owner role.</p>
