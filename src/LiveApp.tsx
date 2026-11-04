@@ -174,7 +174,6 @@ export default function LiveApp({ gym, role, user }: Props) {
       <div className="nav-caption">WORKSPACE</div>
       <nav className="primary-nav" aria-label="Main navigation">{sections.filter(({name}) => name !== 'Staff' || role === 'owner' || role === 'admin').map(({name, icon: Icon}) => <button type="button" key={name} className={'nav-item ' + (section === name ? 'nav-active' : '')} aria-current={section === name ? 'page' : undefined} onClick={() => navigate(name)}><Icon size={18}/><span>{name}</span>{name === 'Follow-ups' && openFollowUps.length > 0 && <span className="nav-count">{openFollowUps.length}</span>}</button>)}</nav>
       <div className="sidebar-spacer"/>
-      <div className="sidebar-pilot"><div className="pilot-icon"><ShieldIcon/></div><b>Private workspace</b><p>Records are loaded from your gym database.</p><span>LIVE DATABASE</span></div>
       <div className="sidebar-bottom"><div className="profile-row"><div className="profile-avatar">{initials(gym.name || 'Gym')}</div><div className="profile-copy"><b>{gym.name}</b><span>Gym workspace · {roleLabel}</span></div><button className="icon-button" aria-label="Sign out" onClick={() => void requireSupabase().auth.signOut()}><LogOut size={16}/></button></div></div>
     </aside>
     <main className="main-area">
@@ -222,7 +221,6 @@ function AttendanceTrend({attendance}:{attendance:AttendanceRecord[]}) {
   </div>
 }
 
-function ShieldIcon() { return <Activity size={16}/> }
 function Status({status}: {status: GymMember['status']}) { const label = status === 'active' ? 'Active' : status === 'paused' ? 'Paused' : 'Inactive'; return <span className={'status status-' + (status === 'active' ? 'active' : status === 'paused' ? 'expiring' : 'inactive')}><i/>{label}</span> }
 function Metric({label,value,detail,icon:Icon}: {label:string;value:string;detail:string;icon:typeof Users}) { return <div className="metric-card"><div className="metric-top"><span>{label}</span><span className="metric-icon"><Icon size={17}/></span></div><div className="metric-value">{value}</div><div className="metric-bottom"><span>{detail}</span></div></div> }
 function RecordsTable({attendance,members}: {attendance:AttendanceRecord[];members:GymMember[]}) { return <div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>CHECK-IN</th><th>METHOD</th></tr></thead><tbody>{attendance.map(a => { const member = members.find(m => m.id === a.member_id); return <tr key={a.id}><td><b>{member?.full_name || 'Member'}</b></td><td>{timeLabel(a.checked_in_at)}</td><td>{a.method === 'qr' ? 'QR scan' : 'Manual'}</td></tr> })}</tbody></table>{attendance.length === 0 && <div className="empty-state">No attendance recorded yet.</div>}</div>}
