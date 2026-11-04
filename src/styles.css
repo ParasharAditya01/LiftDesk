@@ -1716,3 +1716,4 @@ svg {
 @media(max-width:380px){
   .app-shell .section-photo{height:172px;min-height:172px}
 }
+.staff-invite-button{border-color:var(--line);color:var(--ink);background:var(--canvas)}.staff-invite-button:hover{border-color:var(--accent);color:var(--ink)}.staff-invitation-modal>.modal-note{margin:0 0 15px}.staff-invitation-modal .modal-header p:not(.auth-eyebrow){font-size:11px;color:var(--muted);margin:0}.staff-invitation-link-label{display:grid;gap:7px;color:var(--muted);font-size:10px}.staff-form-modal .staff-invitation-link{font-size:11px;overflow:hidden;text-overflow:ellipsis}.staff-invitation-modal .modal-actions .button-primary{display:inline-flex;align-items:center;gap:7px}.staff-copy-feedback{color:var(--muted);font-size:11px;margin:10px 0}.staff-invitation-modal .staff-audit-note{margin:16px 0 0}

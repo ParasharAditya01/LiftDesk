@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'rea
 import type { Session } from '@supabase/supabase-js'
 import { Activity, ArrowRight, Building2, LoaderCircle, ShieldCheck } from 'lucide-react'
 import { acceptMemberInvitation, createGymForCurrentUser, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
+import { acceptGymStaffInvitation } from './lib/staffData'
 import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
 import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
@@ -18,6 +19,7 @@ type Mode = 'signin' | 'signup'
 export default function AuthGate() {
   const [session, setSession] = useState<Session | null>(null)
   const [inviteToken, setInviteToken] = useState(() => new URLSearchParams(window.location.search).get('invite') || '')
+  const [staffInviteToken, setStaffInviteToken] = useState(() => new URLSearchParams(window.location.search).get('staff_invite') || '')
   const [memberFullName, setMemberFullName] = useState('')
   const [memberPhone, setMemberPhone] = useState('')
   const [memberWhatsApp, setMemberWhatsApp] = useState('')
@@ -82,7 +84,16 @@ export default function AuthGate() {
     setBusy(true)
     async function loadWorkspace() {
       try {
-        if (inviteToken) {
+        if (staffInviteToken) {
+          const key = session!.user.id + ':staff:' + staffInviteToken
+          if (invitationAttempt.current !== key) {
+            invitationAttempt.current = key
+            try { await acceptGymStaffInvitation(staffInviteToken) }
+            catch (err) { invitationAttempt.current = ''; throw err }
+          }
+          window.history.replaceState({}, '', window.location.pathname)
+          if (alive) setStaffInviteToken('')
+        } else if (inviteToken) {
           const key = session!.user.id + ':' + inviteToken
           if (invitationAttempt.current !== key) {
             invitationAttempt.current = key
@@ -123,9 +134,17 @@ export default function AuthGate() {
     try {
       const client = requireSupabase()
       if (mode === 'signup') {
-        const { data, error: authError } = await requestOwnerSignup(client.auth, {
-          email: email.trim(), password, ownerName: ownerName.trim(), origin: window.location.origin, isDevelopment: import.meta.env.DEV,
-        })
+        const { data, error: authError } = staffInviteToken
+          ? await client.auth.signUp({
+              email: email.trim(), password,
+              options: {
+                emailRedirectTo: authRedirectUrl(window.location.origin, import.meta.env.DEV, `${window.location.origin}/?staff_invite=${encodeURIComponent(staffInviteToken)}`),
+                data: { full_name: ownerName.trim() },
+              },
+            })
+          : await requestOwnerSignup(client.auth, {
+              email: email.trim(), password, ownerName: ownerName.trim(), origin: window.location.origin, isDevelopment: import.meta.env.DEV,
+            })
         if (authError) {
           logAuthCode('signup', authError)
           if ((authError as { code?: string }).code === 'over_email_send_rate_limit') {
@@ -212,6 +231,7 @@ export default function AuthGate() {
     try {
       const redirect = new URL('/', window.location.origin)
       if (inviteToken) redirect.searchParams.set('invite', inviteToken)
+      if (staffInviteToken) redirect.searchParams.set('staff_invite', staffInviteToken)
       const { error: resendError } = await requestSignupConfirmation(requireSupabase().auth, {
         email: email.trim(), origin: window.location.origin, redirectTo: redirect.toString(), isDevelopment: import.meta.env.DEV,
       })
@@ -251,6 +271,19 @@ export default function AuthGate() {
   if (busy) return <div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24} /><p>Loading your secure workspace…</p></div></div>
 
   if (!isSupabaseConfigured) return <div className="auth-screen"><section className="auth-card"><BrandMark /><p className="auth-eyebrow">SETUP REQUIRED</p><h1>Connect your Supabase project</h1><p className="auth-intro">Authentication is disabled until the project URL and browser publishable key are configured.</p><div className="auth-instructions"><b>1.</b><span>Copy <code>.env.example</code> to a local file named <code>.env</code>.</span><b>2.</b><span>Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>.</span><b>3.</b><span>Run the SQL migrations in your Supabase SQL Editor, then restart Vite.</span></div><p className="auth-security"><ShieldCheck size={16} /> Never use a service-role key in browser settings.</p></section></div>
+
+  if (!session && staffInviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">LIFTDESK STAFF INVITATION</p><h1>{mode === 'signin' ? 'Sign in to accept your invite.' : 'Create your staff account.'}</h1><p className="auth-intro">Use the email address this invitation was sent to. Your access will be linked to the gym and role assigned by its Owner or Admin.</p>
+    <form className="auth-form" onSubmit={submitAuth}>
+      {mode === 'signup' && <label>Your name<input autoComplete="name" required minLength={2} maxLength={120} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>}
+      <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Work email address" /></label>
+      <label>Password<input type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
+      {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
+      {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
+      <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || (mode === 'signup' && emailWaitSeconds > 0)}>{saving ? 'Please wait…' : mode === 'signup' ? 'Create staff account' : 'Sign in and accept invitation'} <ArrowRight size={16} /></button>
+    </form>
+    <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create account' : 'Sign in'}</button></p>
+    <p className="auth-security"><ShieldCheck size={16} /> This invitation is single-use, expires after 48 hours, and only works for its invited email.</p>
+  </section></div>
 
   if (!session && inviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Create your member account.</h1><p className="auth-intro">Complete your details to join the gym that invited you. Your profile will be read-only after registration.</p>
     <form className="auth-form" onSubmit={submitMemberSignup}>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { CalendarDays, Check, ClipboardCheck, LoaderCircle, Pencil, Plus, Search, Users, X } from 'lucide-react'
-import { listGymStaff, listGymStaffAttendance, saveGymStaff, saveGymStaffAttendance, type GymStaff, type GymStaffAttendance, type StaffAttendanceStatus, type StaffRole } from './lib/staffData'
+import { CalendarDays, Check, ClipboardCheck, Copy, LoaderCircle, Pencil, Plus, Search, Users, X } from 'lucide-react'
+import { createGymStaffInvitation, listGymStaff, listGymStaffAttendance, saveGymStaff, saveGymStaffAttendance, type GymStaff, type GymStaffAttendance, type StaffAttendanceStatus, type StaffRole } from './lib/staffData'
 import { userFacingError } from './lib/userFacingError'
 import type { GymRole } from './lib/gymData'
 
@@ -33,6 +33,10 @@ export default function StaffWorkspace({ gymId, role }: Props) {
   const [form, setForm] = useState<FormState>(initialForm())
   const [attendanceNote, setAttendanceNote] = useState('')
   const [markStatus, setMarkStatus] = useState<StaffAttendanceStatus>('present')
+  const [invitationStaff, setInvitationStaff] = useState<GymStaff | null>(null)
+  const [invitationUrl, setInvitationUrl] = useState('')
+  const [creatingInvitation, setCreatingInvitation] = useState(false)
+  const [copyMessage, setCopyMessage] = useState('')
 
   const refresh = useCallback(async () => {
     setError('')
@@ -85,6 +89,22 @@ export default function StaffWorkspace({ gymId, role }: Props) {
     finally { setSaving(false) }
   }
 
+  async function createInvitation(person: GymStaff) {
+    setInvitationStaff(person); setInvitationUrl(''); setCopyMessage(''); setError(''); setCreatingInvitation(true)
+    try {
+      const token = await createGymStaffInvitation(person.id)
+      const url = new URL('/', window.location.origin)
+      url.searchParams.set('staff_invite', token)
+      setInvitationUrl(url.toString())
+    } catch (e) { setInvitationStaff(null); setError(userFacingError(e, 'Could not create an invitation. Check that the staff member has an active record and email address.')) }
+    finally { setCreatingInvitation(false) }
+  }
+
+  async function copyInvitation() {
+    try { await navigator.clipboard.writeText(invitationUrl); setCopyMessage('Invitation link copied.') }
+    catch { setCopyMessage('Copy is unavailable here. Select and copy the link below.') }
+  }
+
   if (!permitted) return <section className="surface staff-access-denied" role="alert"><h2>Staff workspace unavailable</h2><p>Your account does not have permission to view staff records.</p></section>
 
   return <div className="staff-workspace">
@@ -114,7 +134,7 @@ export default function StaffWorkspace({ gymId, role }: Props) {
           <td>{humanRole(person.role)}</td><td><a href={'tel:' + person.phone.replace(/[^+\d]/g,'')}>{person.phone}</a>{person.email && <small className="staff-email">{person.email}</small>}</td><td>{prettyDate(person.joining_date)}</td>
           <td><span className={'staff-status staff-status-' + (row?.status ?? 'not-marked')}>{attendanceLabel(row)}</span></td>
           <td><span className={'staff-employment staff-employment-' + person.employment_status}>{humanRole(person.employment_status)}</span></td>
-          <td><div className="staff-row-actions"><button type="button" className="button-small" onClick={() => { setSelected(person); setMarkStatus(row?.status ?? 'present'); setAttendanceNote(row?.note ?? '') }} disabled={!isActive}>{row ? 'Correct' : 'Mark present'}</button><button type="button" className="row-more" aria-label={'Edit ' + person.full_name} onClick={() => openEdit(person)}><Pencil size={14}/></button></div></td>
+          <td><div className="staff-row-actions"><button type="button" className="button-small" onClick={() => { setSelected(person); setMarkStatus(row?.status ?? 'present'); setAttendanceNote(row?.note ?? '') }} disabled={!isActive}>{row ? 'Correct' : 'Mark present'}</button><button type="button" className="button-small staff-invite-button" onClick={() => void createInvitation(person)} disabled={!isActive || !person.email} title={!person.email ? 'Add an email address to this staff record first' : 'Create a sign-in invitation'}>Invite</button><button type="button" className="row-more" aria-label={'Edit ' + person.full_name} onClick={() => openEdit(person)}><Pencil size={14}/></button></div></td>
         </tr> })}
       </tbody></table>{visibleStaff.length === 0 && <div className="empty-state">No staff records match these filters.</div>}</div>}
     </section>
@@ -131,8 +151,12 @@ export default function StaffWorkspace({ gymId, role }: Props) {
       <div className="form-two"><label>Role<select value={form.role} disabled={!owner} onChange={e => setForm({...form,role:e.target.value as StaffRole})}><option value="trainer">Trainer</option>{owner && <option value="admin">Admin</option>}</select></label><label>Phone<input required type="tel" minLength={5} maxLength={30} pattern="\+?[0-9][0-9\s().-]{4,29}" value={form.phone} onChange={e => setForm({...form,phone:e.target.value})}/></label></div>
       <div className="form-two"><label>Email (optional)<input type="email" value={form.email} onChange={e => setForm({...form,email:e.target.value})}/></label><label>Joining date<input required type="date" value={form.joiningDate} onChange={e => setForm({...form,joiningDate:e.target.value})}/></label></div>
       <div className="form-two"><label>Employment status<select value={form.employmentStatus} onChange={e => setForm({...form,employmentStatus:e.target.value as 'active' | 'inactive'})}><option value="active">Active</option><option value="inactive">Inactive</option></select></label><label>Profile photo URL (optional)<input type="url" value={form.profilePhotoUrl} onChange={e => setForm({...form,profilePhotoUrl:e.target.value})}/></label></div>
-      <label>Notes (optional)<textarea maxLength={2000} value={form.notes} onChange={e => setForm({...form,notes:e.target.value})}/></label><p className="modal-note">This creates an employee directory record only. It does not create an authentication account or send an invitation.</p>
+      <label>Notes (optional)<textarea maxLength={2000} value={form.notes} onChange={e => setForm({...form,notes:e.target.value})}/></label><p className="modal-note">Save a staff email address here first. Then use Invite in the staff list to create a single-use sign-in link.</p>
       <div className="modal-actions"><button type="button" className="button-secondary" onClick={() => setShowForm(false)}>Cancel</button><button type="submit" className="button-primary" disabled={saving}>{saving ? 'Saving…' : 'Save staff record'}</button></div></form>
+    </section></div>}
+    {invitationStaff && <div className="staff-detail-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget && !creatingInvitation) { setInvitationStaff(null); setInvitationUrl('') } }}><section className="staff-form-modal staff-invitation-modal" role="dialog" aria-modal="true" aria-labelledby="staff-invitation-title">
+      <div className="modal-header"><div><p className="auth-eyebrow">STAFF SIGN-IN</p><h2 id="staff-invitation-title">Invite {invitationStaff.full_name}</h2><p>{invitationStaff.email} · {humanRole(invitationStaff.role)}</p></div><button type="button" className="icon-button" onClick={() => { setInvitationStaff(null); setInvitationUrl('') }} aria-label="Close invitation" disabled={creatingInvitation}><X size={18}/></button></div>
+      {creatingInvitation ? <div className="empty-state"><LoaderCircle className="spin" size={20}/> Creating secure invitation…</div> : invitationUrl ? <><p className="modal-note">Share this private link with {invitationStaff.email}. It expires in 48 hours, works once, and grants the {invitationStaff.role} role after that person confirms their email and signs in.</p><label className="staff-invitation-link-label">Private invitation link<input className="staff-invitation-link" readOnly value={invitationUrl} onFocus={event => event.currentTarget.select()} /></label><div className="modal-actions"><button type="button" className="button-secondary" onClick={() => { setInvitationStaff(null); setInvitationUrl('') }}>Close</button><button type="button" className="button-primary" onClick={() => void copyInvitation()}><Copy size={15}/> Copy invitation link</button></div>{copyMessage && <p className="staff-copy-feedback" role="status">{copyMessage}</p>}<p className="staff-audit-note">The link is a sign-in credential. Send it only to the email address shown above. Creating another link invalidates previous unused links for this staff member.</p></> : <p className="modal-note">Could not create the invitation.</p>}
     </section></div>}
   </div>
 }

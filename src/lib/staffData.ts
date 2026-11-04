@@ -58,6 +58,19 @@ export async function saveGymStaff(gymId: string, input: {
   if (error) throw error
   return data as GymStaff
 }
+
+export async function createGymStaffInvitation(staffId: string): Promise<string> {
+  const { data, error } = await requireSupabase().rpc('create_gym_staff_invitation', { target_staff: staffId })
+  if (error) throw error
+  if (typeof data !== 'string' || data.length !== 64) throw new Error('Could not create a valid staff invitation.')
+  return data
+}
+
+export async function acceptGymStaffInvitation(token: string): Promise<void> {
+  const { error } = await requireSupabase().rpc('accept_gym_staff_invitation', { invitation_token: token })
+  if (error) throw error
+}
+
 export async function listGymStaffAttendance(gymId: string): Promise<GymStaffAttendance[]> {
   const { data, error } = await requireSupabase().from('gym_staff_attendance').select(attendanceFields).eq('gym_id', gymId).order('attendance_date', { ascending: false })
   if (error) throw error
