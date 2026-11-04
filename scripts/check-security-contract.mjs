@@ -344,6 +344,17 @@ requireFunction('update_gym_staff_directory', staffAccessMigration, found => {
 const staffDataClient = compact(read('src/lib/staffData.ts'))
 requireText(staffDataClient, "rpc('update_gym_staff_directory'", 'The frontend must update staff through the authorized synchronization RPC')
 
+// Cloudflare Pages response headers provide defense in depth for browser data.
+const pagesHeaders = compact(read('public/_headers'))
+for (const [fragment, message] of [
+  ["content-security-policy: default-src 'self'", 'Cloudflare Pages must restrict script execution with a same-origin CSP'],
+  ["object-src 'none'", 'Cloudflare Pages must block plugin content'],
+  ["frame-ancestors 'none'", 'Cloudflare Pages must prevent embedding'],
+  ['x-content-type-options: nosniff', 'Cloudflare Pages must disable MIME sniffing'],
+  ['referrer-policy: strict-origin-when-cross-origin', 'Cross-origin requests must not receive invitation URL paths'],
+  ['permissions-policy:', 'Browser permissions must be explicitly restricted'],
+]) requireText(pagesHeaders, fragment, message)
+
 if (failures.length) {
   console.error('LiftDesk security contract check failed:')
   for (const failure of failures) console.error(' - ' + failure)
