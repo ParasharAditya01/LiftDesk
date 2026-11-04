@@ -2,5 +2,7 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000
+  Access-Control-Allow-Origin: https://liftdesk.pages.dev
   Permissions-Policy: camera=(self), microphone=(), geolocation=()
   Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com; connect-src 'self' https://ulqavtpfbpvxbxxljafk.supabase.co wss://ulqavtpfbpvxbxxljafk.supabase.co; upgrade-insecure-requests

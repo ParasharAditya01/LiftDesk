@@ -344,6 +344,21 @@ requireFunction('update_gym_staff_directory', staffAccessMigration, found => {
 const staffDataClient = compact(read('src/lib/staffData.ts'))
 requireText(staffDataClient, "rpc('update_gym_staff_directory'", 'The frontend must update staff through the authorized synchronization RPC')
 
+// Invitation RPCs receive simple per-user bounds with transaction locks so
+// concurrent requests cannot bypass the limits.
+const invitationRateLimit = compact(read('supabase/migrations/0017_invitation_rate_limits.sql'))
+for (const name of ['create_member_invitation', 'create_gym_staff_invitation']) {
+  const fn = requireFunction(name, invitationRateLimit)[0]
+  if (!fn?.body.includes('pg_advisory_xact_lock') || !fn.body.includes('created_by = requesting_user') ||
+      !fn.body.includes("created_at > now() - interval '1 hour'") || !fn.body.includes('recent_count >=')) {
+    fail(`${name} must enforce an account-scoped, concurrency-safe hourly request limit`)
+  }
+}
+requireText(invitationRateLimit, 'if recent_count >= 20 then', 'Member invitation RPC must cap creations at 20 per hour')
+requireText(invitationRateLimit, 'if recent_count >= 10 then', 'Staff invitation RPC must cap creations at 10 per hour')
+requireText(invitationRateLimit, 'revoke all on function public.create_member_invitation(uuid) from public, anon', 'Rate-limited member invitation RPC must stay private')
+requireText(invitationRateLimit, 'revoke all on function public.create_gym_staff_invitation(uuid) from public, anon', 'Rate-limited staff invitation RPC must stay private')
+
 // Cloudflare Pages response headers provide defense in depth for browser data.
 const pagesHeaders = compact(read('public/_headers'))
 for (const [fragment, message] of [
@@ -352,6 +367,8 @@ for (const [fragment, message] of [
   ["frame-ancestors 'none'", 'Cloudflare Pages must prevent embedding'],
   ['x-content-type-options: nosniff', 'Cloudflare Pages must disable MIME sniffing'],
   ['referrer-policy: strict-origin-when-cross-origin', 'Cross-origin requests must not receive invitation URL paths'],
+  ['strict-transport-security: max-age=31536000', 'Cloudflare Pages must tell browsers to use HTTPS for one year'],
+  ['access-control-allow-origin: https://liftdesk.pages.dev', 'Static website CORS must be limited to the production origin'],
   ['permissions-policy:', 'Browser permissions must be explicitly restricted'],
 ]) requireText(pagesHeaders, fragment, message)
 
@@ -360,5 +377,5 @@ if (failures.length) {
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations, coaching/template scope, and linked staff access synchronization assertions are present.')
+console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, and browser headers are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')

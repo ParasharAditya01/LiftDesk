@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "node --test",
-    "security:check": "node scripts/check-security-contract.mjs"
+    "security:check": "node scripts/check-security-contract.mjs",
+    "security:tenant-test": "node scripts/check-live-tenant-isolation.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",

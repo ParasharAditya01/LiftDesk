@@ -8,7 +8,7 @@ import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 import LiftDeskMark from './LiftDeskMark'
 import { userFacingError } from './lib/userFacingError'
-import { authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation } from './lib/authRegistration'
+import { authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation, SIGNUP_NEXT_STEP_MESSAGE } from './lib/authRegistration'
 
 const LiveApp = lazy(() => import('./LiveApp'))
 const MemberPortal = lazy(() => import('./MemberPortal'))
@@ -157,9 +157,7 @@ export default function AuthGate() {
         if (signup.kind === 'confirmation-pending' || signup.kind === 'existing-account') {
           setShowResendConfirmation(true)
           startEmailCooldown()
-          if (signup.kind === 'existing-account') {
-            setMessage('No new account was created. This email may already have an account. Try signing in; if it still needs confirmation, you can request another email below.')
-          }
+          setMessage(SIGNUP_NEXT_STEP_MESSAGE)
         } else if (signup.kind === 'signed-in') {
           setSession(signup.session)
         } else {
@@ -217,7 +215,7 @@ export default function AuthGate() {
       if (signup.kind === 'signed-in') setSession(signup.session)
       else if (signup.kind === 'confirmation-pending' || signup.kind === 'existing-account') {
         setShowResendConfirmation(true)
-        setMessage(`${CONFIRMATION_REQUEST_ACCEPTED_MESSAGE} The invitation link will be preserved if you resend.`)
+        setMessage(`${SIGNUP_NEXT_STEP_MESSAGE} The invitation link will be preserved if you resend.`)
         startEmailCooldown()
       } else throw new Error('Signup did not return an account. Please try again.')
     } catch (err) { setError(userFacingError(err, 'Could not create your member account. Check the details and try again.')) }

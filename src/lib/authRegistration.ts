@@ -4,6 +4,7 @@ type AuthApi = SupabaseClient['auth']
 
 export const PRODUCTION_AUTH_REDIRECT_URL = 'https://liftdesk.pages.dev/'
 export const CONFIRMATION_REQUEST_ACCEPTED_MESSAGE = 'Confirmation request submitted. Check your inbox and spam folder. LiftDesk cannot confirm inbox delivery.'
+export const SIGNUP_NEXT_STEP_MESSAGE = 'If this address can be registered, the next step will arrive by email. If you already use LiftDesk, try signing in.'
 
 export function authRedirectUrl(origin: string, isDevelopment = false, redirectTo?: string): string {
   const current = new URL(origin)
