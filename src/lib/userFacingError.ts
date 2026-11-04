@@ -18,6 +18,9 @@ export function userFacingError(value: unknown, fallback: string): string {
   if (/already checked in today|checked in moments ago/.test(message)) {
     return 'This member has already checked in today.'
   }
+  if (/invitation request limit reached/.test(message)) {
+    return 'You have reached the hourly invitation limit. Wait before creating more invitations.'
+  }
   if (error?.name === 'AuthRetryableFetchError' || /network|fetch|failed to connect|load failed/.test(message)) {
     return 'A network error interrupted the request. Check your connection and try again.'
   }

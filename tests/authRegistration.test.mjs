@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation } from '../src/lib/authRegistration.ts'
+import { authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation, SIGNUP_NEXT_STEP_MESSAGE } from '../src/lib/authRegistration.ts'
 import { authErrorCode, userFacingError } from '../src/lib/userFacingError.ts'
 
 test('rate-limit errors are actionable and retain only the provider code for diagnosis', () => {
@@ -52,6 +52,12 @@ test('signup responses distinguish confirmation pending, existing-account respon
   assert.equal(classifySignupResult(null, null).kind, 'incomplete')
 })
 
+test('signup next-step feedback does not reveal whether an arbitrary address already has an account', () => {
+  assert.match(SIGNUP_NEXT_STEP_MESSAGE, /if this address can be registered/i)
+  assert.match(SIGNUP_NEXT_STEP_MESSAGE, /if you already use liftdesk, try signing in/i)
+  assert.doesNotMatch(SIGNUP_NEXT_STEP_MESSAGE, /account (already )?exists|email is registered/i)
+})
+
 test('resend calls the signup confirmation endpoint with the current origin', async () => {
   let received
   const fakeAuth = { resend: async input => { received = input; return { error: null } } }
@@ -80,6 +86,13 @@ test('confirmation acceptance copy does not claim delivery', () => {
 
 test('network errors are shown as actionable guidance without raw transport details', () => {
   assert.equal(userFacingError(new TypeError('Failed to fetch https://private.example/path?token=secret'), 'Unable to request confirmation email. Please try again later.'), 'A network error interrupted the request. Check your connection and try again.')
+})
+
+test('invitation throttling gives clear wait-and-retry guidance without exposing backend details', () => {
+  assert.equal(
+    userFacingError({ message: 'Invitation request limit reached. Try again later', details: 'sensitive database detail' }, 'Could not create an invitation.'),
+    'You have reached the hourly invitation limit. Wait before creating more invitations.',
+  )
 })
 
 test('resend provider errors remain failures for the UI to report', async () => {
