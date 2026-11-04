@@ -53,10 +53,22 @@ export async function saveGymStaff(gymId: string, input: {
   }
   const query = requireSupabase().from('gym_staff')
   const { data, error } = input.id
-    ? await query.update(payload).eq('id', input.id).eq('gym_id', gymId).select(staffFields).single()
+    ? await requireSupabase().rpc('update_gym_staff_directory', {
+        target_staff: input.id,
+        new_staff_code: payload.staff_code,
+        new_full_name: payload.full_name,
+        new_role: payload.role,
+        new_phone: payload.phone,
+        new_email: payload.email,
+        new_joining_date: payload.joining_date,
+        new_employment_status: payload.employment_status,
+        new_profile_photo_url: payload.profile_photo_url,
+        new_notes: payload.notes,
+      })
     : await query.insert(payload).select(staffFields).single()
   if (error) throw error
-  return data as GymStaff
+  if (!data || (Array.isArray(data) && !data.length)) throw new Error('Could not save the staff record.')
+  return (Array.isArray(data) ? data[0] : data) as GymStaff
 }
 
 export async function createGymStaffInvitation(staffId: string): Promise<string> {

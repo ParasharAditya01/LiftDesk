@@ -312,10 +312,42 @@ requireText(staffUi, "owner || person.role === 'trainer'", 'Admin-facing directo
 const liveApp = compact(read('src/LiveApp.tsx'))
 requireText(liveApp, "name !== 'staff' || role === 'owner' || role === 'admin'", 'Staff navigation must be hidden from trainers and members')
 
+// Staff sign-in and offboarding must keep the employee directory bound to the
+// actual authorization membership, not merely to frontend role labels.
+const staffInviteMigration = compact(read('supabase/migrations/0014_staff_login_invitations.sql'))
+requireText(staffInviteMigration, 'auth_user_id uuid unique references auth.users(id)', 'Staff login linkage must reference a unique Supabase Auth user')
+requireText(staffInviteMigration, 'token_hash bytea not null unique', 'Staff invitation tokens must be stored as unique hashes')
+requireText(staffInviteMigration, "default (now() + interval '48 hours')", 'Staff invitations must expire')
+requireText(staffInviteMigration, 'confirmed_at is null', 'Staff invitation acceptance must require confirmed email')
+requireText(staffInviteMigration, 'staff_row.role <> invite.role', 'Staff invitation acceptance must recheck the current role')
+requireText(staffInviteMigration, 'revoke all on function public.accept_gym_staff_invitation(text) from public, anon', 'Staff invitation acceptance must not be publicly or anonymously executable')
+requireFunction('create_gym_staff_invitation', staffInviteMigration)
+requireFunction('accept_gym_staff_invitation', staffInviteMigration)
+
+const staffAccessMigration = compact(read('supabase/migrations/0015_sync_staff_access_changes.sql'))
+requireText(staffAccessMigration, 'revoke update on table public.gym_staff from authenticated', 'Staff directory edits must not bypass access synchronization')
+requireText(staffAccessMigration, 'revoke update (gym_id, staff_code, full_name, role, phone, email, joining_date, employment_status, profile_photo_url, notes) on table public.gym_staff from authenticated', 'Previously granted column-level updates must also be revoked')
+requireText(staffAccessMigration, 'alter table public.gym_staff_access_events enable row level security', 'Staff access audit must have RLS enabled')
+requireText(staffAccessMigration, 'update public.gym_memberships gm set role = result_row.role, active = result_row.employment_status =', 'Role and active status changes must update the linked authorization membership')
+requireText(staffAccessMigration, 'raise exception', 'A linked staff record with no authorization membership must not silently save an access change')
+requireText(staffAccessMigration, 'insert into public.gym_staff_access_events', 'Staff role and status access changes must be audited')
+requireText(staffAccessMigration, 'update public.gym_staff_invitations set revoked_at = now()', 'Pending invitations must be revoked when role or employment access changes')
+requireText(staffAccessMigration, 'revoke all on function public.update_gym_staff_directory(', 'Staff access update RPC must not be public')
+requireText(staffAccessMigration, 'grant execute on function public.update_gym_staff_directory(', 'Authenticated staff editors must use the access-sync RPC')
+requireFunction('update_gym_staff_directory', staffAccessMigration, found => {
+  if (!found.some(fn => fn.body.includes('public.has_gym_role(staff_row.gym_id') &&
+      fn.body.includes("staff_row.role = 'trainer' and new_role = 'trainer'") &&
+      fn.body.includes('staff_row.auth_user_id'))) {
+    fail('Staff access update must verify gym role, keep Admin changes limited to Trainers, and bind synchronization to the linked account')
+  }
+})
+const staffDataClient = compact(read('src/lib/staffData.ts'))
+requireText(staffDataClient, "rpc('update_gym_staff_directory'", 'The frontend must update staff through the authorized synchronization RPC')
+
 if (failures.length) {
   console.error('LiftDesk security contract check failed:')
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member invitation controls, and coaching/template data scope assertions are present.')
+console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations, coaching/template scope, and linked staff access synchronization assertions are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')

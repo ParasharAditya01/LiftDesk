@@ -33,3 +33,24 @@ test('notes are append-only and plan edits retain prior snapshots', () => {
   assert.ok(migration.includes('create trigger workout_plan_history before update'))
   assert.doesNotMatch(migration, /create policy [^;]+on public\.coaching_notes for (update|delete)/)
 })
+
+test('staff directory role and offboarding changes update linked login access atomically', () => {
+  const migration = readFileSync(new URL('../supabase/migrations/0015_sync_staff_access_changes.sql', import.meta.url), 'utf8').toLowerCase().replace(/\s+/g, ' ')
+  assert.ok(migration.includes('revoke update on table public.gym_staff from authenticated'))
+  assert.match(migration, /create or replace function public\.update_gym_staff_directory\([\s\S]+security definer set search_path = ''/)
+  assert.ok(migration.includes("public.has_gym_role(staff_row.gym_id, array['owner']::public.gym_role[])"))
+  assert.ok(migration.includes("staff_row.role = 'trainer' and new_role = 'trainer'"))
+  assert.ok(migration.includes('update public.gym_memberships gm set role = result_row.role, active = result_row.employment_status = \'active\''))
+  assert.ok(migration.includes("raise exception 'linked staff login has no matching gym membership"))
+  assert.ok(migration.includes('insert into public.gym_staff_access_events'))
+  assert.ok(migration.includes('alter table public.gym_staff_access_events enable row level security'))
+  assert.ok(migration.includes('revoke all on function public.update_gym_staff_directory('))
+  assert.ok(migration.includes('to authenticated'))
+})
+
+test('staff edit UI requires confirmation before changing linked-login role or active status', () => {
+  const ui = readFileSync(new URL('../src/StaffWorkspace.tsx', import.meta.url), 'utf8')
+  assert.match(ui, /const accessChanged = !!editing && \(editing\.role !== form\.role \|\| editing\.employment_status !== form\.employmentStatus\)/)
+  assert.match(ui, /window\.confirm\('This changes this staff member/)
+  assert.match(ui, /linked login access updated/)
+})

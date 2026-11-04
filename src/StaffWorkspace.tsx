@@ -68,11 +68,14 @@ export default function StaffWorkspace({ gymId, role }: Props) {
   function openEdit(person: GymStaff) { setEditing(person); setForm({ staffCode: person.staff_code, fullName: person.full_name, role: person.role, phone: person.phone, email: person.email ?? '', joiningDate: person.joining_date, employmentStatus: person.employment_status, profilePhotoUrl: person.profile_photo_url ?? '', notes: person.notes ?? '' }); setShowForm(true); setError(''); setNotice('') }
 
   async function submitStaff(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSaving(true); setError(''); setNotice('')
+    event.preventDefault(); setError(''); setNotice('')
     if (!owner && form.role !== 'trainer') { setError('Admins can only manage trainer records.'); setSaving(false); return }
+    const accessChanged = !!editing && (editing.role !== form.role || editing.employment_status !== form.employmentStatus)
+    if (accessChanged && !window.confirm('This changes this staff member’s login access immediately. Continue?')) return
+    setSaving(true)
     try {
       await saveGymStaff(gymId, { ...(editing ? { id: editing.id } : {}), ...form })
-      setShowForm(false); setNotice(editing ? 'Staff record updated.' : 'Staff record added.'); await refresh()
+      setShowForm(false); setNotice(accessChanged ? 'Staff record and linked login access updated. The change is recorded in the access audit.' : editing ? 'Staff record updated.' : 'Staff record added.'); await refresh()
     } catch (e) { setError(userFacingError(e, 'Could not save the staff record. Check for a duplicate Staff ID and try again.')) }
     finally { setSaving(false) }
   }
