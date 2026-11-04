@@ -1546,6 +1546,8 @@ svg {
 /* On phones, keep the workspace identity and sign-out pinned while navigation scrolls. */
 @media (max-width: 720px) {
   .app-shell .sidebar {
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
     overflow: hidden;
     overscroll-behavior: none;
   }
@@ -1561,8 +1563,10 @@ svg {
     scrollbar-width: thin;
   }
   .app-shell .sidebar .sidebar-bottom {
-    flex: 0 0 auto;
-    margin-top: auto;
+    min-width: 0;
+    margin-top: 0;
+    align-self: end;
+    background: #faf7f0;
   }
 }
 
