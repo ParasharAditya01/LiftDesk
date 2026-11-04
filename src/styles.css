@@ -1542,3 +1542,60 @@ svg {
   .app-shell .sidebar .sidebar-pilot>p{font-size:11px;line-height:1.45}
   .app-shell .sidebar .sidebar-bottom{flex:0 0 auto}
 }
+
+/* On phones, keep the workspace identity and sign-out pinned while navigation scrolls. */
+@media (max-width: 720px) {
+  .app-shell .sidebar {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  .app-shell .sidebar .sidebar-spacer,
+  .app-shell .sidebar .sidebar-pilot {
+    display: none;
+  }
+  .app-shell .sidebar .primary-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .app-shell .sidebar .sidebar-bottom {
+    flex: 0 0 auto;
+    margin-top: auto;
+  }
+}
+
+@media (max-width: 720px) and (max-height: 700px) {
+  .app-shell .sidebar {
+    padding-top: 9px;
+  }
+  .app-shell .sidebar-top {
+    padding-bottom: 9px;
+  }
+  .app-shell .sidebar .workspace-switcher {
+    min-height: 52px;
+    margin-bottom: 10px;
+    padding: 6px 9px;
+  }
+  .app-shell .sidebar .workspace-avatar {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+  .app-shell .sidebar .nav-caption {
+    padding-bottom: 5px;
+  }
+  .app-shell .sidebar .primary-nav {
+    gap: 1px;
+  }
+  .app-shell .sidebar .nav-item {
+    min-height: 42px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+  .app-shell .sidebar .profile-row {
+    margin-top: 0;
+    padding-top: 8px;
+  }
+}
