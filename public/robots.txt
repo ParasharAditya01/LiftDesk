@@ -1,0 +1,3 @@
+# LiftDesk is an authenticated application with no public indexable pages.
+User-agent: *
+Disallow: /

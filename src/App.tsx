@@ -1,98 +1,239 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import QRCode from 'qrcode'
-import { Html5QrcodeScanner } from 'html5-qrcode'
-import { Activity, Users, QrCode, CalendarDays, Bell, FileText, LayoutDashboard, LogOut, Plus, Search, ShieldCheck, X, Check, Menu } from 'lucide-react'
-import './styles.css'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import {
+  Activity, ArrowUpRight, Bell, CalendarDays,
+  CircleHelp, Download, Dumbbell, FileBarChart, LayoutDashboard, Menu,
+  Plus, ClipboardCheck, Search, Settings2, ShieldCheck, Sparkles, Users, X, Zap,
+} from 'lucide-react'
+import LiftDeskMark from './LiftDeskMark'
+import LiftDeskLogo from './LiftDeskLogo'
+import { useScrollMotion } from './lib/useScrollMotion'
+import SectionPhoto from './SectionPhoto'
 
-type Member = { id:string; gym_id:string; full_name:string; phone:string; email:string|null; status:'active'|'inactive'|'paused'; joined_on:string; membership_expires_on:string|null; plan_name:string; monthly_fee:number; qr_token:string }
-type Gym = { id:string; name:string; city:string|null }
-type Visit = { id:string; member_id:string; checked_in_at:string; method:string }
-type FollowUp = { id:string; member_id:string; kind:string; status:string; due_on:string; note:string|null }
-type Page = 'Overview'|'Members'|'Attendance'|'Follow-ups'|'Reports'
-const envUrl = import.meta.env.VITE_SUPABASE_URL as string|undefined
-const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string|undefined
-const db = envUrl && envKey && !envUrl.includes('YOUR_PROJECT') && !envKey.includes('YOUR_SUPABASE') ? createClient(envUrl,envKey) : null
-const today = () => new Date().toISOString().slice(0,10)
-const inr = (n:number) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n||0)
-const initials = (s:string) => s.trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()
-const days = (d:string|null) => d ? Math.ceil((new Date(d+'T23:59:59').getTime()-Date.now())/86400000) : null
+type Section = 'Overview' | 'Members' | 'Attendance' | 'Follow-ups' | 'Reports'
+type MemberStatus = 'Active' | 'Expiring' | 'Inactive'
+type Member = { id: number; name: string; initials: string; phone: string; plan: string; status: MemberStatus; expires: string; fee: number; lastVisit: string }
 
-export default function App() {
- const [session,setSession]=useState<any>(null), [gym,setGym]=useState<Gym|null>(null)
- const [members,setMembers]=useState<Member[]>([]), [visits,setVisits]=useState<Visit[]>([]), [tasks,setTasks]=useState<FollowUp[]>([])
- const [page,setPage]=useState<Page>('Overview'), [loading,setLoading]=useState(true), [busy,setBusy]=useState(false)
- const [error,setError]=useState(''), [message,setMessage]=useState(''), [authMode,setAuthMode]=useState(false)
- const [auth,setAuth]=useState({name:'',email:'',password:''}), [gymName,setGymName]=useState(''), [city,setCity]=useState('')
- const [memberOpen,setMemberOpen]=useState(false), [member,setMember]=useState({name:'',phone:'',email:'',plan:'Monthly',fee:'999',expiry:''})
- const [search,setSearch]=useState(''), [qrMember,setQrMember]=useState<Member|null>(null), [qr,setQr]=useState(''), [navOpen,setNavOpen]=useState(false), [scanOpen,setScanOpen]=useState(false)
- const load=async(uid:string)=> {
-  if(!db)return
-  const {data:ms,error:me}=await db.from('gym_memberships').select('gym_id').eq('user_id',uid).eq('active',true).limit(1)
-  if(me){setError(me.message);setLoading(false);return}
-  if(!ms?.length){setGym(null);setLoading(false);return}
-  const id=ms[0].gym_id
-  const [g,m,a,f]=await Promise.all([
-   db.from('gyms').select('id,name,city').eq('id',id).single(),
-   db.from('members').select('*').eq('gym_id',id).order('created_at',{ascending:false}),
-   db.from('attendance').select('id,member_id,checked_in_at,method').eq('gym_id',id).gte('checked_in_at',new Date(Date.now()-30*86400000).toISOString()).order('checked_in_at',{ascending:false}).limit(500),
-   db.from('follow_ups').select('*').eq('gym_id',id).order('due_on')
-  ])
-  if(g.error)setError(g.error.message);else setGym(g.data)
-  if(m.error)setError(m.error.message);else setMembers((m.data||[]) as Member[])
-  if(a.error)setError(a.error.message);else setVisits((a.data||[]) as Visit[])
-  if(f.error)setError(f.error.message);else setTasks((f.data||[]) as FollowUp[])
-  setLoading(false)
- }
- useEffect(()=>{if(!db){setLoading(false);return} let alive=true
-  db.auth.getSession().then(({data})=>{if(!alive)return;setSession(data.session);if(data.session)void load(data.session.user.id);else setLoading(false)})
-  const {data:{subscription}}=db.auth.onAuthStateChange((_e,s)=>{setSession(s);if(s){setLoading(true);setTimeout(()=>{if(alive)void load(s.user.id)},0)}else{setGym(null);setMembers([]);setVisits([]);setTasks([]);setLoading(false)}})
-  return()=>{alive=false;subscription.unsubscribe()}
- },[])
- useEffect(()=>{if(qrMember)void QRCode.toDataURL(JSON.stringify({gym_id:qrMember.gym_id,token:qrMember.qr_token}),{width:300,margin:2}).then(setQr).catch(()=>setError('QR generation failed'));else setQr('')},[qrMember])
- const act=async(fn:()=>Promise<void>)=>{setBusy(true);setError('');setMessage('');try{await fn()}catch(e){setError(e instanceof Error?e.message:'Request failed. Try again.')}finally{setBusy(false)}}
- const refresh=async()=>{if(session?.user?.id)await load(session.user.id)}
- const active=members.filter(m=>m.status==='active')
- const todayVisits=visits.filter(v=>v.checked_in_at.slice(0,10)===today())
- const inactive=useMemo(()=>active.filter(m=>{const v=visits.find(x=>x.member_id===m.id);return !v||Date.now()-new Date(v.checked_in_at).getTime()>7*86400000}),[active,visits])
- const expiring=members.filter(m=>m.status==='active'&&days(m.membership_expires_on)!==null&&days(m.membership_expires_on)!>=0&&days(m.membership_expires_on)!<=7)
- const filtered=members.filter(m=>(m.full_name+' '+m.phone+' '+(m.email||'')).toLowerCase().includes(search.toLowerCase()))
- const sign=async(e:FormEvent)=>{e.preventDefault();if(!db)return;await act(async()=>{if(authMode){const {data,error}=await db.auth.signUp({email:auth.email.trim(),password:auth.password,options:{data:{full_name:auth.name}}});if(error)throw error;if(!data.session)setMessage('Account created. Confirm your email, then sign in.')}else{const {error}=await db.auth.signInWithPassword({email:auth.email.trim(),password:auth.password});if(error)throw error}})}
- const setupGym=async(e:FormEvent)=>{e.preventDefault();if(!db)return;await act(async()=>{const {error}=await db.rpc('create_gym_for_current_user',{gym_name:gymName,owner_name:auth.name||session?.user?.user_metadata?.full_name||'',gym_city:city||null,gym_phone:null});if(error)throw error;await load(session.user.id)})}
- const addMember=async(e:FormEvent)=>{e.preventDefault();if(!db||!gym)return;await act(async()=>{const {error}=await db.from('members').insert({gym_id:gym.id,full_name:member.name.trim(),phone:member.phone.trim(),email:member.email.trim()||null,plan_name:member.plan,monthly_fee:Number(member.fee),membership_expires_on:member.expiry||null});if(error)throw error;setMemberOpen(false);setMember({name:'',phone:'',email:'',plan:'Monthly',fee:'999',expiry:''});setMessage('Member added.');await refresh()})}
- const checkin=async(m:Member)=>{if(!db||!gym||!session)return;await act(async()=>{if(m.status!=='active')throw Error('Only active members can check in.');if(m.membership_expires_on&&m.membership_expires_on<today())throw Error('Membership has expired.');if(visits.some(v=>v.member_id===m.id&&Date.now()-new Date(v.checked_in_at).getTime()<60000))throw Error('This member was checked in moments ago.');const {error}=await db.rpc('record_manual_check_in',{target_gym:gym.id,target_member:m.id});if(error)throw error;setMessage(m.full_name+' checked in.');await refresh()})}
- const followup=async(m:Member,kind:'inactive'|'renewal')=>{if(!db||!gym||!session)return;await act(async()=>{const {error}=await db.from('follow_ups').insert({gym_id:gym.id,member_id:m.id,kind,due_on:today(),note:kind==='inactive'?'No attendance recorded in the last 7 days.':'Membership expiry is approaching.',created_by:session.user.id});if(error)throw error;setMessage('Follow-up created for '+m.full_name);await refresh()})}
- const nav:{name:Page;icon:any}[]=[{name:'Overview',icon:LayoutDashboard},{name:'Members',icon:Users},{name:'Attendance',icon:QrCode},{name:'Follow-ups',icon:Bell},{name:'Reports',icon:FileText}]
- if(!db)return <div className="setup"><section className="setup-card"><div className="logo"><Activity/></div><p className="eyebrow">INITIAL SETUP REQUIRED</p><h1>Connect your workspace.</h1><p>LiftDesk needs your Supabase project credentials before it can load or save real records.</p><ol><li>Create a Supabase project on its free tier.</li><li>Run <code>supabase/migrations/0001_initial_schema.sql</code> in its SQL Editor.</li><li>Copy <code>.env.example</code> to <code>.env.local</code> and add the project URL and publishable/anon key.</li><li>Restart Vite.</li></ol><div className="secure-note"><ShieldCheck/> Never expose the service-role key in browser code.</div><a className="btn dark full" href="https://supabase.com/dashboard" target="_blank" rel="noreferrer">Open Supabase ↗</a></section></div>
- if(loading)return <div className="loading"><Activity/><p>Preparing your workspace…</p></div>
- if(!session)return <div className="auth"><div className="auth-left"><div className="brand"><span className="logo"><Activity/></span>LiftDesk</div><p className="eyebrow">GYM OPERATIONS, SIMPLIFIED</p><h1>Make every<br/>member <em>count.</em></h1><p>Member records, attendance and timely follow-ups. One calmer way to run your gym.</p><div className="secure-note"><ShieldCheck/> Private gym workspace</div></div><form className="auth-card" onSubmit={sign}><p className="eyebrow">LIFTDESK WORKSPACE</p><h2>{authMode?'Create your account':'Welcome back.'}</h2><p className="muted">{authMode?'Start with a secure owner account.':'Sign in to your gym workspace.'}</p>{authMode&&<Field label="Full name"><input required value={auth.name} onChange={e=>setAuth({...auth,name:e.target.value})}/></Field>}<Field label="Email"><input required type="email" value={auth.email} onChange={e=>setAuth({...auth,email:e.target.value})}/></Field><Field label="Password"><input required type="password" minLength={8} value={auth.password} onChange={e=>setAuth({...auth,password:e.target.value})}/></Field><Notice error={error} message={message}/><button className="btn dark full" disabled={busy}>{busy?'Please wait…':authMode?'Create account ↗':'Sign in ↗'}</button><p className="switch">{authMode?'Already registered?':'New to LiftDesk?'} <button type="button" onClick={()=>{setAuthMode(!authMode);setError('');setMessage('')}}>{authMode?'Sign in':'Create account'}</button></p><small className="muted">No payment details required.</small></form></div>
- if(!gym)return <div className="setup"><form className="setup-card" onSubmit={setupGym}><div className="logo"><Activity/></div><p className="eyebrow">STEP 01 / WORKSPACE</p><h1>First, your gym.</h1><p>Your members and attendance will stay inside this gym's private workspace.</p><Field label="Gym name"><input required minLength={2} value={gymName} onChange={e=>setGymName(e.target.value)} placeholder="Northside Strength"/></Field><Field label="City (optional)"><input value={city} onChange={e=>setCity(e.target.value)} placeholder="Pune"/></Field><Notice error={error} message={message}/><button className="btn dark full" disabled={busy}>Create workspace ↗</button><button type="button" className="text-button" onClick={()=>void db.auth.signOut()}>Sign out</button></form></div>
- return <div className="shell"><aside className={'sidebar '+(navOpen?'open':'')}><div className="brand"><span className="logo"><Activity/></span><span>LiftDesk<small>GYM MANAGEMENT</small></span><button className="icon mobile-only" onClick={()=>setNavOpen(false)}><X/></button></div><div className="workspace"><div className="avatar">{initials(gym.name)}</div><div><b>{gym.name}</b><small>{gym.city||'Gym workspace'}</small></div></div><p className="nav-label">WORKSPACE</p>{nav.map(n=><button key={n.name} className={'nav-link '+(page===n.name?'selected':'')} onClick={()=>{setPage(n.name);setNavOpen(false);setSearch('')}}><n.icon size={18}/>{n.name}{n.name==='Follow-ups'&&tasks.some(t=>t.status==='open')&&<i/>}</button>)}<div className="sidebar-bottom"><div className="secure-note"><ShieldCheck/><span><b>Your gym. Your data.</b><small>Protected by database policies.</small></span></div><button className="logout" onClick={()=>void db.auth.signOut()}><span className="avatar">{initials(gym.name)}</span><span><b>{gym.name}</b><small>Gym workspace · Sign out</small></span><LogOut size={16}/></button></div></aside>
- <main className="main"><header className="topbar"><button className="icon mobile-only" onClick={()=>setNavOpen(true)}><Menu/></button><div>Workspace <span>/</span> <b>{page}</b></div><div className="top-date"><CalendarDays size={16}/>{new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div></header><div className="content"><div className="page-title"><div><p className="eyebrow">YOUR GYM, IN RHYTHM</p><h1>{page==='Overview'?'A clearer view of your gym.':page==='Members'?'Your members.':page==='Attendance'?'Every visit counts.':page==='Follow-ups'?'Keep the connection.':'The numbers that matter.'}</h1><p>{page==='Overview'?'Here’s what needs your attention today.':'Manage '+page.toLowerCase()+' and keep your gym running smoothly.'}</p></div>{page==='Members'&&<button className="btn dark" onClick={()=>setMemberOpen(true)}><Plus size={17}/> Add member</button>}</div><Notice error={error} message={message} clear={()=>setMessage('')}/>
- {page==='Overview'&&<><div className="welcome"><div className="welcome-icon"><Activity/></div><div><b>Good work starts with a clear picture.</b><p>Notice missed visits, prepare for renewals and keep member records up to date.</p></div><span>LD / 01</span></div><div className="stats"><Stat title="Active members" value={String(active.length)} note="Currently marked active" icon={Users}/><Stat title="Check-ins today" value={String(todayVisits.length)} note="Recorded visits today" icon={QrCode}/><Stat title="Renewals soon" value={String(expiring.length)} note="Next 7 days" icon={CalendarDays}/><Stat title="Monthly plan value" value={inr(active.reduce((s,m)=>s+Number(m.monthly_fee||0),0))} note="Listed fees, not collected revenue" icon={Activity}/></div><div className="two-col"><Panel title="Needs your attention" subtitle="Start a helpful follow-up"><div className="list">{expiring.slice(0,3).map(m=><Attention key={m.id} m={m} detail={'Renewal · '+(days(m.membership_expires_on)===0?'expires today':'expires in '+days(m.membership_expires_on)+' days')} action={()=>void followup(m,'renewal')}/>)}{inactive.slice(0,4).map(m=><Attention key={m.id} m={m} detail="No visit in 7+ days" action={()=>void followup(m,'inactive')}/>)}{!expiring.length&&!inactive.length&&<Empty text="No follow-up flags at the moment."/>}</div><button className="inline-link" onClick={()=>setPage('Follow-ups')}>Open follow-ups ↗</button></Panel><Panel title="Recent check-ins" subtitle="Latest 30-day records"><div className="list">{visits.slice(0,6).map(v=>{const m=members.find(x=>x.id===v.member_id);return <div className="list-row" key={v.id}><span className="avatar">{initials(m?.full_name||'M')}</span><div className="row-copy"><b>{m?.full_name||'Member'}</b><small>{new Date(v.checked_in_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})} · {v.method}</small></div><span className="pill active">Checked in</span></div>})}{!visits.length&&<Empty text="First visits will appear here."/>}</div></Panel></div><p className="footnote"><ShieldCheck size={16}/> Gym-level access is enforced by Supabase row-level security.</p></>}
- {page==='Members'&&<><div className="toolbar"><div className="search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name, phone or email…"/></div><span>{filtered.length} members</span></div><div className="panel table-wrap"><table><thead><tr><th>MEMBER</th><th>PLAN</th><th>STATUS</th><th>EXPIRES</th><th>FEE / MONTH</th><th>ACTIONS</th></tr></thead><tbody>{filtered.map(m=><tr key={m.id}><td><div className="table-person"><span className="avatar">{initials(m.full_name)}</span><span><b>{m.full_name}</b><small>{m.phone}</small></span></div></td><td>{m.plan_name}</td><td><span className={'pill '+m.status}>{m.status}</span></td><td>{m.membership_expires_on||'—'}</td><td>{inr(Number(m.monthly_fee))}</td><td><div className="actions"><button className="icon action" title="Show QR code" onClick={()=>setQrMember(m)}><QrCode size={16}/></button><button className="icon action" title="Check in" disabled={busy||m.status!=='active'} onClick={()=>void checkin(m)}><Check size={16}/></button></div></td></tr>)}</tbody></table>{!filtered.length&&<Empty text={search?'No members match your search.':'Add your first member to get started.'}/>}</div></>}
- {page==='Attendance'&&<><div className="stats two-stats"><Stat title="Today's check-ins" value={String(todayVisits.length)} note="Recorded visits" icon={QrCode}/><Stat title="Active members" value={String(active.length)} note="Eligible for check-in" icon={Users}/></div><div className="scan-action"><button className="btn dark" onClick={()=>setScanOpen(true)}><QrCode size={17}/> Scan member QR</button><span>Camera permission required</span></div><Panel title="Check a member in" subtitle="Record a visit or display their QR code"><div className="toolbar"><div className="search"><Search size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Find a member…"/></div></div><div className="list">{filtered.slice(0,50).map(m=><div className="list-row" key={m.id}><span className="avatar">{initials(m.full_name)}</span><div className="row-copy"><b>{m.full_name}</b><small>{m.phone} · {m.plan_name}</small></div><span className={'pill '+m.status}>{m.status}</span><button className="btn outline small" disabled={busy||m.status!=='active'} onClick={()=>void checkin(m)}>Check in</button><button className="icon action" onClick={()=>setQrMember(m)}><QrCode size={16}/></button></div>)}</div></Panel><Panel title="Recent attendance" subtitle="Up to 500 records from the last 30 days"><div className="list">{visits.slice(0,20).map(v=><div className="list-row" key={v.id}><span className="avatar">{initials(members.find(m=>m.id===v.member_id)?.full_name||'M')}</span><div className="row-copy"><b>{members.find(m=>m.id===v.member_id)?.full_name||'Member'}</b><small>{new Date(v.checked_in_at).toLocaleString('en-IN')}</small></div><span className="pill">{v.method}</span></div>)}{!visits.length&&<Empty text="No attendance recorded yet."/>}</div></Panel></>}
- {page==='Follow-ups'&&<><div className="stats three-stats"><Stat title="Open follow-ups" value={String(tasks.filter(t=>t.status==='open').length)} note="Needs action" icon={Bell}/><Stat title="Inactive members" value={String(inactive.length)} note="No visit in 7+ days" icon={Users}/><Stat title="Renewals soon" value={String(expiring.length)} note="Next 7 days" icon={CalendarDays}/></div><Panel title="Follow-up queue" subtitle="Tasks are saved in your workspace"><div className="list">{tasks.map(t=><div className="list-row" key={t.id}><span className="attention-icon"><Bell size={17}/></span><div className="row-copy"><b>{members.find(m=>m.id===t.member_id)?.full_name||'Member'}</b><small>{t.note||t.kind} · due {t.due_on}</small></div><span className={'pill '+(t.status==='resolved'?'active':'paused')}>{t.status}</span>{t.status!=='resolved'&&<button className="btn outline small" disabled={busy} onClick={()=>void act(async()=>{const {error}=await db.from('follow_ups').update({status:t.status==='open'?'contacted':'resolved',completed_at:t.status==='contacted'?new Date().toISOString():null}).eq('id',t.id).eq('gym_id',gym.id);if(error)throw error;await refresh()})}>{t.status==='open'?'Contacted':'Resolve'}</button>}</div>)}{!tasks.length&&<Empty text="No tasks yet. Create one from an overview alert."/>}</div></Panel></>}
- {page==='Reports'&&<><div className="stats"><Stat title="All members" value={String(members.length)} note="Member records" icon={Users}/><Stat title="Active members" value={String(active.length)} note={members.length?Math.round(active.length/members.length*100)+'% of records':'No records yet'} icon={Activity}/><Stat title="30-day visits" value={String(visits.length)} note="Records loaded" icon={QrCode}/><Stat title="Open follow-ups" value={String(tasks.filter(t=>t.status==='open').length)} note="Pending actions" icon={Bell}/></div><div className="two-col"><Panel title="Membership mix" subtitle="Member status"><div className="report-list">{(['active','inactive','paused'] as const).map(s=><div key={s}><div className="report-label"><span>{s[0].toUpperCase()+s.slice(1)}</span><b>{members.filter(m=>m.status===s).length}</b></div><div className="bar"><i className={'bar-'+s} style={{width:(members.length?members.filter(m=>m.status===s).length/members.length*100:0)+'%'}}/></div></div>)}</div></Panel><Panel title="Renewal watch" subtitle="Membership dates"><div className="report-list"><div className="report-label"><span>Expiring in 7 days</span><b>{expiring.length}</b></div><div className="report-label"><span>Expired memberships</span><b>{members.filter(m=>m.membership_expires_on&&days(m.membership_expires_on)!<0).length}</b></div><div className="report-label"><span>Active listed monthly fees</span><b>{inr(active.reduce((s,m)=>s+Number(m.monthly_fee||0),0))}</b></div><small className="muted">Listed fees are not verified collections, revenue or profit.</small></div></Panel></div></>}
- </div><footer className="footer"><span>LIFTDESK © {new Date().getFullYear()}</span><span><ShieldCheck size={14}/> Protected workspace</span></footer></main>
- {navOpen&&<button className="scrim" onClick={()=>setNavOpen(false)} aria-label="Close navigation"/>}
- {memberOpen&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setMemberOpen(false)}}><form className="modal" onSubmit={addMember}><div className="modal-head"><div><p className="eyebrow">MEMBER RECORD</p><h2>Add a member</h2></div><button type="button" className="icon" onClick={()=>setMemberOpen(false)}><X/></button></div><div className="form-grid"><Field label="Full name"><input required minLength={2} value={member.name} onChange={e=>setMember({...member,name:e.target.value})}/></Field><Field label="Phone number"><input required minLength={5} value={member.phone} onChange={e=>setMember({...member,phone:e.target.value})}/></Field><Field label="Email (optional)"><input type="email" value={member.email} onChange={e=>setMember({...member,email:e.target.value})}/></Field><Field label="Plan"><select value={member.plan} onChange={e=>setMember({...member,plan:e.target.value})}><option>Monthly</option><option>Quarterly</option><option>Half-yearly</option><option>Annual</option><option>Custom</option></select></Field><Field label="Monthly fee (₹)"><input type="number" min="0" max="1000000" step="1" required value={member.fee} onChange={e=>setMember({...member,fee:e.target.value})}/></Field><Field label="Membership expires"><input type="date" value={member.expiry} onChange={e=>setMember({...member,expiry:e.target.value})}/></Field></div><Notice error={error} message=""/><div className="modal-actions"><button type="button" className="btn outline" onClick={()=>setMemberOpen(false)}>Cancel</button><button className="btn dark" disabled={busy}>{busy?'Saving…':'Save member ↗'}</button></div></form></div>}
- {scanOpen&&<ScannerModal onClose={()=>setScanOpen(false)} onDecoded={async(raw)=>{try{const data=JSON.parse(raw);if(data.gym_id!==gym.id||!data.token)throw new Error('This QR code does not belong to this gym.');const {error}=await db.rpc('check_in_with_qr',{target_gym:gym.id,target_token:data.token});if(error)throw error;setMessage('QR check-in recorded.');setScanOpen(false);await refresh()}catch(e){setError(e instanceof Error?e.message:'Invalid QR code.')}}}/>}{qrMember&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setQrMember(null)}}><section className="qr-modal"><button className="icon qr-close" onClick={()=>setQrMember(null)}><X/></button><p className="eyebrow">MEMBER CHECK-IN</p><h2>{qrMember.full_name}</h2><p className="muted">Member-specific QR identifier for staff-assisted check-in.</p>{qr&&<img src={qr} alt={'QR code for '+qrMember.full_name}/>}<div className="secure-note"><ShieldCheck/> QR check-in must be validated by the backend.</div><a className="btn dark full" href={qr} download={'liftdesk-member-'+qrMember.id+'.png'}>Download QR code ↗</a><small className="muted">The QR contains a gym ID and random member token. Staff must be signed in to validate it.</small></section></div>}
- </div>
+const initialMembers: Member[] = [
+  { id: 1, name: 'Aarav Sharma', initials: 'AS', phone: '+91 98765 43210', plan: 'Monthly', status: 'Active', expires: '18 Nov 2026', fee: 999, lastVisit: 'Today, 07:42 AM' },
+  { id: 2, name: 'Meera Joshi', initials: 'MJ', phone: '+91 98220 14567', plan: 'Quarterly', status: 'Expiring', expires: '27 Oct 2026', fee: 899, lastVisit: 'Yesterday, 06:18 PM' },
+  { id: 3, name: 'Rohan Patil', initials: 'RP', phone: '+91 97654 21098', plan: 'Monthly', status: 'Inactive', expires: '04 Nov 2026', fee: 999, lastVisit: '12 days ago' },
+  { id: 4, name: 'Isha Kulkarni', initials: 'IK', phone: '+91 98901 33221', plan: 'Annual', status: 'Active', expires: '16 Mar 2027', fee: 799, lastVisit: 'Today, 08:06 AM' },
+  { id: 5, name: 'Kabir Deshmukh', initials: 'KD', phone: '+91 93071 55881', plan: 'Quarterly', status: 'Active', expires: '12 Dec 2026', fee: 899, lastVisit: 'Today, 06:51 AM' },
+  { id: 6, name: 'Ananya Shah', initials: 'AS', phone: '+91 97633 70419', plan: 'Monthly', status: 'Expiring', expires: '29 Oct 2026', fee: 999, lastVisit: '3 days ago' },
+]
+
+const navItems: { label: Section; icon: typeof LayoutDashboard }[] = [
+  { label: 'Overview', icon: LayoutDashboard },
+  { label: 'Members', icon: Users },
+  { label: 'Attendance', icon: ClipboardCheck },
+  { label: 'Follow-ups', icon: Bell },
+  { label: 'Reports', icon: FileBarChart },
+]
+
+const money = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
+
+function Brand() {
+  return <div className="brand-lockup"><LiftDeskMark size={35} className="brand-mark" /><span className="brand-name">Lift<span>Desk</span><small>GYM OPERATIONS</small></span></div>
 }
-function Field({label,children}:{label:string;children:ReactNode}){return <label className="field"><span>{label}</span>{children}</label>}
-function Notice({error,message,clear}:{error?:string;message?:string;clear?:()=>void}){if(!error&&!message)return null;return <div className={'notice '+(error?'error':'success')} role={error?'alert':'status'}>{error||message}{clear&&message&&<button onClick={clear}><X size={14}/></button>}</div>}
-function Stat({title,value,note,icon:Icon}:{title:string;value:string;note:string;icon:any}){return <section className="stat"><div><span>{title}</span><i><Icon size={18}/></i></div><strong>{value}</strong><small>{note}</small></section>}
-function Panel({title,subtitle,children}:{title:string;subtitle:string;children:ReactNode}){return <section className="panel"><div className="panel-head"><div><h2>{title}</h2><p>{subtitle}</p></div></div>{children}</section>}
-function Empty({text}:{text:string}){return <div className="empty"><ShieldCheck size={20}/><p>{text}</p></div>}
-function Attention({m,detail,action}:{m:Member;detail:string;action:()=>void}){return <div className="list-row"><span className="attention-icon"><Bell size={17}/></span><div className="row-copy"><b>{m.full_name}</b><small>{detail}</small></div><button className="icon action" title="Create follow-up" onClick={action}><Plus size={16}/></button></div>}
 
-function ScannerModal({onClose,onDecoded}:{onClose:()=>void;onDecoded:(raw:string)=>void}) {
- const [scannerError,setScannerError]=useState('')
- useEffect(()=>{
-  const scanner=new Html5QrcodeScanner('liftdesk-qr-reader',{fps:10,qrbox:{width:230,height:230},rememberLastUsedCamera:true},false)
-  scanner.render((decoded)=>{void scanner.clear().catch(()=>{});onDecoded(decoded)},(err)=>{if(typeof err==='string'&&err.toLowerCase().includes('permission'))setScannerError('Allow camera access in your browser settings, then try again.')})
-  return()=>{void scanner.clear().catch(()=>{})}
- },[])
- return <div className="modal-backdrop"><section className="qr-modal scanner-modal"><button className="icon qr-close" onClick={onClose} aria-label="Close scanner"><X/></button><p className="eyebrow">ATTENDANCE / QR SCAN</p><h2>Scan member code</h2><p className="muted">Use a member QR code issued by this gym.</p><div id="liftdesk-qr-reader"/>{scannerError&&<Notice error={scannerError}/>}<p className="legal-note">The server validates gym ownership, member status, expiry, and duplicate check-ins.</p><button className="btn outline full" onClick={onClose}>Cancel</button></section></div>
+function Status({ status }: { status: MemberStatus }) {
+  return <span className={'status status-' + status.toLowerCase()}><i />{status}</span>
 }
+
+function App() {
+  const [section, setSection] = useState<Section>('Overview')
+  const [members, setMembers] = useState(initialMembers)
+  const [query, setQuery] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [mobileNav, setMobileNav] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const sidebarRef = useRef<HTMLElement>(null)
+  const pageContentRef = useRef<HTMLDivElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const addMemberButtonRef = useRef<HTMLButtonElement>(null)
+  const memberDialogRef = useRef<HTMLFormElement>(null)
+  const [memberStatusFilter, setMemberStatusFilter] = useState<'All' | MemberStatus>('All')
+  const [notice, setNotice] = useState('')
+  const [form, setForm] = useState({ name: '', phone: '', plan: 'Monthly', fee: '999', expiry: '' })
+  const filtered = useMemo(() => members.filter(m => (m.name + ' ' + m.phone).toLowerCase().includes(query.toLowerCase()) && (memberStatusFilter === 'All' || m.status === memberStatusFilter)), [members, query, memberStatusFilter])
+  const activeCount = members.filter(m => m.status === 'Active').length
+  const expiringCount = members.filter(m => m.status === 'Expiring').length
+  const inactiveCount = members.filter(m => m.status === 'Inactive').length
+
+  useScrollMotion(pageContentRef, section)
+
+  useEffect(() => {
+    if (mobileNav) requestAnimationFrame(() => sidebarRef.current?.querySelector<HTMLElement>('.mobile-close')?.focus())
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && mobileNav) {
+        setMobileNav(false)
+        requestAnimationFrame(() => menuButtonRef.current?.focus())
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setSection('Members')
+        requestAnimationFrame(() => searchInputRef.current?.focus())
+      }
+      if (mobileNav && event.key === 'Tab') {
+        const focusable = sidebarRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])')
+        if (!focusable?.length) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [mobileNav])
+
+  useEffect(() => {
+    if (!modalOpen) return
+    requestAnimationFrame(() => memberDialogRef.current?.querySelector<HTMLElement>('input, select')?.focus())
+    const onDialogKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setModalOpen(false)
+        requestAnimationFrame(() => addMemberButtonRef.current?.focus())
+      }
+      if (event.key === 'Tab') {
+        const focusable = memberDialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])')
+        if (!focusable?.length) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+      }
+    }
+    window.addEventListener('keydown', onDialogKeyDown)
+    return () => window.removeEventListener('keydown', onDialogKeyDown)
+  }, [modalOpen])
+
+  function addMember(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const name = form.name.trim()
+    if (!name || !form.phone.trim()) return
+    const initials = name.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()
+    setMembers(current => [{ id: Date.now(), name, initials, phone: form.phone.trim(), plan: form.plan, status: 'Active', expires: form.expiry || 'Not set', fee: Number(form.fee) || 0, lastVisit: 'Not checked in' }, ...current])
+    setForm({ name: '', phone: '', plan: 'Monthly', fee: '999', expiry: '' })
+    setModalOpen(false)
+    requestAnimationFrame(() => addMemberButtonRef.current?.focus())
+    setNotice('Preview member added locally. This has not been saved to a database.')
+  }
+
+  function chooseSection(next: Section) {
+    setSection(next)
+    setMobileNav(false)
+    setNotice('')
+    requestAnimationFrame(() => headingRef.current?.focus())
+  }
+
+  function viewMember(name: string) {
+    setQuery(name)
+    setMemberStatusFilter('All')
+    chooseSection('Members')
+  }
+
+  function downloadReport() {
+    const rows = [['Name', 'Phone', 'Plan', 'Status', 'Membership expiry', 'Monthly fee'], ...members.map(member => [member.name, member.phone, member.plan, member.status, member.expires, String(member.fee)])]
+    const csv = rows.map(row => row.map(value => `"${value.replaceAll('"', '""')}"`).join(',')).join('\r\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'liftdesk-preview-members.csv'
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    setNotice('Preview report downloaded. It contains sample data only.')
+  }
+
+  return (
+    <div className="app-shell">
+      <aside ref={sidebarRef} id="preview-navigation" className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')}>
+        <div className="sidebar-top"><button type="button" className="brand-home" aria-label="LiftDesk home, Overview" onClick={() => chooseSection('Overview')}><Brand /></button><button className="icon-button mobile-close" onClick={() => { setMobileNav(false); requestAnimationFrame(() => menuButtonRef.current?.focus()) }} aria-label="Close navigation"><X size={18} /></button></div>
+        <div className="workspace-switcher"><div className="workspace-avatar">PF</div><div className="workspace-copy"><b>Power Fitness Club</b><span>Owner workspace</span></div></div>
+        <div className="nav-caption">WORKSPACE</div>
+        <nav className="primary-nav" aria-label="Main navigation">
+          {navItems.map(({ label, icon: Icon }) => <button type="button" key={label} className={'nav-item ' + (section === label ? 'nav-active' : '')} aria-current={section === label ? 'page' : undefined} onClick={() => chooseSection(label)}><Icon size={18} strokeWidth={1.9} /><span>{label}</span>{label === 'Follow-ups' && <span className="nav-count">3</span>}</button>)}
+        </nav>
+        <div className="sidebar-spacer" />
+        <div className="sidebar-pilot"><div className="pilot-icon"><Sparkles size={16} /></div><b>Early access</b><p>Help shape a calmer way to run your gym.</p><span>PREVIEW WORKSPACE</span></div>
+        <div className="sidebar-bottom">
+          <div className="nav-item muted-nav" aria-disabled="true"><Settings2 size={18} /><span>Settings · coming soon</span></div>
+          <div className="nav-item muted-nav" aria-disabled="true"><CircleHelp size={18} /><span>Help · coming soon</span></div>
+          <div className="profile-row"><div className="profile-avatar">AP</div><div className="profile-copy"><b>Gym owner</b><span>Preview account</span></div></div>
+        </div>
+      </aside>
+      {mobileNav && <button className="sidebar-scrim" aria-label="Close navigation overlay" onClick={() => { setMobileNav(false); requestAnimationFrame(() => menuButtonRef.current?.focus()) }} />}
+      <main className="main-area">
+        <header className="topbar">
+          <div className="topbar-left"><button ref={menuButtonRef} type="button" className="icon-button mobile-menu" aria-label="Open main navigation" aria-controls="preview-navigation" aria-expanded={mobileNav} onClick={() => setMobileNav(true)}><Menu size={20} /></button><span className="breadcrumb-muted">Workspace</span><span className="breadcrumb-slash">/</span><b>{section}</b></div>
+          <div className="topbar-right"><span className="preview-pill"><span /> Preview mode</span><span className="topbar-divider" /><span className="today-label"><CalendarDays size={15} /> 25 Oct 2026</span><button className="icon-button notification-button" aria-label="Notifications" onClick={() => chooseSection('Follow-ups')}><Bell size={18} /><i /></button></div>
+        </header>
+        <div className="page-content" ref={pageContentRef}>
+          <div className="page-heading">
+            <div><div className="eyebrow">{section === 'Overview' ? 'SUNDAY, 25 OCTOBER 2026' : 'POWER FITNESS CLUB  /  WORKSPACE'}</div><h1 ref={headingRef} tabIndex={-1}>{section === 'Overview' ? 'Your gym, at a glance.' : section === 'Members' ? 'Members' : section === 'Attendance' ? 'Attendance' : section === 'Follow-ups' ? 'Follow-ups' : 'Reports'}</h1><p>{section === 'Overview' ? 'A little more clarity for the work you do every day.' : section === 'Members' ? 'Keep member details and memberships in one place.' : section === 'Attendance' ? 'A clear record of who walked through the door.' : section === 'Follow-ups' ? 'Small reminders that help keep members connected.' : 'Understand attendance, membership and retention at a glance.'}</p></div>
+            <div className="heading-actions">{section === 'Members' && <button ref={addMemberButtonRef} type="button" className="button-primary" onClick={() => setModalOpen(true)}><Plus size={17} /> Add member</button>}{section === 'Reports' && <button type="button" className="button-secondary" onClick={downloadReport}><Download size={16} /> Export preview CSV</button>}</div>
+          </div>
+          <SectionPhoto section={section} />
+          {notice && <div className="notice-banner" role="status"><ShieldCheck size={17} /><span>{notice}</span><button className="icon-button" aria-label="Dismiss notice" onClick={() => setNotice('')}><X size={16} /></button></div>}
+          <div className="demo-warning"><span className="demo-dot" /><span><b>Preview data</b> — these sample records are for interface testing only. Changes are not stored in a database.</span><button type="button" onClick={() => setNotice('Preview changes stay in this browser session only. Sign in from the home page to access your gym’s live, access-controlled records.')}>What’s this?</button></div>
+
+          {section === 'Overview' && <>
+            <div className="welcome-card" data-motion-reveal><img className="welcome-photo" src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1100&q=82" alt="Modern gym interior with strength-training equipment" loading="lazy" /><div className="welcome-copy"><div className="welcome-label"><Zap size={14} /> YOUR DAILY BRIEF</div><h2>Good morning. Let’s keep things moving.</h2><p>Here’s where your team’s attention can make the biggest difference today.</p><button className="text-action" onClick={() => chooseSection('Follow-ups')}>Review follow-ups <ArrowUpRight size={15} /></button></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-orb"><Dumbbell size={35} strokeWidth={1.4} /></div><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✳</span></div></div>
+            <div className="section-head"><div><h2>The essentials</h2><p>A useful snapshot, without the noise.</p></div><span className="period-label"><CalendarDays size={14} /> This month</span></div>
+            <div className="metric-grid" data-motion-reveal>
+              <Metric label="Active members" value={String(activeCount)} change="+4.8%" positive detail="vs. last month" icon={Users} />
+              <Metric label="Visits today" value="24" change="+12.2%" positive detail="vs. last Sunday" icon={ClipboardCheck} />
+              <Metric label="Renewals soon" value={String(expiringCount)} change="Next 7 days" detail="Members to contact" icon={CalendarDays} />
+              <Metric label="Need a check-in" value={String(inactiveCount)} change="7+ days away" detail="Could use a follow-up" icon={Bell} />
+            </div>
+            <div className="overview-grid" data-motion-reveal>
+              <section className="surface attendance-panel"><div className="surface-heading"><div><h2>Attendance rhythm</h2><p>Visits across the last 7 days</p></div><button className="subtle-select" onClick={() => chooseSection('Attendance')}>View attendance <ArrowUpRight size={14} /></button></div><div className="chart-legend"><span><i className="legend-green" /> Check-ins</span><span><i className="legend-pale" /> Previous week</span></div><AttendanceChart /></section>
+              <section className="surface attention-panel"><div className="surface-heading"><div><h2>Needs your attention</h2><p>Worth a quick look today</p></div><span className="count-bubble">3</span></div><AttentionRow initials="MJ" name="Meera Joshi" detail="Membership ends in 2 days" type="Renewal" onClick={() => chooseSection('Follow-ups')} /><AttentionRow initials="RP" name="Rohan Patil" detail="No visit in 12 days" type="Inactive" onClick={() => chooseSection('Follow-ups')} /><AttentionRow initials="AS" name="Ananya Shah" detail="Membership ends in 4 days" type="Renewal" onClick={() => chooseSection('Follow-ups')} /><button className="full-width-link" onClick={() => chooseSection('Follow-ups')}>Open follow-up queue <ArrowUpRight size={15} /></button></section>
+            </div>
+            <section className="surface recent-panel" data-motion-reveal><div className="surface-heading"><div><h2>Recent check-ins</h2><p>Member visits from today</p></div><button className="subtle-select" onClick={() => chooseSection('Attendance')}>All attendance <ArrowUpRight size={14} /></button></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>CHECK-IN TIME</th><th>MEMBERSHIP</th><th>METHOD</th></tr></thead><tbody>{members.filter(m => m.lastVisit.startsWith('Today')).slice(0, 4).map(m => <tr key={m.id}><td><PersonCell member={m} /></td><td className="time-cell">{m.lastVisit.replace('Today, ', '')}</td><td><Status status={m.status} /></td><td><span className="method-label"><ClipboardCheck size={14} /> Manual</span></td></tr>)}</tbody></table></div></section>
+          </>}
+
+          {section === 'Members' && <section className="surface directory-panel" data-motion-reveal><div className="directory-toolbar"><div className="search-box"><Search size={17} /><input ref={searchInputRef} type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members by name or phone" aria-label="Search members" /><kbd>⌘/Ctrl K</kbd></div><div className="directory-filters"><label className="sr-only" htmlFor="preview-member-filter">Filter members by status</label><select id="preview-member-filter" className="filter-button" value={memberStatusFilter} onChange={e => setMemberStatusFilter(e.target.value as 'All' | MemberStatus)}><option value="All">All statuses</option><option value="Active">Active</option><option value="Expiring">Expiring</option><option value="Inactive">Inactive</option></select><span>{filtered.length} records</span></div></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>PLAN</th><th>STATUS</th><th>EXPIRES</th><th>MONTHLY FEE</th></tr></thead><tbody>{filtered.map(m => <tr key={m.id}><td><PersonCell member={m} /></td><td>{m.plan}</td><td><Status status={m.status} /></td><td className="time-cell">{m.expires}</td><td className="fee-cell">{money(m.fee)}</td></tr>)}</tbody></table>{filtered.length === 0 && <div className="empty-state">No members match the selected search and status.</div>}</div><div className="table-foot"><span>Sample data shown for preview</span><span>Secure member records will be loaded from Supabase</span></div></section>}
+
+          {section === 'Attendance' && <div className="page-stack" data-motion-reveal><div className="attendance-callout"><div className="qr-illustration"><ClipboardCheck size={31} /></div><div><h2>Staff-recorded check-ins.</h2><p>Select a member on the Members screen and use Manual check-in. Gym staff verify the person before saving attendance.</p></div><button type="button" className="button-primary" onClick={() => chooseSection('Members')}>Open members <ArrowUpRight size={15} /></button></div><div className="metric-grid metric-grid-two"><Metric label="Today's visits" value="24" detail="Preview count" icon={ClipboardCheck} /><Metric label="Active memberships" value={String(activeCount)} detail="Preview records" icon={Users} /></div><section className="surface"><div className="surface-heading"><div><h2>Latest visits</h2><p>Illustrative attendance history</p></div><span className="period-label">Last 7 days</span></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>DATE</th><th>TIME</th><th>CHECK-IN METHOD</th><th>STATUS</th></tr></thead><tbody>{members.filter(m => m.lastVisit.startsWith('Today')).map(m => <tr key={m.id}><td><PersonCell member={m} /></td><td>25 Oct 2026</td><td className="time-cell">{m.lastVisit.replace('Today, ', '')}</td><td><span className="method-label"><ClipboardCheck size={14} /> Manual</span></td><td><Status status="Active" /></td></tr>)}</tbody></table></div></section></div>}
+
+          {section === 'Follow-ups' && <div className="followup-grid" data-motion-reveal><section className="surface followup-list"><div className="surface-heading"><div><h2>Follow-up queue</h2><p>Suggested next steps from sample records</p></div><span className="count-bubble">3</span></div><FollowupCard initials="MJ" name="Meera Joshi" detail="Membership ends 27 Oct · 2 days left" kind="Renewal reminder" onClick={() => viewMember('Meera Joshi')} /><FollowupCard initials="RP" name="Rohan Patil" detail="Last visit was 12 days ago" kind="Member re-engagement" onClick={() => viewMember('Rohan Patil')} /><FollowupCard initials="AS" name="Ananya Shah" detail="Membership ends 29 Oct · 4 days left" kind="Renewal reminder" onClick={() => viewMember('Ananya Shah')} /></section><section className="surface followup-side"><div className="tip-icon"><Sparkles size={18} /></div><div className="eyebrow">A SMALL REMINDER</div><h2>Consistency builds community.</h2><p>A personal message after a missed week can help a member feel noticed, not chased.</p><div className="tip-rule" /><div className="tip-stat"><span>Renewals to review</span><b>{expiringCount}</b></div><div className="tip-stat"><span>Members to reconnect with</span><b>{inactiveCount}</b></div></section></div>}
+
+          {section === 'Reports' && <div className="page-stack" data-motion-reveal><div className="metric-grid"><Metric label="Members in preview" value={String(members.length)} detail="Sample records only" icon={Users} /><Metric label="Active memberships" value={String(activeCount)} detail="Preview count" icon={Activity} /><Metric label="Renewals to review" value={String(expiringCount)} detail="Next 7 days" icon={CalendarDays} /><Metric label="Inactive members" value={String(inactiveCount)} detail="7+ days since visit" icon={Bell} /></div><section className="surface report-surface"><div className="surface-heading"><div><h2>Membership overview</h2><p>Illustrative distribution from sample data</p></div><span className="period-label">October 2026</span></div><div className="report-bars"><ReportBar label="Active" count={activeCount} total={members.length} color="green" /><ReportBar label="Expiring soon" count={expiringCount} total={members.length} color="amber" /><ReportBar label="Inactive" count={inactiveCount} total={members.length} color="grey" /></div><div className="report-note"><ShieldCheck size={16} /> Revenue and retention reports will be calculated from verified database records, not sample values.</div></section></div>}
+          <footer className="page-footer"><span><button type="button" className="footer-home" onClick={() => chooseSection('Overview')} aria-label="LiftDesk home, Overview"><LiftDeskLogo compact /></button> <span className="footer-dot">·</span> Built for independent gyms · © {new Date().getFullYear()}</span><span><ShieldCheck size={14} /> Preview uses sample data</span></footer>
+        </div>
+      </main>
+      {modalOpen && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) } }}><form ref={memberDialogRef} className="member-modal" role="dialog" aria-modal="true" aria-labelledby="preview-add-member-title" onSubmit={addMember}><div className="modal-heading"><div><div className="eyebrow">MEMBER DIRECTORY</div><h2 id="preview-add-member-title">Add a member</h2><p>This adds a temporary preview record only.</p></div><button type="button" className="icon-button" aria-label="Close modal" onClick={() => { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) }}><X size={19} /></button></div><label>Full name<input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Priya Desai" /></label><label>Phone number<input type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+91 98765 43210" /></label><div className="form-two"><label>Membership plan<select value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}><option>Monthly</option><option>Quarterly</option><option>Annual</option></select></label><label>Monthly fee (₹)<input type="number" min="0" value={form.fee} onChange={e => setForm({ ...form, fee: e.target.value })} /></label></div><label>Membership expiry<input type="date" value={form.expiry} onChange={e => setForm({ ...form, expiry: e.target.value })} /></label><div className="modal-note"><ShieldCheck size={16} /> Database saving and gym-level permissions are not enabled yet.</div><div className="modal-actions"><button type="button" className="button-secondary" onClick={() => { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) }}>Cancel</button><button type="submit" className="button-primary"><Plus size={16} /> Add preview member</button></div></form></div>}
+    </div>
+  )
+}
+
+function Metric({ label, value, change, positive, detail, icon: Icon }: { label: string; value: string; change?: string; positive?: boolean; detail: string; icon: typeof Users }) {
+  return <div className="metric-card"><div className="metric-top"><span>{label}</span><span className="metric-icon"><Icon size={17} strokeWidth={1.8} /></span></div><div className="metric-value">{value}</div><div className="metric-bottom">{change && <span className={'metric-change ' + (positive ? 'positive' : '')}>{positive && <ArrowUpRight size={13} />}{change}</span>}<span>{detail}</span></div></div>
+}
+
+function PersonCell({ member }: { member: Member }) {
+  return <div className="person-cell"><span className="person-avatar">{member.initials}</span><span><b>{member.name}</b><small>{member.phone}</small></span></div>
+}
+
+function AttentionRow({ initials, name, detail, type, onClick }: { initials: string; name: string; detail: string; type: string; onClick: () => void }) {
+  return <button className="attention-row" onClick={onClick}><span className="person-avatar">{initials}</span><span className="attention-copy"><b>{name}</b><small>{detail}</small></span><span className={'mini-tag ' + (type === 'Renewal' ? 'tag-amber' : 'tag-sage')}>{type}</span><ArrowUpRight className="attention-arrow" size={15} /></button>
+}
+
+function FollowupCard({ initials, name, detail, kind, onClick }: { initials: string; name: string; detail: string; kind: string; onClick: () => void }) {
+  return <div className="followup-card"><span className="person-avatar">{initials}</span><div className="followup-card-copy"><b>{name}</b><small>{detail}</small><span>{kind}</span></div><button type="button" className="button-secondary button-small" onClick={onClick}>View member <ArrowUpRight size={13} /></button></div>
+}
+
+function ReportBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
+  return <div className="report-bar-row"><div><span>{label}</span><b>{count}</b></div><div className="report-bar-track"><span className={'report-bar-fill fill-' + color} style={{ width: (total ? count / total * 100 : 0) + '%' }} /></div></div>
+}
+
+function AttendanceChart() {
+  const current = [32, 48, 39, 66, 52, 82, 70]
+  const previous = [24, 36, 34, 49, 42, 61, 54]
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  return <div className="chart-wrap"><div className="chart-y-labels"><span>40</span><span>30</span><span>20</span><span>10</span><span>0</span></div><div className="chart-plot"><div className="chart-gridlines"><i /><i /><i /><i /><i /></div><svg viewBox="0 0 560 190" preserveAspectRatio="none" role="img" aria-label="Illustrative line chart comparing this week and previous week attendance"><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#C5F36B" stopOpacity=".65" /><stop offset="100%" stopColor="#C5F36B" stopOpacity="0" /></linearGradient></defs><path d={current.map((v, i) => (i ? 'L' : 'M') + (i * 560 / 6) + ' ' + (178 - v * 1.8)).join(' ') + ' L560 190 L0 190 Z'} fill="url(#chartFill)" /><polyline points={previous.map((v, i) => (i * 560 / 6) + ',' + (178 - v * 1.8)).join(' ')} fill="none" stroke="#D4D8D0" strokeWidth="2.5" strokeDasharray="5 6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" /><polyline points={current.map((v, i) => (i * 560 / 6) + ',' + (178 - v * 1.8)).join(' ')} fill="none" stroke="#343B36" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />{current.map((v, i) => <circle key={i} cx={i * 560 / 6} cy={178 - v * 1.8} r="4" fill="#FFFFFF" stroke="#343B36" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />)}</svg><div className="chart-x-labels">{days.map(day => <span key={day}>{day}</span>)}</div></div></div>
+}
+
+export default App
