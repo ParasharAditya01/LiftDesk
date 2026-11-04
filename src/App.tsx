@@ -59,6 +59,7 @@ function App() {
   const activeCount = members.filter(m => m.status === 'Active').length
   const expiringCount = members.filter(m => m.status === 'Expiring').length
   const inactiveCount = members.filter(m => m.status === 'Inactive').length
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 
   useScrollMotion(pageContentRef, section)
 
@@ -110,6 +111,10 @@ function App() {
 
   function addMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (form.expiry && form.expiry < today) {
+      setNotice('Membership expiry cannot be earlier than today.')
+      return
+    }
     const name = form.name.trim()
     if (!name || !form.phone.trim()) return
     const initials = name.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()
@@ -202,7 +207,7 @@ function App() {
           <footer className="page-footer"><span><button type="button" className="footer-home" onClick={() => chooseSection('Overview')} aria-label="LiftDesk home, Overview"><LiftDeskLogo compact /></button> <span className="footer-dot">·</span> Built for independent gyms · © {new Date().getFullYear()}</span><span><ShieldCheck size={14} /> Preview uses sample data</span></footer>
         </div>
       </main>
-      {modalOpen && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) } }}><form ref={memberDialogRef} className="member-modal" role="dialog" aria-modal="true" aria-labelledby="preview-add-member-title" onSubmit={addMember}><div className="modal-heading"><div><div className="eyebrow">MEMBER DIRECTORY</div><h2 id="preview-add-member-title">Add a member</h2><p>This adds a temporary preview record only.</p></div><button type="button" className="icon-button" aria-label="Close modal" onClick={() => { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) }}><X size={19} /></button></div><label>Full name<input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Priya Desai" /></label><label>Phone number<input type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+91 98765 43210" /></label><div className="form-two"><label>Membership plan<select value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}><option>Monthly</option><option>Quarterly</option><option>Annual</option></select></label><label>Monthly fee (₹)<input type="number" min="0" value={form.fee} onChange={e => setForm({ ...form, fee: e.target.value })} /></label></div><label>Membership expiry<input type="date" value={form.expiry} onChange={e => setForm({ ...form, expiry: e.target.value })} /></label><div className="modal-note"><ShieldCheck size={16} /> Database saving and gym-level permissions are not enabled yet.</div><div className="modal-actions"><button type="button" className="button-secondary" onClick={() => { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) }}>Cancel</button><button type="submit" className="button-primary"><Plus size={16} /> Add preview member</button></div></form></div>}
+      {modalOpen && <div className="modal-backdrop" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) } }}><form ref={memberDialogRef} className="member-modal" role="dialog" aria-modal="true" aria-labelledby="preview-add-member-title" onSubmit={addMember}><div className="modal-heading"><div><div className="eyebrow">MEMBER DIRECTORY</div><h2 id="preview-add-member-title">Add a member</h2><p>This adds a temporary preview record only.</p></div><button type="button" className="icon-button" aria-label="Close modal" onClick={() => { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) }}><X size={19} /></button></div><label>Full name<input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Priya Desai" /></label><label>Phone number<input type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+91 98765 43210" /></label><div className="form-two"><label>Membership plan<select value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}><option>Monthly</option><option>Quarterly</option><option>Annual</option></select></label><label>Monthly fee (₹)<input type="number" min="0" value={form.fee} onChange={e => setForm({ ...form, fee: e.target.value })} /></label></div><label>Membership expiry<input type="date" min={today} value={form.expiry} onChange={e => setForm({ ...form, expiry: e.target.value })} /></label><div className="modal-note"><ShieldCheck size={16} /> Database saving and gym-level permissions are not enabled yet.</div><div className="modal-actions"><button type="button" className="button-secondary" onClick={() => { setModalOpen(false); requestAnimationFrame(() => addMemberButtonRef.current?.focus()) }}>Cancel</button><button type="submit" className="button-primary"><Plus size={16} /> Add preview member</button></div></form></div>}
     </div>
   )
 }

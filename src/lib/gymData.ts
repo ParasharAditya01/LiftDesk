@@ -169,6 +169,10 @@ export async function createMember(gymId: string, input: {
   monthlyFee: number
   membershipExpiresOn?: string
 }): Promise<GymMember> {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+  if (input.membershipExpiresOn && input.membershipExpiresOn < today) {
+    throw new Error('Membership expiry cannot be earlier than today.')
+  }
   const { data, error } = await requireSupabase()
     .from('members')
     .insert({

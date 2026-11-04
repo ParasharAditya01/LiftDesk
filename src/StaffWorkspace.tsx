@@ -69,6 +69,14 @@ export default function StaffWorkspace({ gymId, role }: Props) {
 
   async function submitStaff(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(''); setNotice('')
+    if (!editing && form.joiningDate < todayKey()) {
+      setError('A new staff member’s joining date cannot be earlier than today.')
+      return
+    }
+    if (editing && form.joiningDate !== editing.joining_date && form.joiningDate < todayKey()) {
+      setError('A changed joining date cannot be earlier than today. The existing historical date can stay unchanged.')
+      return
+    }
     if (!owner && form.role !== 'trainer') { setError('Admins can only manage trainer records.'); setSaving(false); return }
     const accessChanged = !!editing && (editing.role !== form.role || editing.employment_status !== form.employmentStatus)
     if (accessChanged && !window.confirm('This changes this staff member’s login access immediately. Continue?')) return
@@ -152,7 +160,7 @@ export default function StaffWorkspace({ gymId, role }: Props) {
       <div className="modal-header"><div><p className="auth-eyebrow">STAFF DIRECTORY</p><h2 id="staff-form-title">{editing ? 'Edit staff record' : 'Add staff'}</h2></div><button type="button" className="icon-button" onClick={() => setShowForm(false)} aria-label="Close"><X size={18}/></button></div>
       <form onSubmit={submitStaff}><div className="form-two"><label>Staff ID<input required minLength={2} maxLength={32} value={form.staffCode} onChange={e => setForm({...form,staffCode:e.target.value})} placeholder="e.g. TR-001"/></label><label>Full name<input required minLength={2} maxLength={120} value={form.fullName} onChange={e => setForm({...form,fullName:e.target.value})}/></label></div>
       <div className="form-two"><label>Role<select value={form.role} disabled={!owner} onChange={e => setForm({...form,role:e.target.value as StaffRole})}><option value="trainer">Trainer</option>{owner && <option value="admin">Admin</option>}</select></label><label>Phone<input required type="tel" minLength={5} maxLength={30} pattern="\+?[0-9][0-9\s().-]{4,29}" value={form.phone} onChange={e => setForm({...form,phone:e.target.value})}/></label></div>
-      <div className="form-two"><label>Email (optional)<input type="email" value={form.email} onChange={e => setForm({...form,email:e.target.value})}/></label><label>Joining date<input required type="date" value={form.joiningDate} onChange={e => setForm({...form,joiningDate:e.target.value})}/></label></div>
+      <div className="form-two"><label>Email (optional)<input type="email" value={form.email} onChange={e => setForm({...form,email:e.target.value})}/></label><label>Joining date<input required type="date" min={!editing ? todayKey() : undefined} value={form.joiningDate} onChange={e => setForm({...form,joiningDate:e.target.value})}/></label></div>
       <div className="form-two"><label>Employment status<select value={form.employmentStatus} onChange={e => setForm({...form,employmentStatus:e.target.value as 'active' | 'inactive'})}><option value="active">Active</option><option value="inactive">Inactive</option></select></label><label>Profile photo URL (optional)<input type="url" value={form.profilePhotoUrl} onChange={e => setForm({...form,profilePhotoUrl:e.target.value})}/></label></div>
       <label>Notes (optional)<textarea maxLength={2000} value={form.notes} onChange={e => setForm({...form,notes:e.target.value})}/></label><p className="modal-note">Save a staff email address here first. Then use Invite in the staff list to create a single-use sign-in link.</p>
       <div className="modal-actions"><button type="button" className="button-secondary" onClick={() => setShowForm(false)}>Cancel</button><button type="submit" className="button-primary" disabled={saving}>{saving ? 'Saving…' : 'Save staff record'}</button></div></form>
