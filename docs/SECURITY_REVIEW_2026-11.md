@@ -29,7 +29,7 @@ below distinguish code evidence from controls that need account access.
 | 19 | Payments/pricing | N/A | No payment processing or price calculation exists in the app. |
 | 20 | Production debug mode | PASS (build configuration) | Vite production builds do not enable debug mode or source maps by default. Browser diagnostics are development-only and omit emails/tokens. |
 | 21 | Vulnerable dependencies | PASS (last audit) | `npm audit` returned zero advisories during the prior review. Re-run against the current lockfile before each release. |
-| 22 | Unused dependencies | NEEDS REVIEW | Dependency audit did not identify known vulnerabilities. Tailwind/PostCSS config and packages are present; verify build tooling before pruning. |
+| 22 | Unused dependencies | PASS (repository review) | Removed the unused Tailwind package/configuration and the unused Turnstile site-key placeholder. Kept PostCSS and Autoprefixer; the production asset hashes match before and after cleanup. |
 | 23 | Exposed files/backups | PASS (last live probe; recheck after deploy) | Production probes for `.env` and `.git/config` returned 404; unknown paths returned 404. Never publish source maps, backups, or environment files. |
 | 24 | Git history secrets | PASS (targeted scan, limited) | A targeted scan in the previous review found no known secret patterns. This is not a complete secret-scanner guarantee; enable GitHub secret scanning/push protection and scan the full history. |
 | 25 | Credential rotation | NEEDS OWNER REVIEW | No compromised key was identified. Rotate any key ever committed, shared, or exposed; this requires owner/provider dashboard action. |

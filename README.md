@@ -22,7 +22,7 @@ Existing `staff` memberships are migrated in place to `trainer`; user accounts a
 ## Stack
 
 - React + TypeScript + Vite
-- Responsive custom CSS design system (Tailwind remains configured for utility styling)
+- Responsive custom CSS design system with PostCSS Autoprefixer processing
 - Supabase Auth + PostgreSQL + RLS
 
 ## Current rebuild status
