@@ -336,7 +336,7 @@ export default function AuthGate() {
       {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
       <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || (mode === 'signup' && emailWaitSeconds > 0)}>{saving ? 'Please wait…' : mode === 'signup' ? 'Create staff account' : 'Sign in and accept invitation'} <ArrowRight size={16} /></button>
     </form>
-    <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create account' : 'Sign in'}</button></p>
+    <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button type="button" disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create account' : 'Sign in'}</button></p>
     <p className="auth-security"><ShieldCheck size={16} /> This invitation is single-use, expires after 48 hours, and only works for its invited email.</p>
   </section></div>
 
@@ -401,7 +401,7 @@ export default function AuthGate() {
           <GoogleMark /> {saving ? 'Connecting to Google…' : 'Continue with Google'}
         </button>
       </>}
-      <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
+      <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button type="button" disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
       <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
     </section><p className="auth-main-foot">LiftDesk <span>·</span> Gym operations, made clearer</p></main>
   </div>
@@ -429,17 +429,18 @@ export default function AuthGate() {
       <GymThemeSelector value={gymTheme} onChange={setGymTheme} />
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Creating workspace…' : 'Create gym workspace'} <ArrowRight size={16} /></button>
-    </form><button className="auth-signout" onClick={() => requireSupabase().auth.signOut()}>Sign out</button>
+    </form><button type="button" className="auth-signout" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button>
   </section></div>
 
-  if (workspace?.role === 'member') return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">Member</span><button onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your member portal…</p></div></div>}><MemberPortal gym={workspace.gym} user={session!.user} /></Suspense></div>
+  if (workspace?.role === 'member') return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">Member</span><button type="button" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your member portal…</p></div></div>}><MemberPortal gym={workspace.gym} user={session!.user} /></Suspense></div>
 
-  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}</span><button onClick={() => requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
-  return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button className="auth-submit" onClick={() => requireSupabase().auth.signOut()}>Sign out</button></section></div>
+  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}</span><button type="button" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
+  return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button type="button" className="auth-submit" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></section></div>
 }
 
 function BrandMark() {
-  return <div className="auth-brand"><LiftDeskMark size={38} /><b>Lift<span>Desk</span></b></div>
+  const homeUrl = `/${window.location.search}${window.location.hash}`
+  return <a className="auth-brand" href={homeUrl} aria-label="LiftDesk home"><LiftDeskMark size={38} /><b>Lift<span>Desk</span></b></a>
 }
 
 function GoogleMark() {
