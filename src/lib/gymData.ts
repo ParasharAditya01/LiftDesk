@@ -24,6 +24,9 @@ export type AttendanceRecord = {
   checked_in_at: string
   method: 'manual' | 'qr'
 }
+export type MemberFollowUpSummary = Pick<GymMember, 'id' | 'full_name' | 'phone' | 'email' | 'status' | 'joined_on' | 'membership_expires_on' | 'plan_name'> & {
+  last_visit_at: string | null
+}
 export type FollowUp = {
   id: string
   gym_id: string
@@ -224,6 +227,12 @@ export async function listFollowUps(gymId: string): Promise<FollowUp[]> {
     .order('due_on', { ascending: true })
   if (error) throw error
   return (data ?? []) as FollowUp[]
+}
+
+export async function listMemberFollowUpSummary(gymId: string): Promise<MemberFollowUpSummary[]> {
+  const { data, error } = await requireSupabase().rpc('list_member_follow_up_summary', { target_gym: gymId })
+  if (error) throw error
+  return (data ?? []) as MemberFollowUpSummary[]
 }
 
 

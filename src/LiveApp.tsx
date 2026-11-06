@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { Activity, Bell, CalendarDays, ClipboardCheck, Dumbbell, LayoutDashboard, LoaderCircle, LogOut, Menu, Plus, Search, Users, X } from 'lucide-react'
-import { createMember, createMemberInvitation, listAttendance, listFollowUps, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole } from './lib/gymData'
+import { createMember, createMemberInvitation, listAttendance, listFollowUps, listMemberFollowUpSummary, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole, type MemberFollowUpSummary } from './lib/gymData'
 import { requireSupabase } from './lib/supabase'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
@@ -19,6 +19,10 @@ const sections: { name: Section; icon: typeof LayoutDashboard }[] = [
 const BUSINESS_TIME_ZONE = 'Asia/Kolkata'
 const indiaDateKey = (value: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(value)
 const dateLabel = (value: string | null) => value ? new Date(value + (value.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('en-IN', { timeZone: BUSINESS_TIME_ZONE, day: '2-digit', month: 'short', year: 'numeric' }) : 'Not set'
+const daysSinceVisit = (lastVisit: string) => {
+  const toDayNumber = (key: string) => { const [year, month, day] = key.split('-').map(Number); return Math.floor(Date.UTC(year, month - 1, day) / 86400000) }
+  return Math.max(0, toDayNumber(indiaDateKey(new Date())) - toDayNumber(indiaDateKey(new Date(lastVisit))))
+}
 const timeLabel = (value: string) => new Date(value).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 const initials = (name: string) => name.split(/\s+/).slice(0, 2).map(p => p[0] ?? '').join('').toUpperCase()
 const money = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value)
@@ -70,6 +74,7 @@ export default function LiveApp({ gym, role, user }: Props) {
   const [members, setMembers] = useState<GymMember[]>([])
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [followUps, setFollowUps] = useState<FollowUp[]>([])
+  const [followUpMembers, setFollowUpMembers] = useState<MemberFollowUpSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -85,10 +90,10 @@ export default function LiveApp({ gym, role, user }: Props) {
     setError('')
     try {
       const since = new Date(); since.setDate(since.getDate() - 30); since.setHours(0, 0, 0, 0)
-      const [memberRows, attendanceRows, followUpRows] = await Promise.all([
-        listMembers(gym.id), listAttendance(gym.id, since.toISOString()), listFollowUps(gym.id),
+      const [memberRows, attendanceRows, followUpRows, followUpMemberRows] = await Promise.all([
+        listMembers(gym.id), listAttendance(gym.id, since.toISOString()), listFollowUps(gym.id), listMemberFollowUpSummary(gym.id),
       ])
-      setMembers(memberRows); setAttendance(attendanceRows); setFollowUps(followUpRows)
+      setMembers(memberRows); setAttendance(attendanceRows); setFollowUps(followUpRows); setFollowUpMembers(followUpMemberRows)
     } catch (e) { setError(userFacingError(e, 'Could not load gym data. Check your connection and try again.')) }
     finally { setLoading(false) }
   }, [gym.id])
@@ -117,6 +122,7 @@ export default function LiveApp({ gym, role, user }: Props) {
   }, [showAdd])
 
   const filteredMembers = useMemo(() => members.filter(m => (m.full_name + ' ' + m.phone).toLowerCase().includes(query.toLowerCase())), [members, query])
+  const filteredFollowUpMembers = useMemo(() => followUpMembers.filter(m => (m.full_name + ' ' + m.phone + ' ' + (m.email || '')).toLowerCase().includes(query.trim().toLowerCase())), [followUpMembers, query])
   const today = indiaDateKey(new Date())
   const renewalWindowEnd = indiaDateKey(new Date(Date.now() + 7 * 86400000))
   const visitsToday = attendance.filter(a => indiaDateKey(new Date(a.checked_in_at)) === today)
@@ -198,7 +204,7 @@ export default function LiveApp({ gym, role, user }: Props) {
           {section === 'Members' && <section className="surface directory-panel" data-motion-reveal><div className="directory-toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members by name or phone" aria-label="Search members"/></div><div className="directory-filters"><span>{filteredMembers.length} records</span></div></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>PLAN</th><th>STATUS</th><th>EXPIRES</th><th>MONTHLY FEE</th><th>ACTION</th></tr></thead><tbody>{filteredMembers.map(m => { const phone = telHref(m.phone); return <tr key={m.id}><td><b>{m.full_name}</b><br/>{phone ? <a href={phone}>{m.phone}</a> : <small>{m.phone}</small>}</td><td>{m.plan_name}</td><td><Status status={m.status}/></td><td>{dateLabel(m.membership_expires_on)}</td><td>{money(Number(m.monthly_fee))}</td><td><button type="button" className="button-small" disabled={saving || m.status !== 'active' || visitsToday.some(v => v.member_id === m.id)} onClick={() => void checkIn(m)}>{visitsToday.some(v => v.member_id === m.id) ? 'Checked in today' : 'Manual check-in'}</button></td></tr> })}</tbody></table>{filteredMembers.length === 0 && <div className="empty-state">No member records found.</div>}</div></section>}
           {section === 'Coaching' && <CoachingWorkspace gym={gym} user={user} members={members} attendance={attendance}/>}
           {section === 'Attendance' && <div className="page-stack" data-motion-reveal><section className="surface manual-attendance-panel"><div className="manual-attendance-mark"><ClipboardCheck size={19}/></div><div className="manual-attendance-copy"><h2>Trainer-recorded check-ins</h2><p>Member self-check-in by QR and WhatsApp code is turned off. A trainer should open Members, find the person, and select <b>Manual check-in</b>. LiftDesk checks the member’s gym, active status and membership expiry before saving attendance.</p></div><button type="button" className="button-primary" onClick={() => setSection('Members')}><Users size={16}/>Open members</button></section><section className="surface directory-panel"><div className="surface-heading attendance-history-heading"><div><h2>Attendance history</h2><p>Latest 30-day records</p></div><span>{attendance.length} check-ins</span></div><RecordsTable attendance={attendance} members={members}/></section></div>}
-          {section === 'Follow-ups' && <section className="surface directory-panel" data-motion-reveal><div className="surface-heading"><div><h2>Follow-up queue</h2><p>Reminders currently stored for this gym</p></div><span>{openFollowUps.length} open</span></div><div className="table-scroll"><table><thead><tr><th>MEMBER ID</th><th>TYPE</th><th>DUE DATE</th><th>STATUS</th><th>NOTE</th></tr></thead><tbody>{followUps.map(f => <tr key={f.id}><td>{members.find(m => m.id === f.member_id)?.full_name || 'Member'}</td><td>{f.kind}</td><td>{dateLabel(f.due_on)}</td><td>{f.status}</td><td>{f.note || '—'}</td></tr>)}</tbody></table>{followUps.length === 0 && <div className="empty-state" role="status">No follow-ups yet</div>}</div></section>}
+          {section === 'Follow-ups' && <section className="surface directory-panel" data-motion-reveal><div className="surface-heading"><div><h2>Member follow-ups</h2><p>Every gym member, with recent attendance and contact details</p></div><span>{filteredFollowUpMembers.length} members</span></div><div className="directory-toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by member name, phone or email" aria-label="Search follow-up members"/></div></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>CONTACT</th><th>PLAN</th><th>STATUS</th><th>EXPIRES</th><th>LAST VISIT</th><th>AWAY FOR</th></tr></thead><tbody>{filteredFollowUpMembers.map(m => { const days = m.last_visit_at ? daysSinceVisit(m.last_visit_at) : null; const phone = telHref(m.phone); return <tr key={m.id}><td><b>{m.full_name}</b><br/><small>Joined {dateLabel(m.joined_on)}</small></td><td>{phone ? <a href={phone}>{m.phone}</a> : m.phone}<br/>{m.email && <small>{m.email}</small>}</td><td>{m.plan_name}</td><td><Status status={m.status}/></td><td>{dateLabel(m.membership_expires_on)}</td><td>{m.last_visit_at ? dateLabel(m.last_visit_at) : 'No visit recorded'}</td><td>{days === null ? 'Never visited' : days === 0 ? 'Today' : `${days} ${days === 1 ? 'day' : 'days'}`}</td></tr> })}</tbody></table>{filteredFollowUpMembers.length === 0 && <div className="empty-state" role="status">{followUpMembers.length === 0 ? 'No members in this gym yet.' : 'No members match this search.'}</div>}</div></section>}
           {section === 'Staff' && (role === 'owner' || role === 'admin') && <StaffWorkspace gymId={gym.id} role={role} />}
           {section === 'Reports' && <div className="page-stack" data-motion-reveal><section className="surface report-surface"><h2>Workspace summary</h2><p>All figures are calculated from records accessible to this gym account.</p><div className="metric-grid metric-grid-two"><Metric label="Total members" value={String(members.length)} detail="All statuses" icon={Users}/><Metric label="Check-ins (30 days)" value={String(attendance.length)} detail="Attendance rows" icon={ClipboardCheck}/><Metric label="Active memberships" value={String(active.length)} detail="Status marked active" icon={Activity}/><Metric label="Open follow-ups" value={String(openFollowUps.length)} detail="Not resolved" icon={Bell}/></div></section></div>}
         </>}
