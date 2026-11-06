@@ -85,6 +85,24 @@ export default function AuthGate() {
     setBusy(true)
     async function loadWorkspace() {
       try {
+        // A member can sign in from an old invitation URL after already joining.
+        // Resolve their existing membership first so ordinary sign-in never
+        // tries to consume a second invitation (which the database correctly rejects).
+        let result: Workspace | null = null
+        if (staffInviteToken || inviteToken) {
+          result = await getCurrentGym(session!.user)
+          if (result) {
+            window.history.replaceState({}, '', window.location.pathname)
+            if (alive) {
+              setStaffInviteToken('')
+              setInviteToken('')
+              setMemberProfileRequired(false)
+              setWorkspace(result)
+              setNeedsWorkspace(false)
+            }
+            return
+          }
+        }
         if (staffInviteToken) {
           const key = session!.user.id + ':staff:' + staffInviteToken
           if (invitationAttempt.current !== key) {
@@ -116,7 +134,7 @@ export default function AuthGate() {
           window.history.replaceState({}, '', window.location.pathname)
           if (alive) setInviteToken('')
         }
-        const result = await getCurrentGym(session!.user)
+        if (!result) result = await getCurrentGym(session!.user)
         if (alive) { setWorkspace(result); setNeedsWorkspace(!result) }
       } catch (err) {
         if (alive) setError(userFacingError(err, 'Could not load your gym workspace. Check your connection and try again.'))
