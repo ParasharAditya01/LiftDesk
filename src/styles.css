@@ -1684,16 +1684,22 @@ svg {
 .gym-chat-composer-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--theme-muted,var(--ld-muted,#77766f));font-size:11px}
 .gym-chat-composer-actions .button-primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 13px}
 .gym-chat-composer-actions .button-primary:disabled{cursor:not-allowed;opacity:.55}
-.member-portal-section>.gym-chat{min-height:min(72vh,760px)}
 @media(max-width:600px){.gym-chat.surface{min-height:calc(100dvh - 190px);border-radius:11px}.gym-chat-header{gap:9px;padding:13px}.gym-chat-mark{width:34px;height:34px;flex-basis:34px}.gym-chat-header h2{font-size:14px}.gym-chat-header p{font-size:11px}.gym-chat-messages{min-height:270px;max-height:55dvh;padding:13px;gap:10px}.gym-chat-message{max-width:88%;padding:9px 10px}.gym-chat-message p{font-size:12px}.gym-chat-composer{padding:11px}.gym-chat-composer textarea{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.gym-chat-messages{scroll-behavior:auto}}
 
-/* Member status navigation stays compact on desktop and thumb-scrollable on mobile. */
-.app-shell .member-filter-nav{display:flex;align-items:stretch;gap:5px;min-width:0;overflow-x:auto;padding:10px 18px 0;border-bottom:1px solid var(--ld-line);scrollbar-width:thin;scrollbar-color:var(--ld-line) transparent}
-.app-shell .member-filter-nav button{position:relative;display:inline-flex;flex:0 0 auto;align-items:center;gap:8px;min-height:42px;padding:0 12px;border:0;border-radius:7px 7px 0 0;background:transparent;color:var(--ld-muted);font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;transition:color .16s ease,background-color .16s ease}
-.app-shell .member-filter-nav button:hover{background:color-mix(in srgb,var(--ld-line) 36%,transparent);color:var(--ld-ink)}
-.app-shell .member-filter-nav button[aria-pressed="true"]{color:var(--ld-ink);background:var(--theme-canvas,#f8f7f3)}
-.app-shell .member-filter-nav button[aria-pressed="true"]::after{position:absolute;right:10px;bottom:-1px;left:10px;height:2px;border-radius:2px 2px 0 0;background:var(--theme-accent,#b7a17a);content:""}
-.app-shell .member-filter-nav button:focus-visible{z-index:1;outline:2px solid var(--theme-accent,#a7ce56);outline-offset:-2px}
-.member-filter-count{display:inline-grid;min-width:21px;height:21px;place-items:center;padding:0 5px;border-radius:5px;background:color-mix(in srgb,var(--ld-line) 48%,transparent);color:inherit;font-size:11px;font-variant-numeric:tabular-nums}
-@media(max-width:720px){.app-shell .member-filter-nav{gap:2px;padding:8px 12px 0;overscroll-behavior-x:contain}.app-shell .member-filter-nav button{min-height:42px;padding:0 10px;font-size:12px}.member-filter-count{min-width:19px;height:19px;font-size:10px}}
+/* A compact, persistent launcher keeps gym chat out of the workspace navigation. */
+.gym-chat-floating-panel{position:fixed;z-index:70;right:24px;bottom:88px;display:flex;width:min(420px,calc(100vw - 40px));height:min(660px,calc(100dvh - 120px));min-height:320px;overflow:hidden;border:1px solid var(--theme-line,#e4e3dc);border-radius:15px;background:var(--theme-surface,#fff);box-shadow:0 18px 55px rgb(25 28 22 / .2)}
+.gym-chat-floating-panel .gym-chat.surface{width:100%;height:100%;min-height:0!important;max-height:100%;border:0;border-radius:inherit;box-shadow:none}
+.gym-chat-floating-panel .gym-chat-header{gap:9px;min-width:0;padding:13px 14px}
+.gym-chat-floating-panel .gym-chat-header>div{min-width:0}
+.gym-chat-floating-panel .gym-chat-header h2{font-size:14px}
+.gym-chat-floating-panel .gym-chat-header p{font-size:11px}
+.gym-chat-floating-panel .gym-chat-messages{min-height:0;max-height:none;padding:15px}
+.gym-chat-floating-panel .gym-chat-close{display:grid;flex:0 0 32px;width:32px;height:32px;place-items:center;border:1px solid var(--theme-line,#e4e3dc);border-radius:8px;background:var(--theme-surface,#fff);color:var(--theme-ink,#202124)}
+.gym-chat-floating-panel .gym-chat-close:hover{background:var(--theme-canvas,#f4f1e9)}
+.gym-chat-floating-panel .gym-chat-close:focus-visible,.gym-chat-floating-launcher:focus-visible{outline:3px solid var(--theme-accent,#a7ce56);outline-offset:3px}
+.gym-chat-floating-launcher{position:fixed;z-index:71;right:24px;bottom:22px;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-width:112px;min-height:50px;padding:0 17px;border:1px solid var(--theme-ink,#202124);border-radius:12px;background:var(--theme-ink,#202124);color:var(--theme-surface,#fff);font-size:13px;font-weight:650;box-shadow:0 7px 22px rgb(25 28 22 / .18);transition:transform .16s ease,box-shadow .16s ease}
+.gym-chat-floating-launcher svg{color:var(--theme-accent,#c5f36b)}
+.gym-chat-floating-launcher:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgb(25 28 22 / .23)}
+@media(max-width:600px){.gym-chat-floating-launcher{right:14px;bottom:14px;min-height:48px}.gym-chat-floating-panel{right:12px;bottom:76px;width:calc(100vw - 24px);height:min(68dvh,620px);min-height:300px;border-radius:13px}.gym-chat-floating-panel .gym-chat-messages{padding:12px}}
+@media(prefers-reduced-motion:reduce){.gym-chat-floating-launcher{transition:none}}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { MessageSquare, RefreshCw, Send } from 'lucide-react'
+import { MessageSquare, RefreshCw, Send, X } from 'lucide-react'
 import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js'
 import { requireSupabase } from './lib/supabase'
 
@@ -31,7 +31,7 @@ function chatErrorMessage(error: { code?: string } | null, action: 'load' | 'sen
     : 'Your message could not be sent. Please try again.'
 }
 
-export default function GymChat({ gymId, userId, gymName }: { gymId: string; userId: string; gymName: string }) {
+export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: string; userId: string; gymName: string; onClose?: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [loading, setLoading] = useState(true)
@@ -114,6 +114,7 @@ export default function GymChat({ gymId, userId, gymName }: { gymId: string; use
       <span className="gym-chat-mark" aria-hidden="true"><MessageSquare size={18}/></span>
       <div><h2>Gym chat</h2><p>Everyone in {gymName} can read and send messages.</p></div>
       <span className={'gym-chat-connection ' + (connected ? 'is-connected' : '')} role="status">{connected ? 'Live' : connectionError ? 'Offline' : 'Connecting'}</span>
+      {onClose && <button type="button" className="gym-chat-close" aria-label="Close gym chat" onClick={onClose}><X size={17}/></button>}
     </header>
 
     {connectionError && <div className="gym-chat-reconnect"><span>Live updates are unavailable. Messages can still be sent.</span><button type="button" onClick={() => setRefreshKey(value => value + 1)}><RefreshCw size={14}/> Reconnect</button></div>}
