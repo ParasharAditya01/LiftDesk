@@ -15,6 +15,11 @@ type ChatMessage = {
 
 type PushStatus = 'checking' | 'off' | 'on' | 'blocked' | 'unsupported' | 'not-configured'
 const vapidPublicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY?.trim()
+const messageRetentionMs = 48 * 60 * 60 * 1000
+
+function isRetainedMessage(message: ChatMessage, now = Date.now()) {
+  return message.is_pinned || now - new Date(message.created_at).getTime() < messageRetentionMs
+}
 
 function decodeVapidKey(value: string) {
   const padding = '='.repeat((4 - value.length % 4) % 4)
@@ -32,7 +37,10 @@ function encodePushKey(value: ArrayBuffer) {
 function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
   const unique = new Map(current.map(message => [message.id, message]))
   incoming.forEach(message => unique.set(message.id, message))
-  return [...unique.values()].sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(-100)
+  return [...unique.values()]
+    .filter(message => isRetainedMessage(message))
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .slice(-100)
 }
 
 function timeLabel(value: string) {
@@ -106,17 +114,33 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
     let active = true
     const client = requireSupabase()
     const loadMessages = async () => {
-      const { data, error: loadError } = await client.from('gym_chat_messages')
-        .select('id, gym_id, user_id, sender_name, body, created_at, is_pinned')
-        .eq('gym_id', gymId)
-        .order('created_at', { ascending: false })
-        .limit(100)
+      const cutoff = new Date(Date.now() - messageRetentionMs).toISOString()
+      const fields = 'id, gym_id, user_id, sender_name, body, created_at, is_pinned'
+      const [recentResult, pinnedResult] = await Promise.all([
+        client.from('gym_chat_messages')
+          .select(fields)
+          .eq('gym_id', gymId)
+          .gte('created_at', cutoff)
+          .order('created_at', { ascending: false })
+          .limit(100),
+        client.from('gym_chat_messages')
+          .select(fields)
+          .eq('gym_id', gymId)
+          .eq('is_pinned', true)
+          .order('created_at', { ascending: false })
+          .limit(100),
+      ])
+      const loadError = recentResult.error ?? pinnedResult.error
       if (!active) return
       if (loadError) {
         setError(chatErrorMessage(loadError, 'load'))
       } else {
         setError('')
-        setMessages(current => mergeMessages(current, ((data ?? []) as ChatMessage[]).reverse()))
+        const loaded = [
+          ...((recentResult.data ?? []) as ChatMessage[]),
+          ...((pinnedResult.data ?? []) as ChatMessage[]),
+        ]
+        setMessages(current => mergeMessages(current, loaded))
       }
       setLoading(false)
     }
@@ -149,6 +173,19 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
       void client.removeChannel(channel)
     }
   }, [gymId, refreshKey])
+
+  useEffect(() => {
+    const nextExpiry = messages.reduce<number | null>((earliest, message) => {
+      if (message.is_pinned) return earliest
+      const expiresAt = new Date(message.created_at).getTime() + messageRetentionMs
+      return earliest === null || expiresAt < earliest ? expiresAt : earliest
+    }, null)
+    if (nextExpiry === null) return
+    const timer = window.setTimeout(() => {
+      setMessages(current => current.filter(message => isRetainedMessage(message)))
+    }, Math.max(0, nextExpiry - Date.now()))
+    return () => window.clearTimeout(timer)
+  }, [messages])
 
   useEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
