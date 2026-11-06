@@ -1,21 +1,40 @@
 import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { LoaderCircle, LogOut, ShieldCheck, UserRound } from 'lucide-react'
+import { Activity, CalendarDays, CheckCircle2, Clock3, Dumbbell, LoaderCircle, LogOut, ShieldCheck, Utensils, Weight } from 'lucide-react'
 import type { Gym } from './lib/gymData'
 import { getOwnCoachingRecords, getOwnMemberProfile, type CoachingPlan, type MemberProfile, type MemberProgress } from './lib/gymData'
 import { requireSupabase } from './lib/supabase'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
 
+type MemberCoaching = {
+  diet: Omit<CoachingPlan, 'created_by' | 'created_at'>[]
+  workout: Omit<CoachingPlan, 'created_by' | 'created_at'>[]
+  progress: MemberProgress[]
+}
+
+type DietMeal = { slot: string; items: string }
+type DietDay = { day: string; meals: DietMeal[] }
+type Exercise = { name: string; sets: string; reps: string; load: string; duration: string; rest: string; instructions: string }
+type WorkoutDay = { day: string; rest_day: boolean; exercises: Exercise[] }
+
+const emptyCoaching: MemberCoaching = { diet: [], workout: [], progress: [] }
+const hasValue = (value: unknown) => value !== null && value !== undefined && String(value).trim() !== ''
+const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(part => part[0] ?? '').join('').toUpperCase()
+
 export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
   const [profile, setProfile] = useState<MemberProfile | null>(null)
-  const [coaching, setCoaching] = useState<{ diet: Omit<CoachingPlan, 'created_by' | 'created_at'>[]; workout: Omit<CoachingPlan, 'created_by' | 'created_at'>[]; progress: MemberProgress[] }>({ diet: [], workout: [], progress: [] })
+  const [coaching, setCoaching] = useState<MemberCoaching>(emptyCoaching)
   const [error, setError] = useState('')
   const [coachingError, setCoachingError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let active = true
+    setLoading(true)
+    setError('')
+    setCoachingError('')
     getOwnMemberProfile(user.id)
       .then(async value => {
         if (!active) return
@@ -23,62 +42,186 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
         try {
           const ownRecords = await getOwnCoachingRecords(value.gym_id, value.id)
           if (active) setCoaching(ownRecords)
-        } catch (reason) { if (active) setCoachingError(userFacingError(reason, 'Your profile loaded, but coaching plans are temporarily unavailable.')) }
+        } catch (reason) {
+          if (active) setCoachingError(userFacingError(reason, 'Your profile loaded, but coaching plans are temporarily unavailable.'))
+        }
       })
       .catch(reason => { if (active) setError(userFacingError(reason, 'Could not load your member profile. Contact your gym staff.')) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [user.id])
+  }, [user.id, reloadKey])
 
   const date = (value: string | null) => value
     ? new Date(value + (value.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
-    : 'Not set'
+    : 'No expiry date set'
 
-  return <main className="auth-screen">
-    <section className="auth-card" style={{ width: 'min(100%, 680px)' }}>
-      <div className="auth-brand"><LiftDeskMark size={38} /><b>Lift<span>Desk</span></b></div>
-      <p className="auth-eyebrow">MEMBER PORTAL</p>
-      <h1>{gym.name}</h1>
-      <p className="auth-intro">Your personal membership information. Only your own profile is shown here.</p>
-      {loading ? <div className="auth-loading"><LoaderCircle className="spin" size={22}/><p>Loading your profile…</p></div> : error ? <p className="auth-error" role="alert">{error}</p> : profile && <>
-        <div className="surface" style={{ padding: 22, marginTop: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div className="metric-icon"><UserRound size={20}/></div>
-            <div><h2 style={{ margin: 0 }}>{profile.full_name}</h2><p style={{ margin: '4px 0 0', color: 'var(--muted, #6b7280)' }}>Member profile · {profile.status}</p></div>
+  const reload = () => {
+    setProfile(null)
+    setCoaching(emptyCoaching)
+    setReloadKey(value => value + 1)
+  }
+
+  const activeDiet = coaching.diet.filter(plan => plan.status === 'active').length
+  const activeWorkout = coaching.workout.filter(plan => plan.status === 'active').length
+  const latestProgress = coaching.progress[0]
+  const readableStatus = profile?.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : '—'
+
+  return <main className="member-portal-shell">
+    <header className="member-portal-header">
+      <div className="member-portal-brand"><LiftDeskMark size={38}/><div><b>Lift<span>Desk</span></b><small>MEMBER PORTAL</small></div></div>
+      <div className="member-portal-gym"><span className="member-portal-gym-label">YOUR GYM</span><b>{gym.name}</b></div>
+      <button type="button" className="member-portal-signout" onClick={() => void requireSupabase().auth.signOut()}><LogOut size={16}/><span>Sign out</span></button>
+    </header>
+
+    <div className="member-portal-content">
+      {loading ? <section className="member-portal-loading" role="status"><LoaderCircle className="spin" size={23}/><p>Loading your membership…</p></section> : error ? <section className="member-portal-error" role="alert"><h1>We couldn’t load your member profile</h1><p>{error}</p><button type="button" className="member-portal-retry" onClick={reload}>Try again</button></section> : profile && <>
+        <section className="member-portal-hero" aria-labelledby="member-portal-title">
+          <div className="member-portal-hero-copy">
+            <p className="member-portal-kicker">YOUR MEMBERSHIP</p>
+            <h1 id="member-portal-title">Your training, in one place.</h1>
+            <p>Review your membership, the plans your coach shared, and your progress updates.</p>
           </div>
-          <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 18, margin: 0 }}>
-            <ProfileField label="Phone number" value={profile.phone}/>
-            <ProfileField label="WhatsApp number" value={profile.whatsapp_number || 'Not provided'}/>
-            <ProfileField label="Age" value={profile.age == null ? 'Not provided' : String(profile.age) + ' years'}/>
-            <ProfileField label="Weight" value={profile.weight_kg == null ? 'Not provided' : String(profile.weight_kg) + ' kg'}/>
-            <ProfileField label="Height" value={profile.height_cm == null ? 'Not provided' : String(profile.height_cm) + ' cm'}/>
-            <ProfileField label="Membership plan" value={profile.plan_name}/>
-            <ProfileField label="Membership expiry" value={date(profile.membership_expires_on)}/>
-          </dl>
-        </div>
-        <div className="member-coaching-portal">
-          {coachingError && <p className="auth-error" role="alert">{coachingError}</p>}
-          <section className="surface member-portal-plans"><h2>Your diet plan</h2>{coaching.diet.length ? coaching.diet.map(plan => <article key={plan.id}><h3>{plan.name}</h3><p>{plan.objective} · {plan.starts_on}{plan.ends_on ? ` to ${plan.ends_on}` : ''}</p><div>{String(plan.plan_data.dietary_preferences ?? '')}</div><p>{String(plan.plan_data.restrictions ?? '')}{plan.plan_data.allergies ? ` · Allergies: ${String(plan.plan_data.allergies)}` : ''}</p><PlanScheduleList kind="diet" data={plan.plan_data}/><pre>{String(plan.plan_data.details ?? '')}</pre><small>Nutrition targets are trainer-entered estimates, not medically validated.</small></article>) : <p>No published diet plan is available yet.</p>}</section>
-          <section className="surface member-portal-plans"><h2>Your workout plan</h2>{coaching.workout.length ? coaching.workout.map(plan => <article key={plan.id}><h3>{plan.name}</h3><p>{plan.objective} · {plan.starts_on}{plan.ends_on ? ` to ${plan.ends_on}` : ''}</p><div>{String(plan.plan_data.weekly_schedule ?? '')}</div><PlanScheduleList kind="workout" data={plan.plan_data}/><pre>{String(plan.plan_data.details ?? '')}</pre></article>) : <p>No published workout plan is available yet.</p>}</section>
-          <section className="surface member-portal-plans"><h2>Your progress</h2>{coaching.progress.length ? coaching.progress.map(item => <article key={item.id}><h3>{date(item.recorded_on)}{item.weight_kg ? ` · ${item.weight_kg} kg` : ''}</h3>{Object.entries(item.measurements).some(([, value]) => value) && <p>Measurements (cm): {Object.entries(item.measurements).filter(([, value]) => value).map(([key, value]) => `${key.replace('_cm', '')} ${String(value)}`).join(' · ')}</p>}{item.milestone && <p>{item.milestone}</p>}{item.workout_notes && <p>{item.workout_notes}</p>}{item.member_feedback && <p>Your feedback: {item.member_feedback}</p>}</article>) : <p>No progress updates are available yet.</p>}</section>
-        </div>
-        <p className="auth-security"><ShieldCheck size={16}/> Profile details are read-only. Ask gym staff to correct an error.</p>
+          <div className="member-portal-person">
+            <div className="member-portal-avatar" aria-hidden="true">{initials(profile.full_name)}</div>
+            <div className="member-portal-person-copy"><b>{profile.full_name}</b><span>Member at {gym.name}</span></div>
+            <span className={'member-portal-status member-status-' + profile.status}><i aria-hidden="true"/>{readableStatus}</span>
+          </div>
+        </section>
+
+        <section className="member-portal-summary" aria-label="Membership and coaching summary">
+          <SummaryItem label="Membership plan" value={profile.plan_name || 'Not set'} detail="Your current plan"/>
+          <SummaryItem label="Membership status" value={readableStatus} detail="As recorded by your gym"/>
+          <SummaryItem label="Membership expiry" value={date(profile.membership_expires_on)} detail="Contact the gym for renewal"/>
+          <SummaryItem label="Current coaching" value={`${activeDiet + activeWorkout} active ${activeDiet + activeWorkout === 1 ? 'plan' : 'plans'}`} detail={`${activeDiet} diet · ${activeWorkout} workout`}/>
+        </section>
+
+        <nav className="member-portal-nav" aria-label="Member portal sections">
+          <a href="#member-membership">Membership</a>
+          <a href="#member-diet">Diet plan</a>
+          <a href="#member-workout">Workout plan</a>
+          <a href="#member-progress">Progress</a>
+        </nav>
+
+        {coachingError && <div className="member-portal-notice" role="alert"><span>{coachingError}</span><button type="button" onClick={reload}>Reload</button></div>}
+
+        <section id="member-membership" className="member-portal-section" aria-labelledby="member-membership-title">
+          <div className="member-portal-section-heading"><div><p className="member-portal-overline">ACCOUNT DETAILS</p><h2 id="member-membership-title">Membership</h2></div><span className="member-portal-section-meta">Managed by {gym.name}</span></div>
+          <div className="member-membership-card">
+            <div className="member-membership-mark"><CheckCircle2 size={19}/></div>
+            <div className="member-membership-copy"><span>Membership plan</span><h3>{profile.plan_name || 'Plan not set'}</h3><p>Your gym staff can help with renewals and corrections.</p></div>
+            <div className="member-membership-expiry"><span>Expires on</span><b>{date(profile.membership_expires_on)}</b></div>
+          </div>
+          <details className="member-personal-details">
+            <summary>View personal details</summary>
+            <dl>
+              <ProfileField label="Phone" value={profile.phone || 'Not provided'}/>
+              <ProfileField label="WhatsApp" value={profile.whatsapp_number || 'Not provided'}/>
+              <ProfileField label="Age" value={profile.age == null ? 'Not provided' : `${profile.age} years`}/>
+              <ProfileField label="Weight" value={profile.weight_kg == null ? 'Not provided' : `${profile.weight_kg} kg`}/>
+              <ProfileField label="Height" value={profile.height_cm == null ? 'Not provided' : `${profile.height_cm} cm`}/>
+            </dl>
+            <p>These details are private to your account. Ask gym staff to correct anything that looks wrong.</p>
+          </details>
+        </section>
+
+        <section id="member-diet" className="member-portal-section" aria-labelledby="member-diet-title">
+          <div className="member-portal-section-heading"><div><p className="member-portal-overline">COACHING</p><h2 id="member-diet-title"><Utensils size={19}/> Diet plan</h2></div><span className="member-portal-section-meta">{coaching.diet.length} shared {coaching.diet.length === 1 ? 'plan' : 'plans'}</span></div>
+          {coaching.diet.length ? <div className="member-plan-list">{coaching.diet.map(plan => <PlanCard key={plan.id} plan={plan} kind="diet" date={date}/>)}</div> : <EmptyPlan kind="diet"/>}
+          {coaching.diet.length > 0 && <p className="member-plan-disclaimer"><ShieldCheck size={15}/> Nutrition targets are trainer-entered estimates, not medically validated. Ask a qualified healthcare professional about medical or significant dietary needs.</p>}
+        </section>
+
+        <section id="member-workout" className="member-portal-section" aria-labelledby="member-workout-title">
+          <div className="member-portal-section-heading"><div><p className="member-portal-overline">COACHING</p><h2 id="member-workout-title"><Dumbbell size={20}/> Workout plan</h2></div><span className="member-portal-section-meta">{coaching.workout.length} shared {coaching.workout.length === 1 ? 'plan' : 'plans'}</span></div>
+          {coaching.workout.length ? <div className="member-plan-list">{coaching.workout.map(plan => <PlanCard key={plan.id} plan={plan} kind="workout" date={date}/>)}</div> : <EmptyPlan kind="workout"/>}
+        </section>
+
+        <section id="member-progress" className="member-portal-section" aria-labelledby="member-progress-title">
+          <div className="member-portal-section-heading"><div><p className="member-portal-overline">COACHING</p><h2 id="member-progress-title"><Activity size={20}/> Progress</h2></div><span className="member-portal-section-meta">{coaching.progress.length} {coaching.progress.length === 1 ? 'update' : 'updates'}</span></div>
+          {latestProgress ? <div className="member-progress-list">{coaching.progress.map(item => <ProgressEntry key={item.id} item={item} date={date}/>)}</div> : <div className="member-portal-empty"><div className="member-empty-symbol"><Weight size={19}/></div><div><b>No progress updates yet</b><p>Your coach’s updates will appear here when they add them.</p></div></div>}
+        </section>
+
+        <footer className="member-portal-footer"><span><ShieldCheck size={15}/> You can only view your own membership and coaching records.</span><span>LiftDesk · {gym.name}</span></footer>
       </>}
-      <button className="auth-signout" onClick={() => void requireSupabase().auth.signOut()}><LogOut size={16}/> Sign out</button>
-    </section>
+    </div>
   </main>
 }
 
-function ProfileField({ label, value }: { label: string; value: string }) {
-  return <div><dt style={{ fontSize: 12, color: 'var(--muted, #6b7280)', marginBottom: 6 }}>{label}</dt><dd style={{ margin: 0, fontWeight: 600, overflowWrap: 'anywhere' }}>{value}</dd></div>
+function SummaryItem({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return <div className="member-summary-item"><span>{label}</span><b>{value}</b><small>{detail}</small></div>
 }
 
-function PlanScheduleList({ kind, data }: { kind: 'diet' | 'workout'; data: Record<string, unknown> }) {
+function ProfileField({ label, value }: { label: string; value: string }) {
+  return <div><dt>{label}</dt><dd>{value}</dd></div>
+}
+
+function EmptyPlan({ kind }: { kind: 'diet' | 'workout' }) {
+  const label = kind === 'diet' ? 'diet plan' : 'workout plan'
+  const Icon = kind === 'diet' ? Utensils : Dumbbell
+  return <div className="member-portal-empty"><div className="member-empty-symbol"><Icon size={19}/></div><div><b>No {label} shared yet</b><p>When your coach publishes one for you, it will appear here.</p></div></div>
+}
+
+function PlanCard({ plan, kind, date }: { plan: Omit<CoachingPlan, 'created_by' | 'created_at'>; kind: 'diet' | 'workout'; date: (value: string | null) => string }) {
+  const data = plan.plan_data
+  const days = kind === 'diet'
+    ? Array.isArray(data.meal_schedule) ? data.meal_schedule as DietDay[] : []
+    : Array.isArray(data.workout_schedule) ? data.workout_schedule as WorkoutDay[] : []
+  const values = kind === 'diet'
+    ? [
+        hasValue(data.calories_kcal) && { label: 'Calories', value: `${String(data.calories_kcal)} kcal/day` },
+        hasValue(data.protein_g) && { label: 'Protein', value: `${String(data.protein_g)} g` },
+        hasValue(data.carbohydrates_g) && { label: 'Carbohydrates', value: `${String(data.carbohydrates_g)} g` },
+        hasValue(data.fat_g) && { label: 'Fat', value: `${String(data.fat_g)} g` },
+        hasValue(data.water_litres) && { label: 'Water target', value: `${String(data.water_litres)} L/day` },
+      ].filter((value): value is { label: string; value: string } => Boolean(value))
+    : []
+  const preference = String(kind === 'diet' ? data.dietary_preferences ?? '' : data.weekly_schedule ?? '').trim()
+  const restrictions = String(kind === 'diet' ? data.restrictions ?? '' : data.equipment_or_limitations ?? '').trim()
+  const details = String(data.details ?? '').trim()
+
+  return <article className="member-plan-card">
+    <header className="member-plan-header"><div><div className="member-plan-heading-line"><h3>{plan.name}</h3><span className={'member-plan-status member-plan-status-' + plan.status}>{plan.status}</span></div>{plan.objective && <p>{plan.objective}</p>}</div><span className="member-plan-dates"><CalendarDays size={14}/>{date(plan.starts_on)}{plan.ends_on ? ` – ${date(plan.ends_on)}` : ''}</span></header>
+    {preference && <p className="member-plan-summary">{preference}</p>}
+    {values.length > 0 && <dl className="member-plan-targets">{values.map(value => <div key={value.label}><dt>{value.label}</dt><dd>{value.value}</dd></div>)}</dl>}
+    {days.length > 0 && <PlanSchedule kind={kind} days={days}/>}
+    {(Boolean(restrictions) || hasValue(data.allergies) || hasValue(data.instructions)) && <div className="member-plan-notes">{restrictions && <p><b>{kind === 'diet' ? 'Restrictions' : 'Equipment or limitations'}</b>{restrictions}</p>}{kind === 'diet' && hasValue(data.allergies) && <p><b>Allergies</b>{String(data.allergies)}</p>}{kind === 'workout' && hasValue(data.instructions) && <p><b>Warm-up, cool-down and progression</b>{String(data.instructions)}</p>}</div>}
+    {details && <details className="member-plan-details"><summary>{kind === 'diet' ? 'Trainer instructions' : 'Additional plan notes'}</summary><p>{details}</p></details>}
+  </article>
+}
+
+function PlanSchedule({ kind, days }: { kind: 'diet' | 'workout'; days: DietDay[] | WorkoutDay[] }) {
   if (kind === 'diet') {
-    const days = Array.isArray(data.meal_schedule) ? data.meal_schedule as { day: string; meals: { slot: string; items: string }[] }[] : []
-    const targets = [data.calories_kcal && `${String(data.calories_kcal)} kcal/day`, data.protein_g && `${String(data.protein_g)} g protein`, data.carbohydrates_g && `${String(data.carbohydrates_g)} g carbohydrates`, data.fat_g && `${String(data.fat_g)} g fat`, data.water_litres && `${String(data.water_litres)} L water`].filter(Boolean)
-    return <div className="member-plan-schedule">{targets.length > 0 && <p>Trainer-entered targets: {targets.join(' · ')}</p>}{days.map((day, index) => <section key={index}><b>{day.day}</b>{day.meals.map((meal, mealIndex) => <p key={mealIndex}><strong>{meal.slot}:</strong> {meal.items}</p>)}</section>)}</div>
+    return <div className="member-schedule-list">
+      {(days as DietDay[]).map((day, index) => <section className="member-schedule-day" key={`${day.day}-${index}`}>
+        <h4>{day.day}</h4>
+        {day.meals?.length ? <div className="member-schedule-entries">{day.meals.map((meal, mealIndex) => <div className="member-schedule-entry" key={`${meal.slot}-${mealIndex}`}><b>{meal.slot}</b><p>{meal.items || 'No meal details added.'}</p></div>)}</div> : <p className="member-schedule-empty">No meals listed for this day.</p>}
+      </section>)}
+    </div>
   }
-  const days = Array.isArray(data.workout_schedule) ? data.workout_schedule as { day: string; rest_day: boolean; exercises: { name: string; sets: string; reps: string; load: string; duration: string; rest: string; instructions: string }[] }[] : []
-  return <div className="member-plan-schedule">{days.map((day, index) => <section key={index}><b>{day.day}{day.rest_day ? ' · Rest day' : ''}</b>{day.rest_day ? <p>Recovery day</p> : day.exercises.map((exercise, exerciseIndex) => <p key={exerciseIndex}><strong>{exercise.name}</strong> · {exercise.sets && `${exercise.sets} sets`} {exercise.reps && `× ${exercise.reps}`} {exercise.load && `· ${exercise.load}`} {exercise.duration && `· ${exercise.duration}`} {exercise.rest && `· Rest ${exercise.rest}`} {exercise.instructions && `· ${exercise.instructions}`}</p>)}</section>)}</div>
+
+  return <div className="member-schedule-list">
+    {(days as WorkoutDay[]).map((day, index) => <section className="member-schedule-day" key={`${day.day}-${index}`}>
+      <h4>{day.day}{day.rest_day && <span>Rest</span>}</h4>
+      {day.rest_day ? <p className="member-schedule-empty">Recovery day</p> : day.exercises?.length ? <div className="member-exercise-list">{day.exercises.map((exercise, exerciseIndex) => {
+        const volume = [exercise.sets && `${exercise.sets} sets`, exercise.reps && `${exercise.reps} reps`].filter(Boolean).join(' × ')
+        const notes = [exercise.load, exercise.duration, exercise.rest && `Rest ${exercise.rest}`].filter(Boolean).join(' · ')
+        return <div className="member-exercise" key={`${exercise.name}-${exerciseIndex}`}>
+          <div className="member-exercise-main"><b>{exercise.name}</b><span>{volume || 'Follow your coach’s instructions'}</span></div>
+          {notes && <small>{notes}</small>}{exercise.instructions && <p>{exercise.instructions}</p>}
+        </div>
+      })}</div> : <p className="member-schedule-empty">No exercises listed for this day.</p>}
+    </section>)}
+  </div>
+}
+
+function ProgressEntry({ item, date }: { item: MemberProgress; date: (value: string | null) => string }) {
+  const measurements = Object.entries(item.measurements ?? {}).filter(([, value]) => hasValue(value))
+  return <article className="member-progress-entry">
+    <div className="member-progress-date"><Clock3 size={15}/><time>{date(item.recorded_on)}</time></div>
+    <div className="member-progress-body">
+      <div className="member-progress-headline">{item.weight_kg != null && <p className="member-progress-weight"><Weight size={16}/><b>{item.weight_kg} kg</b><span>Body weight</span></p>}{item.milestone && <p className="member-progress-milestone">{item.milestone}</p>}</div>
+      {measurements.length > 0 && <dl className="member-progress-measurements">{measurements.map(([key, value]) => <div key={key}><dt>{key.replace(/_cm$/i, '').replace(/_/g, ' ')}</dt><dd>{String(value)} cm</dd></div>)}</dl>}
+      {item.workout_notes && <p className="member-progress-note"><b>Workout update</b>{item.workout_notes}</p>}
+      {item.member_feedback && <p className="member-progress-note"><b>Your feedback</b>{item.member_feedback}</p>}
+    </div>
+  </article>
 }
