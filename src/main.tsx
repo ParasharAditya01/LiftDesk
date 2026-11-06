@@ -4,6 +4,11 @@ import AuthGate from './AuthGate'
 import LiftDeskMark from './LiftDeskMark'
 import './styles.css'
 
+if ('serviceWorker' in navigator) {
+  void navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    .catch(error => console.warn('LiftDesk push service worker could not be registered.', error))
+}
+
 const App = lazy(() => import('./App'))
 
 // /preview is a sample-data walkthrough so the product can be explored

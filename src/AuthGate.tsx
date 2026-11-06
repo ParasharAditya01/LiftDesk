@@ -10,6 +10,7 @@ import LiftDeskMark from './LiftDeskMark'
 import { userFacingError } from './lib/userFacingError'
 import { authOAuthRedirectUrl, authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation, SIGNUP_NEXT_STEP_MESSAGE } from './lib/authRegistration'
 import { getMyOwnerAccessRequest, isLiftDeskPlatformAdmin, requestOwnerWorkspace, type OwnerAccessRequest } from './lib/ownerApprovals'
+import { signOutWithPushCleanup } from './lib/pushNotifications'
 
 const LiveApp = lazy(() => import('./LiveApp'))
 const MemberPortal = lazy(() => import('./MemberPortal'))
@@ -444,7 +445,7 @@ export default function AuthGate() {
 
   if (platformAdmin && platformAdminView) return <Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening LiftDesk approvals…</p></div></div>}><PlatformAdmin
     onOpenWorkspace={workspace ? () => setPlatformAdminView(false) : undefined}
-    onSignOut={() => void requireSupabase().auth.signOut()}
+    onSignOut={() => void signOutWithPushCleanup()}
   /></Suspense>
 
   if (session && inviteToken && memberProfileRequired && !workspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Complete your member profile.</h1><p className="auth-intro">Your Google account is signed in. Add these details to join the gym that invited you.</p>
@@ -458,10 +459,10 @@ export default function AuthGate() {
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Joining gym…' : 'Complete member setup'} <ArrowRight size={16} /></button>
     </form>
-    <button className="auth-signout" type="button" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button>
+    <button className="auth-signout" type="button" onClick={() => void signOutWithPushCleanup()}>Sign out</button>
   </section></div>
 
-  if (ownerRequest?.status === 'pending' && !workspace) return <div className="auth-screen"><section className="auth-card owner-pending-card"><BrandMark /><p className="auth-eyebrow">OWNER REQUEST RECEIVED</p><div className="owner-pending-icon"><Clock3 size={22}/></div><h1>Waiting for LiftDesk approval.</h1><p className="auth-intro">Your request for <b>{ownerRequest.gym_name}</b> is under review. You can sign in again later to check its status. A gym workspace will be created only after approval.</p><div className="owner-pending-summary"><span>Owner</span><b>{ownerRequest.owner_name}</b><span>Account</span><b>{ownerRequest.owner_email}</b><span>Submitted</span><b>{new Date(ownerRequest.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</b></div><button type="button" className="auth-submit" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></section></div>
+  if (ownerRequest?.status === 'pending' && !workspace) return <div className="auth-screen"><section className="auth-card owner-pending-card"><BrandMark /><p className="auth-eyebrow">OWNER REQUEST RECEIVED</p><div className="owner-pending-icon"><Clock3 size={22}/></div><h1>Waiting for LiftDesk approval.</h1><p className="auth-intro">Your request for <b>{ownerRequest.gym_name}</b> is under review. You can sign in again later to check its status. A gym workspace will be created only after approval.</p><div className="owner-pending-summary"><span>Owner</span><b>{ownerRequest.owner_name}</b><span>Account</span><b>{ownerRequest.owner_email}</b><span>Submitted</span><b>{new Date(ownerRequest.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</b></div><button type="button" className="auth-submit" onClick={() => void signOutWithPushCleanup()}>Sign out</button></section></div>
 
   if (needsWorkspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">FIRST-TIME SETUP</p><h1>Request owner access.</h1><p className="auth-intro">Submit your gym details. Your private workspace and Owner access will be created only after LiftDesk approves the request.</p>
     {ownerRequest?.status === 'rejected' && <p className="auth-error" role="status">The previous request was declined.{ownerRequest.review_note ? ` ${ownerRequest.review_note}` : ' You can update the details and submit another request.'}</p>}
@@ -473,13 +474,13 @@ export default function AuthGate() {
       <GymThemeSelector value={gymTheme} onChange={setGymTheme} />
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Submitting request…' : 'Request LiftDesk approval'} <ArrowRight size={16} /></button>
-    </form><button type="button" className="auth-signout" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button>
+    </form><button type="button" className="auth-signout" onClick={() => void signOutWithPushCleanup()}>Sign out</button>
   </section></div>
 
-  if (workspace?.role === 'member') return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">Member</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your member portal…</p></div></div>}><MemberPortal gym={workspace.gym} user={session!.user} /></Suspense></div>
+  if (workspace?.role === 'member') return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">Member</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void signOutWithPushCleanup()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your member portal…</p></div></div>}><MemberPortal gym={workspace.gym} user={session!.user} /></Suspense></div>
 
-  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
-  return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button type="button" className="auth-submit" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button></section></div>
+  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void signOutWithPushCleanup()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
+  return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button type="button" className="auth-submit" onClick={() => void signOutWithPushCleanup()}>Sign out</button></section></div>
 }
 
 function BrandMark() {

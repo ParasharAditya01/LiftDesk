@@ -5,8 +5,21 @@ import GymChat from './GymChat'
 type Props = { gymId: string; userId: string; gymName: string }
 
 export default function FloatingGymChat({ gymId, userId, gymName }: Props) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).get('open_chat') === '1')
   const launcherRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('open_chat') === '1') {
+      url.searchParams.delete('open_chat')
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
+    }
+    const onServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'LIFTDESK_OPEN_GYM_CHAT') setOpen(true)
+    }
+    navigator.serviceWorker?.addEventListener('message', onServiceWorkerMessage)
+    return () => navigator.serviceWorker?.removeEventListener('message', onServiceWorkerMessage)
+  }, [])
 
   useEffect(() => {
     if (!open) return

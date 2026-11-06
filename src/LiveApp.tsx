@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import type { User } from '@supabase/supabase-js'
 import { Activity, Bell, CalendarDays, ClipboardCheck, Dumbbell, LayoutDashboard, LoaderCircle, LogOut, Menu, Plus, Search, Users, X } from 'lucide-react'
 import { createMember, createMemberInvitation, listAttendance, listFollowUps, listMemberFollowUpSummary, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole, type MemberFollowUpSummary } from './lib/gymData'
-import { requireSupabase } from './lib/supabase'
+import { signOutWithPushCleanup } from './lib/pushNotifications'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
 import LiftDeskLogo from './LiftDeskLogo'
@@ -195,7 +195,7 @@ export default function LiveApp({ gym, role, user }: Props) {
       <div className="nav-caption">WORKSPACE</div>
       <nav className="primary-nav" aria-label="Main navigation">{sections.filter(({name}) => name !== 'Staff' || role === 'owner' || role === 'admin').map(({name, icon: Icon}) => <button type="button" key={name} className={'nav-item ' + (section === name ? 'nav-active' : '')} aria-current={section === name ? 'page' : undefined} onClick={() => navigate(name)}><Icon size={18}/><span>{name}</span>{name === 'Follow-ups' && openFollowUps.length > 0 && <span className="nav-count">{openFollowUps.length}</span>}</button>)}</nav>
       <div className="sidebar-spacer"/>
-      <div className="sidebar-bottom"><div className="profile-row"><div className="profile-avatar">{initials(gym.name || 'Gym')}</div><div className="profile-copy"><b>{gym.name}</b><span>Gym workspace · {roleLabel}</span></div><button className="icon-button" aria-label="Sign out" onClick={() => void requireSupabase().auth.signOut()}><LogOut size={16}/></button></div></div>
+      <div className="sidebar-bottom"><div className="profile-row"><div className="profile-avatar">{initials(gym.name || 'Gym')}</div><div className="profile-copy"><b>{gym.name}</b><span>Gym workspace · {roleLabel}</span></div><button className="icon-button" aria-label="Sign out" onClick={() => void signOutWithPushCleanup()}><LogOut size={16}/></button></div></div>
     </aside>
     <main className="main-area">
       <header className="topbar"><div className="topbar-left"><button ref={menuButtonRef} type="button" className="icon-button mobile-menu" aria-label="Open main navigation" aria-controls="workspace-navigation" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="breadcrumb-muted">{gym.name}</span><span className="breadcrumb-slash">/</span><b>{section}</b></div><div className="topbar-right"><span className="preview-pill live-pill"><span/> Live data</span><span className="topbar-divider"/><span className="today-label"><CalendarDays size={15}/> {new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span></div></header>

@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 import { Activity, CalendarDays, CheckCircle2, Clock3, Dumbbell, LoaderCircle, LogOut, ShieldCheck, Utensils, Weight } from 'lucide-react'
 import type { Gym } from './lib/gymData'
 import { getOwnCoachingRecords, getOwnMemberProfile, type CoachingPlan, type MemberProfile, type MemberProgress } from './lib/gymData'
-import { requireSupabase } from './lib/supabase'
+import { signOutWithPushCleanup } from './lib/pushNotifications'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
 import FloatingGymChat from './FloatingGymChat'
@@ -71,7 +71,7 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
     <header className="member-portal-header">
       <div className="member-portal-brand"><LiftDeskMark size={38}/><div><b>Lift<span>Desk</span></b><small>MEMBER PORTAL</small></div></div>
       <div className="member-portal-gym"><span className="member-portal-gym-label">YOUR GYM</span><b>{gym.name}</b></div>
-      <button type="button" className="member-portal-signout" onClick={() => void requireSupabase().auth.signOut()}><LogOut size={16}/><span>Sign out</span></button>
+      <button type="button" className="member-portal-signout" onClick={() => void signOutWithPushCleanup()}><LogOut size={16}/><span>Sign out</span></button>
     </header>
 
     <div className="member-portal-content">

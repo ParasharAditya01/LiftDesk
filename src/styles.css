@@ -1695,6 +1695,14 @@ svg {
 .gym-chat-floating-panel .gym-chat-header h2{font-size:14px}
 .gym-chat-floating-panel .gym-chat-header p{font-size:11px}
 .gym-chat-floating-panel .gym-chat-messages{min-height:0;max-height:none;padding:15px}
+.gym-chat-notification-control{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);background:var(--theme-surface,#fff)}
+.gym-chat-notification-control>div{display:grid;gap:3px;min-width:0}
+.gym-chat-notification-control b{color:var(--theme-ink,#202124);font-size:11px;font-weight:650}
+.gym-chat-notification-control span{color:var(--theme-muted,#73756f);font-size:10px;line-height:1.4}
+.gym-chat-notification-control button{flex:0 0 auto;min-height:34px;padding:0 10px;border:1px solid var(--theme-line,#e4e3dc);border-radius:7px;background:var(--theme-surface,#fff);color:var(--theme-ink,#202124);font-size:11px;font-weight:650}
+.gym-chat-notification-control button:hover{background:var(--theme-canvas,#f4f1e9)}
+.gym-chat-notification-control button:focus-visible{outline:2px solid var(--theme-accent,#a7ce56);outline-offset:2px}
+.gym-chat-push-notice{margin:0;padding:8px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#73756f);font-size:10px;line-height:1.4}
 .gym-chat-floating-panel .gym-chat-close{display:grid;flex:0 0 32px;width:32px;height:32px;place-items:center;border:1px solid var(--theme-line,#e4e3dc);border-radius:8px;background:var(--theme-surface,#fff);color:var(--theme-ink,#202124)}
 .gym-chat-floating-panel .gym-chat-close:hover{background:var(--theme-canvas,#f4f1e9)}
 .gym-chat-floating-panel .gym-chat-close:focus-visible,.gym-chat-floating-launcher:focus-visible{outline:3px solid var(--theme-accent,#a7ce56);outline-offset:3px}
