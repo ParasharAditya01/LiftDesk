@@ -117,6 +117,32 @@
 .workspace-session-strip button{border:0;background:transparent;color:#F8F7F4;font-size:11px;text-decoration:underline;cursor:pointer;margin-left:8px}
 @media(max-width:480px){.auth-card{border-radius:17px}.auth-brand{margin-bottom:30px}.workspace-session-strip{padding:0 12px;justify-content:flex-start}.workspace-session-strip button{margin-left:auto}}
 
+/* LiftDesk platform-owner approval workspace */
+.platform-admin-screen{min-height:100vh;background:#F8F7F4;color:#202124}
+.platform-admin-header{min-height:68px;padding:0 clamp(18px,5vw,64px);display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #E7E3DB;background:#fff}
+.platform-admin-brand{display:flex;align-items:center;gap:10px;color:#202124;text-decoration:none;font-weight:750;letter-spacing:-.4px}
+.platform-admin-brand>svg{color:#8B7350}.platform-admin-brand span{display:grid;gap:2px}.platform-admin-brand small{font-size:9px;letter-spacing:1.3px;color:#77736B}
+.platform-admin-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.platform-admin-actions button,.owner-request-actions button{min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #E7E3DB;border-radius:9px;background:white;color:#292A2D;padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.platform-admin-actions button:hover,.owner-request-actions .button-secondary:hover{background:#F2F0EB}
+.platform-admin-actions button:disabled,.owner-request-actions button:disabled{opacity:.58;cursor:wait}
+.platform-admin-content{width:min(100% - 36px,920px);margin:0 auto;padding:clamp(32px,6vw,72px) 0}
+.platform-admin-eyebrow{display:flex;align-items:center;gap:8px;margin:0 0 12px;color:#8B7350;font-size:10px;font-weight:800;letter-spacing:1.4px}
+.platform-admin-content>h1{margin:0;color:#202124;font-size:clamp(28px,5vw,40px);line-height:1.1;letter-spacing:-1.2px}
+.platform-admin-intro{max-width:650px;margin:12px 0 28px;color:#6F6B63;font-size:14px;line-height:1.65}
+.owner-request-list{display:grid;gap:14px}
+.owner-request-card{padding:20px;background:#fff;border:1px solid #E7E3DB;border-radius:16px;box-shadow:0 8px 24px #20212408}
+.owner-request-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.owner-request-heading h2{margin:0;font-size:18px;letter-spacing:-.3px}.owner-request-heading p{margin:5px 0 0;color:#706D66;font-size:13px;overflow-wrap:anywhere}
+.owner-request-status{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;padding:6px 9px;border-radius:999px;background:#F2F0EB;color:#6D5B3E;font-size:10px;font-weight:700}
+.owner-request-card dl{display:flex;flex-wrap:wrap;gap:12px 34px;margin:20px 0;color:#292A2D}.owner-request-card dl>div{display:grid;gap:4px}.owner-request-card dt{color:#77736B;font-size:10px;text-transform:uppercase;letter-spacing:.6px}.owner-request-card dd{margin:0;font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.owner-request-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:14px;border-top:1px solid #EEECE7}.owner-request-actions .button-primary{border-color:#202124;background:#202124;color:#fff}.owner-request-actions .button-primary:hover{background:#34363A}
+.platform-admin-empty{min-height:110px;display:flex;align-items:center;justify-content:center;gap:12px;padding:20px;border:1px dashed #D8D4CC;border-radius:14px;color:#77736B;font-size:13px}.platform-admin-empty>div{display:grid;gap:4px}.platform-admin-empty b{color:#292A2D}.platform-admin-empty span{font-size:12px}
+.platform-admin-footnote{display:flex;align-items:flex-start;gap:8px;margin:24px 0 0;color:#77736B;font-size:11px;line-height:1.5}.platform-admin-footnote svg{flex-shrink:0;color:#8B7350}
+.owner-pending-card{width:min(100%,520px)}.owner-pending-icon{width:44px;height:44px;display:grid;place-items:center;margin:6px 0 16px;border-radius:13px;background:#F2F0EB;color:#8B7350}.owner-pending-summary{display:grid;grid-template-columns:100px 1fr;gap:10px 14px;margin:0 0 22px;padding:15px;background:#F8F7F4;border-radius:11px;font-size:12px}.owner-pending-summary span{color:#77736B}.owner-pending-summary b{overflow-wrap:anywhere}
+@media(max-width:620px){.platform-admin-header{align-items:flex-start;flex-direction:column;padding-block:14px}.platform-admin-actions{width:100%;justify-content:flex-start}.platform-admin-actions button{flex:1 1 auto}.owner-request-heading{flex-direction:column}.owner-request-status{align-self:flex-start}.owner-request-actions{display:grid;grid-template-columns:1fr 1fr}.owner-request-actions button{min-height:44px}.platform-admin-content{width:min(100% - 28px,920px)}}
+@media(prefers-reduced-motion:reduce){.platform-admin-screen *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
 /* First-run gym theme selector */
 .auth-card-theme{width:min(100%,760px)}
 .gym-theme-fieldset{min-width:0;margin:2px 0 0;padding:0;border:0}
