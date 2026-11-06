@@ -144,7 +144,7 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
         <footer className="member-portal-footer"><span><ShieldCheck size={15}/> You can only view your own membership and coaching records.</span><span>LiftDesk · {gym.name}</span></footer>
       </>}
     </div>
-    {!loading && !error && profile && <FloatingGymChat gymId={gym.id} userId={user.id} gymName={gym.name}/>}
+    {!loading && !error && profile && <FloatingGymChat gymId={gym.id} userId={user.id} gymName={gym.name} canManagePins={false}/>}
   </main>
 }
 

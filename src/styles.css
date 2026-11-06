@@ -1703,6 +1703,22 @@ svg {
 .gym-chat-notification-control button:hover{background:var(--theme-canvas,#f4f1e9)}
 .gym-chat-notification-control button:focus-visible{outline:2px solid var(--theme-accent,#a7ce56);outline-offset:2px}
 .gym-chat-push-notice{margin:0;padding:8px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#73756f);font-size:10px;line-height:1.4}
+.gym-chat-pinned{display:grid;gap:7px;max-height:150px;overflow:auto;padding:10px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);background:color-mix(in srgb,var(--theme-accent,#c5f36b) 10%,var(--theme-surface,#fff))}
+.gym-chat-pinned-heading{display:flex;align-items:center;gap:7px;color:var(--theme-ink,#202124);font-size:11px}
+.gym-chat-pinned-heading svg{color:var(--theme-muted,#73756f)}
+.gym-chat-pinned-heading span{display:grid;min-width:18px;height:18px;place-items:center;border-radius:10px;background:var(--theme-surface,#fff);color:var(--theme-muted,#73756f);font-size:10px}
+.gym-chat-pinned ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.gym-chat-pinned li{display:grid;gap:2px;min-width:0;padding:7px 9px;border:1px solid var(--theme-line,#e4e3dc);border-radius:8px;background:var(--theme-surface,#fff)}
+.gym-chat-pinned li>span{color:var(--theme-muted,#73756f);font-size:10px;font-weight:650}
+.gym-chat-pinned li p{display:-webkit-box;overflow:hidden;margin:0;color:var(--theme-ink,#202124);font-size:11px;line-height:1.4;white-space:pre-wrap;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.gym-chat-message-pin{display:inline-flex;align-items:center;gap:4px;color:var(--theme-muted,#73756f);font-size:10px;font-weight:650}
+.gym-chat-message-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.gym-chat-message-footer time{align-self:auto}
+.gym-chat-pin-button{display:grid;width:28px;height:28px;place-items:center;border:0;border-radius:7px;background:transparent;color:var(--theme-muted,#73756f);cursor:pointer}
+.gym-chat-pin-button:hover{background:var(--theme-canvas,#f4f1e9);color:var(--theme-ink,#202124)}
+.gym-chat-pin-button[aria-pressed="true"]{color:var(--theme-ink,#202124)}
+.gym-chat-pin-button:focus-visible{outline:2px solid var(--theme-accent,#a7ce56);outline-offset:2px}
+.gym-chat-pin-button:disabled{cursor:wait;opacity:.55}
 .gym-chat-floating-panel .gym-chat-close{display:grid;flex:0 0 32px;width:32px;height:32px;place-items:center;border:1px solid var(--theme-line,#e4e3dc);border-radius:8px;background:var(--theme-surface,#fff);color:var(--theme-ink,#202124)}
 .gym-chat-floating-panel .gym-chat-close:hover{background:var(--theme-canvas,#f4f1e9)}
 .gym-chat-floating-panel .gym-chat-close:focus-visible,.gym-chat-floating-launcher:focus-visible{outline:3px solid var(--theme-accent,#a7ce56);outline-offset:3px}

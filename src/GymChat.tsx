@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { MessageSquare, RefreshCw, Send, X } from 'lucide-react'
-import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js'
+import { MessageSquare, Pin, PinOff, RefreshCw, Send, X } from 'lucide-react'
+import type { RealtimePostgresInsertPayload, RealtimePostgresUpdatePayload } from '@supabase/supabase-js'
 import { requireSupabase } from './lib/supabase'
 
 type ChatMessage = {
@@ -10,6 +10,7 @@ type ChatMessage = {
   sender_name: string
   body: string
   created_at: string
+  is_pinned: boolean
 }
 
 type PushStatus = 'checking' | 'off' | 'on' | 'blocked' | 'unsupported' | 'not-configured'
@@ -38,16 +39,21 @@ function timeLabel(value: string) {
   return new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit' }).format(new Date(value))
 }
 
-function chatErrorMessage(error: { code?: string } | null, action: 'load' | 'send') {
+function chatErrorMessage(error: { code?: string } | null, action: 'load' | 'send' | 'pin') {
   if (error?.code === '42P01' || error?.code === 'PGRST205') {
     return 'Gym chat is not enabled yet. Apply the gym chat migration in Supabase to turn it on.'
   }
+  if (action === 'pin' && (error?.code === '42703' || error?.code === 'PGRST204')) {
+    return 'Message pinning is not enabled yet. Apply the chat pin migration in Supabase.'
+  }
   return action === 'load'
     ? 'Could not load gym chat. Check your connection and try again.'
-    : 'Your message could not be sent. Please try again.'
+    : action === 'pin'
+      ? 'Could not update the pinned announcement. Please try again.'
+      : 'Your message could not be sent. Please try again.'
 }
 
-export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: string; userId: string; gymName: string; onClose?: () => void }) {
+export default function GymChat({ gymId, userId, gymName, canManagePins, onClose }: { gymId: string; userId: string; gymName: string; canManagePins: boolean; onClose?: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [loading, setLoading] = useState(true)
@@ -64,6 +70,8 @@ export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: st
   })
   const [pushBusy, setPushBusy] = useState(false)
   const [pushNotice, setPushNotice] = useState('')
+  const [pinningMessageIds, setPinningMessageIds] = useState<Set<string>>(() => new Set())
+  const [pinError, setPinError] = useState('')
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -99,7 +107,7 @@ export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: st
     const client = requireSupabase()
     const loadMessages = async () => {
       const { data, error: loadError } = await client.from('gym_chat_messages')
-        .select('id, gym_id, user_id, sender_name, body, created_at')
+        .select('id, gym_id, user_id, sender_name, body, created_at, is_pinned')
         .eq('gym_id', gymId)
         .order('created_at', { ascending: false })
         .limit(100)
@@ -118,6 +126,11 @@ export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: st
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'gym_chat_messages', filter: `gym_id=eq.${gymId}`,
       }, (payload: RealtimePostgresInsertPayload<ChatMessage>) => {
+        if (active) setMessages(current => mergeMessages(current, [payload.new as ChatMessage]))
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'gym_chat_messages', filter: `gym_id=eq.${gymId}`,
+      }, (payload: RealtimePostgresUpdatePayload<ChatMessage>) => {
         if (active) setMessages(current => mergeMessages(current, [payload.new as ChatMessage]))
       })
       .subscribe(status => {
@@ -150,7 +163,7 @@ export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: st
     setError('')
     const { data, error: sendError } = await requireSupabase().from('gym_chat_messages')
       .insert({ gym_id: gymId, user_id: userId, body })
-      .select('id, gym_id, user_id, sender_name, body, created_at')
+      .select('id, gym_id, user_id, sender_name, body, created_at, is_pinned')
       .single()
     if (sendError || !data) {
       setError(chatErrorMessage(sendError, 'send'))
@@ -163,6 +176,26 @@ export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: st
         })
     }
     setSending(false)
+  }
+
+  async function toggleMessagePin(message: ChatMessage) {
+    if (!canManagePins || pinningMessageIds.has(message.id)) return
+    setPinningMessageIds(current => new Set(current).add(message.id))
+    setPinError('')
+    const { data, error: updateError } = await requireSupabase()
+      .from('gym_chat_messages')
+      .update({ is_pinned: !message.is_pinned })
+      .eq('id', message.id)
+      .eq('gym_id', gymId)
+      .select('id, gym_id, user_id, sender_name, body, created_at, is_pinned')
+      .single()
+    if (updateError || !data) setPinError(chatErrorMessage(updateError, 'pin'))
+    else setMessages(current => mergeMessages(current, [data as ChatMessage]))
+    setPinningMessageIds(current => {
+      const next = new Set(current)
+      next.delete(message.id)
+      return next
+    })
   }
 
   async function togglePushNotifications() {
@@ -235,6 +268,7 @@ export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: st
     unsupported: 'Web push is not supported by this browser.',
     'not-configured': 'Push setup is not complete for this site yet.',
   }
+  const pinnedMessages = messages.filter(message => message.is_pinned)
 
   return <section className="gym-chat surface" aria-label={`Chat for ${gymName}`}>
     <header className="gym-chat-header">
@@ -249,17 +283,37 @@ export default function GymChat({ gymId, userId, gymName, onClose }: { gymId: st
       {(pushStatus === 'off' || pushStatus === 'on') && <button type="button" disabled={pushBusy} onClick={() => void togglePushNotifications()}>{pushBusy ? 'Saving…' : pushStatus === 'on' ? 'Turn off' : 'Enable'}</button>}
     </div>
     {pushNotice && <p className="gym-chat-push-notice" role="status">{pushNotice}</p>}
+    {pinnedMessages.length > 0 && <aside className="gym-chat-pinned" aria-label="Pinned announcements">
+      <div className="gym-chat-pinned-heading"><Pin size={14}/><b>Pinned announcements</b><span>{pinnedMessages.length}</span></div>
+      <ul>{[...pinnedMessages].reverse().map(message => <li key={message.id}>
+        <span>{message.sender_name}</span>
+        <p>{message.body}</p>
+      </li>)}</ul>
+    </aside>}
 
     {connectionError && <div className="gym-chat-reconnect"><span>Live updates are unavailable. Messages can still be sent.</span><button type="button" onClick={() => setRefreshKey(value => value + 1)}><RefreshCw size={14}/> Reconnect</button></div>}
     {error && <p className="gym-chat-error" role="alert">{error}</p>}
+    {pinError && <p className="gym-chat-error" role="alert">{pinError}</p>}
 
     <div className="gym-chat-messages" aria-label="Gym chat messages" aria-live="polite" aria-relevant="additions text">
       {loading ? <div className="gym-chat-empty" role="status">Loading messages…</div> : messages.length === 0 ? <div className="gym-chat-empty"><MessageSquare size={20}/><b>Start the conversation</b><span>Send a message to everyone at {gymName}.</span></div> : messages.map(message => {
         const ownMessage = message.user_id === userId
         return <article key={message.id} className={'gym-chat-message ' + (ownMessage ? 'is-own-message' : '')}>
           {!ownMessage && <b className="gym-chat-sender">{message.sender_name}</b>}
+          {message.is_pinned && <span className="gym-chat-message-pin"><Pin size={11}/> Pinned announcement</span>}
           <p>{message.body}</p>
-          <time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>
+          <div className="gym-chat-message-footer">
+            <time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>
+            {canManagePins && <button
+              type="button"
+              className="gym-chat-pin-button"
+              disabled={pinningMessageIds.has(message.id)}
+              aria-label={message.is_pinned ? `Unpin announcement from ${message.sender_name}` : `Pin announcement from ${message.sender_name}`}
+              aria-pressed={message.is_pinned}
+              title={message.is_pinned ? 'Unpin announcement' : 'Pin announcement'}
+              onClick={() => void toggleMessagePin(message)}
+            >{message.is_pinned ? <PinOff size={14}/> : <Pin size={14}/>}<span className="sr-only">{message.is_pinned ? 'Unpin' : 'Pin'}</span></button>}
+          </div>
         </article>
       })}
       <div ref={endRef}/>
