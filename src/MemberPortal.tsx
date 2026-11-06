@@ -6,6 +6,7 @@ import { getOwnCoachingRecords, getOwnMemberProfile, type CoachingPlan, type Mem
 import { requireSupabase } from './lib/supabase'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
+import GymChat from './GymChat'
 
 type MemberCoaching = {
   diet: Omit<CoachingPlan, 'created_by' | 'created_at'>[]
@@ -100,6 +101,7 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
           <a href="#member-diet">Diet plan</a>
           <a href="#member-workout">Workout plan</a>
           <a href="#member-progress">Progress</a>
+          <a href="#member-chat">Gym chat</a>
         </nav>
 
         {coachingError && <div className="member-portal-notice" role="alert"><span>{coachingError}</span><button type="button" onClick={reload}>Reload</button></div>}
@@ -138,6 +140,10 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
         <section id="member-progress" className="member-portal-section" aria-labelledby="member-progress-title">
           <div className="member-portal-section-heading"><div><p className="member-portal-overline">COACHING</p><h2 id="member-progress-title"><Activity size={20}/> Progress</h2></div><span className="member-portal-section-meta">{coaching.progress.length} {coaching.progress.length === 1 ? 'update' : 'updates'}</span></div>
           {latestProgress ? <div className="member-progress-list">{coaching.progress.map(item => <ProgressEntry key={item.id} item={item} date={date}/>)}</div> : <div className="member-portal-empty"><div className="member-empty-symbol"><Weight size={19}/></div><div><b>No progress updates yet</b><p>Your coach’s updates will appear here when they add them.</p></div></div>}
+        </section>
+
+        <section id="member-chat" className="member-portal-section" aria-label="Gym chat">
+          <GymChat gymId={gym.id} userId={user.id} gymName={gym.name}/>
         </section>
 
         <footer className="member-portal-footer"><span><ShieldCheck size={15}/> You can only view your own membership and coaching records.</span><span>LiftDesk · {gym.name}</span></footer>

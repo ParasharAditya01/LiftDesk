@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { Activity, Bell, CalendarDays, ClipboardCheck, Dumbbell, LayoutDashboard, LoaderCircle, LogOut, Menu, Plus, Search, Users, X } from 'lucide-react'
+import { Activity, Bell, CalendarDays, ClipboardCheck, Dumbbell, LayoutDashboard, LoaderCircle, LogOut, Menu, MessageSquare, Plus, Search, Users, X } from 'lucide-react'
 import { createMember, createMemberInvitation, listAttendance, listFollowUps, listMemberFollowUpSummary, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole, type MemberFollowUpSummary } from './lib/gymData'
 import { requireSupabase } from './lib/supabase'
 import { userFacingError } from './lib/userFacingError'
@@ -9,12 +9,13 @@ import LiftDeskLogo from './LiftDeskLogo'
 import StaffWorkspace from './StaffWorkspace'
 import { useScrollMotion } from './lib/useScrollMotion'
 import CoachingWorkspace from './CoachingWorkspace'
+import GymChat from './GymChat'
 
 type Props = { gym: Gym; role: GymRole; user: User }
-type Section = 'Overview' | 'Members' | 'Coaching' | 'Attendance' | 'Follow-ups' | 'Reports' | 'Staff'
+type Section = 'Overview' | 'Members' | 'Coaching' | 'Attendance' | 'Follow-ups' | 'Chat' | 'Reports' | 'Staff'
 const sections: { name: Section; icon: typeof LayoutDashboard }[] = [
   { name: 'Overview', icon: LayoutDashboard }, { name: 'Members', icon: Users },
-  { name: 'Coaching', icon: Dumbbell }, { name: 'Attendance', icon: ClipboardCheck }, { name: 'Follow-ups', icon: Bell }, { name: 'Reports', icon: CalendarDays }, { name: 'Staff', icon: Users },
+  { name: 'Coaching', icon: Dumbbell }, { name: 'Attendance', icon: ClipboardCheck }, { name: 'Follow-ups', icon: Bell }, { name: 'Chat', icon: MessageSquare }, { name: 'Reports', icon: CalendarDays }, { name: 'Staff', icon: Users },
 ]
 const BUSINESS_TIME_ZONE = 'Asia/Kolkata'
 const indiaDateKey = (value: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(value)
@@ -205,6 +206,7 @@ export default function LiveApp({ gym, role, user }: Props) {
           {section === 'Coaching' && <CoachingWorkspace gym={gym} user={user} members={members} attendance={attendance}/>}
           {section === 'Attendance' && <div className="page-stack" data-motion-reveal><section className="surface manual-attendance-panel"><div className="manual-attendance-mark"><ClipboardCheck size={19}/></div><div className="manual-attendance-copy"><h2>Trainer-recorded check-ins</h2><p>Member self-check-in by QR and WhatsApp code is turned off. A trainer should open Members, find the person, and select <b>Manual check-in</b>. LiftDesk checks the member’s gym, active status and membership expiry before saving attendance.</p></div><button type="button" className="button-primary" onClick={() => setSection('Members')}><Users size={16}/>Open members</button></section><section className="surface directory-panel"><div className="surface-heading attendance-history-heading"><div><h2>Attendance history</h2><p>Latest 30-day records</p></div><span>{attendance.length} check-ins</span></div><RecordsTable attendance={attendance} members={members}/></section></div>}
           {section === 'Follow-ups' && <section className="surface directory-panel" data-motion-reveal><div className="surface-heading"><div><h2>Member attendance tracking</h2><p>Track every gym member by their most recent visit</p></div><span>{filteredFollowUpMembers.length} members</span></div><div className="directory-toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members by name" aria-label="Search follow-up members by name"/></div></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>LAST VISIT</th><th>DAYS AWAY</th></tr></thead><tbody>{filteredFollowUpMembers.map(m => { const days = m.last_visit_at ? daysSinceVisit(m.last_visit_at) : null; return <tr key={m.id}><td><b>{m.full_name}</b></td><td>{m.last_visit_at ? dateLabel(m.last_visit_at) : 'No visit recorded'}</td><td>{days === null ? 'Never visited' : days === 0 ? 'Today' : `${days} ${days === 1 ? 'day' : 'days'}`}</td></tr> })}</tbody></table>{filteredFollowUpMembers.length === 0 && <div className="empty-state" role="status">{followUpMembers.length === 0 ? 'No members in this gym yet.' : 'No members match this search.'}</div>}</div></section>}
+          {section === 'Chat' && <GymChat gymId={gym.id} userId={user.id} gymName={gym.name}/>}
           {section === 'Staff' && (role === 'owner' || role === 'admin') && <StaffWorkspace gymId={gym.id} role={role} />}
           {section === 'Reports' && <div className="page-stack" data-motion-reveal><section className="surface report-surface"><h2>Workspace summary</h2><p>All figures are calculated from records accessible to this gym account.</p><div className="metric-grid metric-grid-two"><Metric label="Total members" value={String(members.length)} detail="All statuses" icon={Users}/><Metric label="Check-ins (30 days)" value={String(attendance.length)} detail="Attendance rows" icon={ClipboardCheck}/><Metric label="Active memberships" value={String(active.length)} detail="Status marked active" icon={Activity}/><Metric label="Open follow-ups" value={String(openFollowUps.length)} detail="Not resolved" icon={Bell}/></div></section></div>}
         </>}
