@@ -13,6 +13,7 @@ import GymChat from './GymChat'
 
 type Props = { gym: Gym; role: GymRole; user: User }
 type Section = 'Overview' | 'Members' | 'Coaching' | 'Attendance' | 'Follow-ups' | 'Chat' | 'Reports' | 'Staff'
+type MemberFilter = 'all' | 'active' | 'paused' | 'inactive' | 'expired'
 const sections: { name: Section; icon: typeof LayoutDashboard }[] = [
   { name: 'Overview', icon: LayoutDashboard }, { name: 'Members', icon: Users },
   { name: 'Coaching', icon: Dumbbell }, { name: 'Attendance', icon: ClipboardCheck }, { name: 'Follow-ups', icon: Bell }, { name: 'Chat', icon: MessageSquare }, { name: 'Reports', icon: CalendarDays }, { name: 'Staff', icon: Users },
@@ -81,6 +82,7 @@ export default function LiveApp({ gym, role, user }: Props) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [query, setQuery] = useState('')
+  const [memberFilter, setMemberFilter] = useState<MemberFilter>('all')
   const [showAdd, setShowAdd] = useState(false)
   const [creatingInvite, setCreatingInvite] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '', plan: 'Monthly', fee: '999', expiry: '' })
@@ -122,9 +124,21 @@ export default function LiveApp({ gym, role, user }: Props) {
     return () => window.removeEventListener('keydown', onDialogKeyDown)
   }, [showAdd])
 
-  const filteredMembers = useMemo(() => members.filter(m => (m.full_name + ' ' + m.phone).toLowerCase().includes(query.toLowerCase())), [members, query])
-  const filteredFollowUpMembers = useMemo(() => followUpMembers.filter(m => m.full_name.toLowerCase().includes(query.trim().toLowerCase())), [followUpMembers, query])
   const today = indiaDateKey(new Date())
+  const memberFilterOptions: { id: MemberFilter; label: string; count: number }[] = [
+    { id: 'all', label: 'All members', count: members.length },
+    { id: 'active', label: 'Active', count: members.filter(m => m.status === 'active').length },
+    { id: 'paused', label: 'Paused', count: members.filter(m => m.status === 'paused').length },
+    { id: 'inactive', label: 'Inactive', count: members.filter(m => m.status === 'inactive').length },
+    { id: 'expired', label: 'Expired', count: members.filter(m => m.membership_expires_on && m.membership_expires_on < today).length },
+  ]
+  const filteredMembers = useMemo(() => members.filter(m => {
+    const matchesSearch = (m.full_name + ' ' + m.phone).toLowerCase().includes(query.trim().toLowerCase())
+    const matchesFilter = memberFilter === 'all'
+      || (memberFilter === 'expired' ? Boolean(m.membership_expires_on && m.membership_expires_on < today) : m.status === memberFilter)
+    return matchesSearch && matchesFilter
+  }), [members, query, memberFilter, today])
+  const filteredFollowUpMembers = useMemo(() => followUpMembers.filter(m => m.full_name.toLowerCase().includes(query.trim().toLowerCase())), [followUpMembers, query])
   const renewalWindowEnd = indiaDateKey(new Date(Date.now() + 7 * 86400000))
   const visitsToday = attendance.filter(a => indiaDateKey(new Date(a.checked_in_at)) === today)
   const active = members.filter(m => m.status === 'active')
@@ -202,7 +216,15 @@ export default function LiveApp({ gym, role, user }: Props) {
             <section className="surface attendance-trend-panel" data-motion-reveal><div className="surface-heading"><div><h2>Attendance activity</h2><p>Daily check-ins across the last 7 days, from your live gym records</p></div><span className="trend-period">LAST 7 DAYS</span></div><AttendanceTrend attendance={attendance}/></section>
             <section className="surface recent-panel" data-motion-reveal><div className="surface-heading"><div><h2>Recent check-ins</h2><p>Latest attendance records from the last 30 days</p></div><button className="subtle-select" onClick={() => setSection('Attendance')}>View attendance ↗</button></div><RecordsTable attendance={attendance.slice(0,8)} members={members}/></section>
           </>}
-          {section === 'Members' && <section className="surface directory-panel" data-motion-reveal><div className="directory-toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members by name or phone" aria-label="Search members"/></div><div className="directory-filters"><span>{filteredMembers.length} records</span></div></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>PLAN</th><th>STATUS</th><th>EXPIRES</th><th>MONTHLY FEE</th><th>ACTION</th></tr></thead><tbody>{filteredMembers.map(m => { const phone = telHref(m.phone); return <tr key={m.id}><td><b>{m.full_name}</b><br/>{phone ? <a href={phone}>{m.phone}</a> : <small>{m.phone}</small>}</td><td>{m.plan_name}</td><td><Status status={m.status}/></td><td>{dateLabel(m.membership_expires_on)}</td><td>{money(Number(m.monthly_fee))}</td><td><button type="button" className="button-small" disabled={saving || m.status !== 'active' || visitsToday.some(v => v.member_id === m.id)} onClick={() => void checkIn(m)}>{visitsToday.some(v => v.member_id === m.id) ? 'Checked in today' : 'Manual check-in'}</button></td></tr> })}</tbody></table>{filteredMembers.length === 0 && <div className="empty-state">No member records found.</div>}</div></section>}
+          {section === 'Members' && <section className="surface directory-panel" data-motion-reveal>
+            <nav className="member-filter-nav" aria-label="Filter members by membership status">
+              {memberFilterOptions.map(option => <button key={option.id} type="button" aria-pressed={memberFilter === option.id} onClick={() => setMemberFilter(option.id)}>
+                <span>{option.label}</span><span className="member-filter-count">{option.count}</span>
+              </button>)}
+            </nav>
+            <div className="directory-toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members by name or phone" aria-label="Search members"/></div><div className="directory-filters"><span>{filteredMembers.length} of {members.length} members</span></div></div>
+            <div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>PLAN</th><th>STATUS</th><th>EXPIRES</th><th>MONTHLY FEE</th><th>ACTION</th></tr></thead><tbody>{filteredMembers.map(m => { const phone = telHref(m.phone); return <tr key={m.id}><td><b>{m.full_name}</b><br/>{phone ? <a href={phone}>{m.phone}</a> : <small>{m.phone}</small>}</td><td>{m.plan_name}</td><td><Status status={m.status}/></td><td>{dateLabel(m.membership_expires_on)}</td><td>{money(Number(m.monthly_fee))}</td><td><button type="button" className="button-small" disabled={saving || m.status !== 'active' || visitsToday.some(v => v.member_id === m.id)} onClick={() => void checkIn(m)}>{visitsToday.some(v => v.member_id === m.id) ? 'Checked in today' : 'Manual check-in'}</button></td></tr> })}</tbody></table>{filteredMembers.length === 0 && <div className="empty-state">No members match this search and filter.</div>}</div>
+          </section>}
           {section === 'Coaching' && <CoachingWorkspace gym={gym} user={user} members={members} attendance={attendance}/>}
           {section === 'Attendance' && <div className="page-stack" data-motion-reveal><section className="surface manual-attendance-panel"><div className="manual-attendance-mark"><ClipboardCheck size={19}/></div><div className="manual-attendance-copy"><h2>Trainer-recorded check-ins</h2><p>Member self-check-in by QR and WhatsApp code is turned off. A trainer should open Members, find the person, and select <b>Manual check-in</b>. LiftDesk checks the member’s gym, active status and membership expiry before saving attendance.</p></div><button type="button" className="button-primary" onClick={() => setSection('Members')}><Users size={16}/>Open members</button></section><section className="surface directory-panel"><div className="surface-heading attendance-history-heading"><div><h2>Attendance history</h2><p>Latest 30-day records</p></div><span>{attendance.length} check-ins</span></div><RecordsTable attendance={attendance} members={members}/></section></div>}
           {section === 'Follow-ups' && <section className="surface directory-panel" data-motion-reveal><div className="surface-heading"><div><h2>Member attendance tracking</h2><p>Track every gym member by their most recent visit</p></div><span>{filteredFollowUpMembers.length} members</span></div><div className="directory-toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members by name" aria-label="Search follow-up members by name"/></div></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>LAST VISIT</th><th>DAYS AWAY</th></tr></thead><tbody>{filteredFollowUpMembers.map(m => { const days = m.last_visit_at ? daysSinceVisit(m.last_visit_at) : null; return <tr key={m.id}><td><b>{m.full_name}</b></td><td>{m.last_visit_at ? dateLabel(m.last_visit_at) : 'No visit recorded'}</td><td>{days === null ? 'Never visited' : days === 0 ? 'Today' : `${days} ${days === 1 ? 'day' : 'days'}`}</td></tr> })}</tbody></table>{filteredFollowUpMembers.length === 0 && <div className="empty-state" role="status">{followUpMembers.length === 0 ? 'No members in this gym yet.' : 'No members match this search.'}</div>}</div></section>}
