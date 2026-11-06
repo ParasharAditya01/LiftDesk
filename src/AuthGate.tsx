@@ -8,7 +8,7 @@ import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 import LiftDeskMark from './LiftDeskMark'
 import { userFacingError } from './lib/userFacingError'
-import { authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation, SIGNUP_NEXT_STEP_MESSAGE } from './lib/authRegistration'
+import { authOAuthRedirectUrl, authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation, SIGNUP_NEXT_STEP_MESSAGE } from './lib/authRegistration'
 
 const LiveApp = lazy(() => import('./LiveApp'))
 const MemberPortal = lazy(() => import('./MemberPortal'))
@@ -29,6 +29,7 @@ export default function AuthGate() {
   const invitationAttempt = useRef('')
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
   const [needsWorkspace, setNeedsWorkspace] = useState(false)
+  const [memberProfileRequired, setMemberProfileRequired] = useState(false)
   const [mode, setMode] = useState<Mode>('signin')
   const [busy, setBusy] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -79,7 +80,7 @@ export default function AuthGate() {
   }, [])
 
   useEffect(() => {
-    if (!session?.user) { setWorkspace(null); setNeedsWorkspace(false); return }
+    if (!session?.user) { setWorkspace(null); setNeedsWorkspace(false); setMemberProfileRequired(false); return }
     let alive = true
     setBusy(true)
     async function loadWorkspace() {
@@ -99,7 +100,8 @@ export default function AuthGate() {
             invitationAttempt.current = key
             const meta = session!.user.user_metadata ?? {}
             if (!meta.member_full_name || !meta.member_phone || !meta.member_whatsapp || !meta.member_age || !meta.member_weight || !meta.member_height) {
-              throw new Error('This invitation must be used to create a new member account. Sign out and open the invitation link again.')
+              if (alive) setMemberProfileRequired(true)
+              return
             }
             await acceptMemberInvitation({
               token: inviteToken,
@@ -180,6 +182,27 @@ export default function AuthGate() {
     finally { authRequestLock.current.release(); setSaving(false) }
   }
 
+  async function signInWithGoogle(invitation: 'staff' | 'member' | 'none') {
+    if (!authRequestLock.current.tryAcquire()) return
+    setError(''); setMessage(''); setSaving(true)
+    try {
+      const redirect = authOAuthRedirectUrl(window.location.origin, import.meta.env.DEV, {
+        inviteToken: invitation === 'member' ? inviteToken : undefined,
+        staffInviteToken: invitation === 'staff' ? staffInviteToken : undefined,
+      })
+      const { error: oauthError } = await requireSupabase().auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirect, queryParams: { prompt: 'select_account' } },
+      })
+      if (oauthError) throw oauthError
+    } catch (err) {
+      logAuthCode('Google sign-in', err)
+      setError(userFacingError(err, 'Could not start Google sign-in. Please try again.'))
+      authRequestLock.current.release()
+      setSaving(false)
+    }
+  }
+
   async function submitMemberSignup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!inviteToken || emailWaitSeconds > 0 || !authRequestLock.current.tryAcquire()) return
@@ -220,6 +243,36 @@ export default function AuthGate() {
       } else throw new Error('Signup did not return an account. Please try again.')
     } catch (err) { setError(userFacingError(err, 'Could not create your member account. Check the details and try again.')) }
     finally { authRequestLock.current.release(); setSaving(false) }
+  }
+
+  async function submitGoogleMemberProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!session?.user || !inviteToken || !authRequestLock.current.tryAcquire()) return
+    setError(''); setSaving(true)
+    try {
+      if (!/^\d{10}$/.test(memberPhone) || !/^\d{10}$/.test(memberWhatsApp)) {
+        throw new Error('Phone and WhatsApp numbers must each contain exactly 10 digits.')
+      }
+      await acceptMemberInvitation({
+        token: inviteToken,
+        fullName: memberFullName.trim(),
+        phone: memberPhone.trim(),
+        whatsappNumber: memberWhatsApp.trim(),
+        age: Number(memberAge),
+        weightKg: Number(memberWeight),
+        heightCm: Number(memberHeight),
+      })
+      window.history.replaceState({}, '', window.location.pathname)
+      setInviteToken('')
+      setMemberProfileRequired(false)
+      const result = await getCurrentGym(session.user)
+      if (!result) throw new Error('Your member profile was created, but the gym workspace could not be loaded. Refresh and try again.')
+      setWorkspace(result); setNeedsWorkspace(false)
+    } catch (err) {
+      setError(userFacingError(err, 'Could not finish your member profile. Check the details and try again.'))
+    } finally {
+      authRequestLock.current.release(); setSaving(false)
+    }
   }
 
   async function resendConfirmation() {
@@ -271,6 +324,10 @@ export default function AuthGate() {
   if (!isSupabaseConfigured) return <div className="auth-screen"><section className="auth-card"><BrandMark /><p className="auth-eyebrow">SETUP REQUIRED</p><h1>Connect your Supabase project</h1><p className="auth-intro">Authentication is disabled until the project URL and browser publishable key are configured.</p><div className="auth-instructions"><b>1.</b><span>Copy <code>.env.example</code> to a local file named <code>.env</code>.</span><b>2.</b><span>Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>.</span><b>3.</b><span>Run the SQL migrations in your Supabase SQL Editor, then restart Vite.</span></div><p className="auth-security"><ShieldCheck size={16} /> Never use a service-role key in browser settings.</p></section></div>
 
   if (!session && staffInviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">LIFTDESK STAFF INVITATION</p><h1>{mode === 'signin' ? 'Sign in to accept your invite.' : 'Create your staff account.'}</h1><p className="auth-intro">Use the email address this invitation was sent to. Your access will be linked to the gym and role assigned by its Owner or Admin.</p>
+    <button className="auth-google" type="button" onClick={() => void signInWithGoogle('staff')} disabled={saving || resendingConfirmation}>
+      <GoogleMark /> {saving ? 'Connecting to Google…' : 'Continue with Google'}
+    </button>
+    <p className="auth-or">or use email and password</p>
     <form className="auth-form" onSubmit={submitAuth}>
       {mode === 'signup' && <label>Your name<input autoComplete="name" required minLength={2} maxLength={120} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>}
       <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Work email address" /></label>
@@ -283,7 +340,11 @@ export default function AuthGate() {
     <p className="auth-security"><ShieldCheck size={16} /> This invitation is single-use, expires after 48 hours, and only works for its invited email.</p>
   </section></div>
 
-  if (!session && inviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Create your member account.</h1><p className="auth-intro">Complete your details to join the gym that invited you. Your profile will be read-only after registration.</p>
+  if (!session && inviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Create your member account.</h1><p className="auth-intro">Continue with Google to avoid email confirmation. After sign-in, you’ll enter your member details. Or create an account using email and password below.</p>
+    <button className="auth-google" type="button" onClick={() => void signInWithGoogle('member')} disabled={saving || resendingConfirmation}>
+      <GoogleMark /> {saving ? 'Connecting to Google…' : 'Continue with Google'}
+    </button>
+    <p className="auth-or">or use email and password</p>
     <form className="auth-form" onSubmit={submitMemberSignup}>
       <label>Full name<input autoComplete="name" required minLength={2} maxLength={120} value={memberFullName} onChange={e => setMemberFullName(e.target.value)} placeholder="Your full name" /></label>
       <label>Phone number<input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberPhone} onChange={e => setMemberPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit mobile number" /></label>
@@ -334,10 +395,30 @@ export default function AuthGate() {
         {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
         <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || (mode === 'signup' && emailWaitSeconds > 0)}>{saving ? 'Please wait…' : mode === 'signup' && emailWaitSeconds > 0 ? `Please wait ${emailWaitSeconds}s…` : mode === 'signin' ? 'Sign in' : 'Create account'} <ArrowRight size={16} /></button>
       </form>
+      {mode === 'signin' && <>
+        <p className="auth-or">or</p>
+        <button className="auth-google" type="button" onClick={() => void signInWithGoogle('none')} disabled={saving || resendingConfirmation}>
+          <GoogleMark /> {saving ? 'Connecting to Google…' : 'Continue with Google'}
+        </button>
+      </>}
       <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
       <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
     </section><p className="auth-main-foot">LiftDesk <span>·</span> Gym operations, made clearer</p></main>
   </div>
+
+  if (session && inviteToken && memberProfileRequired && !workspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Complete your member profile.</h1><p className="auth-intro">Your Google account is signed in. Add these details to join the gym that invited you.</p>
+    <form className="auth-form" onSubmit={submitGoogleMemberProfile}>
+      <label>Google account<input type="email" value={session.user.email ?? ''} readOnly /></label>
+      <label>Full name<input autoComplete="name" required minLength={2} maxLength={120} value={memberFullName} onChange={e => setMemberFullName(e.target.value)} placeholder="Your full name" /></label>
+      <label>Phone number<input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberPhone} onChange={e => setMemberPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit mobile number" /></label>
+      <label>WhatsApp number<input type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberWhatsApp} onChange={e => setMemberWhatsApp(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit WhatsApp number" /></label>
+      <div className="form-two"><label>Age<input type="number" required min="13" max="120" value={memberAge} onChange={e => setMemberAge(e.target.value)} /></label><label>Weight (kg)<input type="number" required min="20" max="500" step="0.1" value={memberWeight} onChange={e => setMemberWeight(e.target.value)} /></label></div>
+      <label>Height (cm)<input type="number" required min="80" max="260" step="0.1" value={memberHeight} onChange={e => setMemberHeight(e.target.value)} /></label>
+      {error && <p className="auth-error" role="alert">{error}</p>}
+      <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Joining gym…' : 'Complete member setup'} <ArrowRight size={16} /></button>
+    </form>
+    <button className="auth-signout" type="button" onClick={() => void requireSupabase().auth.signOut()}>Sign out</button>
+  </section></div>
 
   if (needsWorkspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">FIRST-TIME SETUP</p><h1>Set up your gym.</h1><p className="auth-intro">This creates a private workspace and assigns your account the owner role.</p>
     <form className="auth-form" onSubmit={submitWorkspace}>
@@ -359,4 +440,13 @@ export default function AuthGate() {
 
 function BrandMark() {
   return <div className="auth-brand"><LiftDeskMark size={38} /><b>Lift<span>Desk</span></b></div>
+}
+
+function GoogleMark() {
+  return <svg aria-hidden="true" viewBox="0 0 48 48" width="18" height="18">
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" transform="translate(0 4)"/>
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.88c-.58 2.96-2.26 5.48-4.73 7.18l7.65 5.93c4.47-4.13 7.18-10.21 7.18-17.58Z" transform="translate(0 1)"/>
+    <path fill="#FBBC05" d="M10.53 28.59a14.4 14.4 0 0 1-.75-4.59c0-1.59.27-3.13.75-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.88.93 7.55 2.56 10.78l7.97-6.19Z" transform="translate(1 0)"/>
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.78l-7.65-5.93c-2.13 1.43-4.85 2.27-8.25 2.27-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" transform="translate(0 -2)"/>
+  </svg>
 }

@@ -21,6 +21,18 @@ export function authRedirectUrl(origin: string, isDevelopment = false, redirectT
   return target.toString()
 }
 
+/** Build a safe OAuth return URL while preserving a one-time app invitation. */
+export function authOAuthRedirectUrl(
+  origin: string,
+  isDevelopment = false,
+  invitation?: { inviteToken?: string; staffInviteToken?: string },
+): string {
+  const redirect = new URL('/', origin)
+  if (invitation?.inviteToken) redirect.searchParams.set('invite', invitation.inviteToken)
+  if (invitation?.staffInviteToken) redirect.searchParams.set('staff_invite', invitation.staffInviteToken)
+  return authRedirectUrl(origin, isDevelopment, redirect.toString())
+}
+
 /** Synchronous lock to prevent rapid duplicate auth calls before React rerenders. */
 export function createRequestLock() {
   let locked = false

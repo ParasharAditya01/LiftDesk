@@ -21,6 +21,15 @@ export function userFacingError(value: unknown, fallback: string): string {
   if (/invitation request limit reached/.test(message)) {
     return 'You have reached the hourly invitation limit. Wait before creating more invitations.'
   }
+  if (/sign in with the email address this invitation was sent to/.test(message)) {
+    return 'This Google account does not match the email on the staff invitation. Use the invited account or ask the gym Owner to create a new invitation.'
+  }
+  if (/this invitation has expired or has already been used|this invitation link is invalid/.test(message)) {
+    return 'This invitation link is invalid, expired, or already used. Ask the gym Owner or Admin for a new invitation.'
+  }
+  if (/this account already belongs to a gym/.test(message)) {
+    return 'This account is already linked to a gym and cannot accept another gym invitation.'
+  }
   if (error?.name === 'AuthRetryableFetchError' || /network|fetch|failed to connect|load failed/.test(message)) {
     return 'A network error interrupted the request. Check your connection and try again.'
   }
@@ -34,6 +43,7 @@ export function userFacingError(value: unknown, fallback: string): string {
   if (code === 'email_address_not_authorized') return 'This project is not configured to send email to that address. The owner must configure email delivery in Supabase.'
   if (code === 'email_address_invalid' || code === 'validation_failed') return 'Check that the email address is valid, then try again.'
   if (code === 'user_already_exists') return 'An account already exists for that email. Try signing in instead.'
+  if (code === 'provider_disabled') return 'Google sign-in is not configured for this LiftDesk project yet. The project Owner must enable Google under Supabase Authentication providers.'
   if (code === 'weak_password') return 'Choose a stronger password and try again.'
   return fallback
 }
