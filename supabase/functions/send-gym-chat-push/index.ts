@@ -34,7 +34,9 @@ const respond = (body: Record<string, unknown>, status: number) => Response.json
 const authenticatedHandler = withSupabase({ auth: 'user' }, async (request, context) => {
   if (request.method !== 'POST') return respond({ error: 'Method not allowed.' }, 405)
 
-  const userId = context.userClaims?.sub
+  // @supabase/server normalizes the authenticated user's subject to `id`.
+  // The raw JWT uses `sub`, but that field is not present on userClaims.
+  const userId = context.userClaims?.id
   if (!userId) return respond({ error: 'Sign in to send notifications.' }, 401)
 
   let messageId: unknown
