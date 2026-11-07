@@ -1,12 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { MessageSquare, X } from 'lucide-react'
 import GymChat from './GymChat'
+import { ensureRegisteredChatDevice } from './lib/gymChatEncryption'
 
 type Props = { gymId: string; userId: string; gymName: string; canManagePins: boolean }
 
 export default function FloatingGymChat({ gymId, userId, gymName, canManagePins }: Props) {
   const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).get('open_chat') === '1')
   const launcherRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    void ensureRegisteredChatDevice(gymId, userId).catch(error => {
+      console.error('Gym chat device setup is unavailable:', error)
+    })
+  }, [gymId, userId])
 
   useEffect(() => {
     const url = new URL(window.location.href)

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { MessageSquare, Pin, PinOff, RefreshCw, Send, X } from 'lucide-react'
+import { LockKeyhole, MessageSquare, Pin, PinOff, RefreshCw, Send, X } from 'lucide-react'
 import type { RealtimePostgresInsertPayload, RealtimePostgresUpdatePayload } from '@supabase/supabase-js'
 import { requireSupabase } from './lib/supabase'
+import { decryptChatMessage, encryptChatMessage, ensureRegisteredChatDevice, type ChatDeviceKeys, type ChatEncryptionDevice, type ChatMessageEncryptionStatus } from './lib/gymChatEncryption'
 
 type ChatMessage = {
   id: string
@@ -11,7 +12,11 @@ type ChatMessage = {
   body: string
   created_at: string
   is_pinned: boolean
+  encryptionStatus: ChatMessageEncryptionStatus
 }
+
+type StoredChatMessage = Omit<ChatMessage, 'body' | 'encryptionStatus'> & { body: string }
+type OwnChatDevice = { id: string; created_at: string }
 
 type PushStatus = 'checking' | 'off' | 'on' | 'blocked' | 'unsupported' | 'not-configured'
 const vapidPublicKey = import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY?.trim()
@@ -43,6 +48,11 @@ function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
     .slice(-100)
 }
 
+async function decryptMessageRecord(message: StoredChatMessage, device: ChatDeviceKeys): Promise<ChatMessage> {
+  const decrypted = await decryptChatMessage(message.body, message.gym_id, device)
+  return { ...message, ...decrypted }
+}
+
 function timeLabel(value: string) {
   return new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit' }).format(new Date(value))
 }
@@ -50,6 +60,9 @@ function timeLabel(value: string) {
 function chatErrorMessage(error: { code?: string } | null, action: 'load' | 'send' | 'pin') {
   if (error?.code === '42P01' || error?.code === 'PGRST205') {
     return 'Gym chat is not enabled yet. Apply the gym chat migration in Supabase to turn it on.'
+  }
+  if (action === 'send' && error?.code === '42501') {
+    return 'Refresh LiftDesk to send messages securely. The chat has been updated with end-to-end encryption.'
   }
   if (action === 'pin' && (error?.code === '42703' || error?.code === 'PGRST204')) {
     return 'Message pinning is not enabled yet. Apply the chat pin migration in Supabase.'
@@ -80,7 +93,36 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
   const [pushNotice, setPushNotice] = useState('')
   const [pinningMessageIds, setPinningMessageIds] = useState<Set<string>>(() => new Set())
   const [pinError, setPinError] = useState('')
+  const [deviceKeys, setDeviceKeys] = useState<ChatDeviceKeys | null>(null)
+  const [ownDevices, setOwnDevices] = useState<OwnChatDevice[]>([])
+  const [deviceNotice, setDeviceNotice] = useState('')
+  const [revokingDeviceId, setRevokingDeviceId] = useState('')
   const endRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let active = true
+    setDeviceKeys(null)
+    setLoading(true)
+    setError('')
+    void (async () => {
+      const keys = await ensureRegisteredChatDevice(gymId, userId)
+      if (!active) return
+      setDeviceKeys(keys)
+      const { data: ownedDevices } = await requireSupabase().from('gym_chat_devices')
+        .select('id, created_at')
+        .eq('gym_id', gymId)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true })
+      if (active) setOwnDevices((ownedDevices ?? []) as OwnChatDevice[])
+    })().catch(error => {
+      console.error('Gym chat encryption setup failed:', error)
+      if (active) {
+        setError('Encrypted chat could not be set up on this device. Refresh the page or use a supported browser.')
+        setLoading(false)
+      }
+    })
+    return () => { active = false }
+  }, [gymId, userId])
 
   useEffect(() => {
     if (pushStatus !== 'checking') return
@@ -111,6 +153,7 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
   }, [pushStatus, gymId, userId])
 
   useEffect(() => {
+    if (!deviceKeys) return
     let active = true
     const client = requireSupabase()
     const loadMessages = async () => {
@@ -140,7 +183,8 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
           ...((recentResult.data ?? []) as ChatMessage[]),
           ...((pinnedResult.data ?? []) as ChatMessage[]),
         ]
-        setMessages(current => mergeMessages(current, loaded))
+        const decrypted = await Promise.all(loaded.map(message => decryptMessageRecord(message as StoredChatMessage, deviceKeys)))
+        if (active) setMessages(current => mergeMessages(current, decrypted))
       }
       setLoading(false)
     }
@@ -150,12 +194,16 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'gym_chat_messages', filter: `gym_id=eq.${gymId}`,
       }, (payload: RealtimePostgresInsertPayload<ChatMessage>) => {
-        if (active) setMessages(current => mergeMessages(current, [payload.new as ChatMessage]))
+        void decryptMessageRecord(payload.new as StoredChatMessage, deviceKeys).then(message => {
+          if (active) setMessages(current => mergeMessages(current, [message]))
+        })
       })
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'gym_chat_messages', filter: `gym_id=eq.${gymId}`,
       }, (payload: RealtimePostgresUpdatePayload<ChatMessage>) => {
-        if (active) setMessages(current => mergeMessages(current, [payload.new as ChatMessage]))
+        void decryptMessageRecord(payload.new as StoredChatMessage, deviceKeys).then(message => {
+          if (active) setMessages(current => mergeMessages(current, [message]))
+        })
       })
       .subscribe(status => {
         if (!active) return
@@ -172,7 +220,7 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
       active = false
       void client.removeChannel(channel)
     }
-  }, [gymId, refreshKey])
+  }, [deviceKeys, gymId, refreshKey])
 
   useEffect(() => {
     const nextExpiry = messages.reduce<number | null>((earliest, message) => {
@@ -195,24 +243,50 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const body = draft.trim()
-    if (!body || sending) return
+    if (!body || sending || !deviceKeys) return
     setSending(true)
     setError('')
-    const { data, error: sendError } = await requireSupabase().from('gym_chat_messages')
-      .insert({ gym_id: gymId, user_id: userId, body })
-      .select('id, gym_id, user_id, sender_name, body, created_at, is_pinned')
-      .single()
-    if (sendError || !data) {
-      setError(chatErrorMessage(sendError, 'send'))
-    } else {
-      setMessages(current => mergeMessages(current, [data as ChatMessage]))
-      setDraft('')
-      void requireSupabase().functions.invoke('send-gym-chat-push', { body: { messageId: data.id } })
-        .then(({ error: pushError }) => {
-          if (pushError) console.warn('Gym chat push could not be requested. The message was still sent.')
-        })
+    try {
+      const client = requireSupabase()
+      const { data: devices, error: devicesError } = await client.from('gym_chat_devices')
+        .select('id, public_key')
+        .eq('gym_id', gymId)
+      if (devicesError || !devices) {
+        setError('Could not prepare secure delivery for this message. Please try again.')
+        return
+      }
+      if (!(devices as ChatEncryptionDevice[]).some(device => device.id === deviceKeys.id)) {
+        throw new Error('This device is not registered for gym chat encryption yet. Refresh the page and try again.')
+      }
+      const encryptedBody = await encryptChatMessage(body, gymId, devices as ChatEncryptionDevice[])
+      const { data, error: sendError } = await client.from('gym_chat_messages')
+        .insert({ gym_id: gymId, user_id: userId, body: encryptedBody })
+        .select('id, gym_id, user_id, sender_name, body, created_at, is_pinned')
+        .single()
+      if (sendError || !data) {
+        setError(chatErrorMessage(sendError, 'send'))
+      } else {
+        const message = await decryptMessageRecord(data as StoredChatMessage, deviceKeys)
+        setMessages(current => mergeMessages(current, [message]))
+        setDraft('')
+        void client.functions.invoke('send-gym-chat-push', { body: { messageId: data.id } })
+          .then(({ error: pushError }) => {
+            if (pushError) console.warn('Gym chat push could not be requested. The message was still sent.')
+          })
+      }
+    } catch (sendFailure) {
+      console.error('Encrypted gym chat message could not be sent:', sendFailure)
+      const safeEncryptionErrors = [
+        'No active gym chat devices are registered yet. Refresh chat and try again.',
+        'This gym has too many registered chat devices for one encrypted message. Ask LiftDesk support for help.',
+        'This device is not registered for gym chat encryption yet. Refresh the page and try again.',
+      ]
+      setError(sendFailure instanceof Error && safeEncryptionErrors.includes(sendFailure.message)
+        ? sendFailure.message
+        : 'Could not securely encrypt this message. Please try again.')
+    } finally {
+      setSending(false)
     }
-    setSending(false)
   }
 
   async function toggleMessagePin(message: ChatMessage) {
@@ -227,12 +301,33 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
       .select('id, gym_id, user_id, sender_name, body, created_at, is_pinned')
       .single()
     if (updateError || !data) setPinError(chatErrorMessage(updateError, 'pin'))
-    else setMessages(current => mergeMessages(current, [data as ChatMessage]))
+    else if (deviceKeys) {
+      const decrypted = await decryptMessageRecord(data as StoredChatMessage, deviceKeys)
+      setMessages(current => mergeMessages(current, [decrypted]))
+    }
     setPinningMessageIds(current => {
       const next = new Set(current)
       next.delete(message.id)
       return next
     })
+  }
+
+  async function revokeChatDevice(deviceId: string) {
+    if (!deviceKeys || deviceId === deviceKeys.id || revokingDeviceId) return
+    if (!window.confirm('Revoke this device from future gym chat messages? Messages it already received cannot be recalled.')) return
+    setRevokingDeviceId(deviceId)
+    setDeviceNotice('')
+    const { error: revokeError } = await requireSupabase().from('gym_chat_devices')
+      .delete()
+      .eq('id', deviceId)
+      .eq('gym_id', gymId)
+      .eq('user_id', userId)
+    if (revokeError) setDeviceNotice('Could not revoke this device. Please try again.')
+    else {
+      setOwnDevices(current => current.filter(device => device.id !== deviceId))
+      setDeviceNotice('Device revoked. It will not be included in future encrypted messages.')
+    }
+    setRevokingDeviceId('')
   }
 
   async function togglePushNotifications() {
@@ -320,10 +415,21 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
       {(pushStatus === 'off' || pushStatus === 'on') && <button type="button" disabled={pushBusy} onClick={() => void togglePushNotifications()}>{pushBusy ? 'Saving…' : pushStatus === 'on' ? 'Turn off' : 'Enable'}</button>}
     </div>
     {pushNotice && <p className="gym-chat-push-notice" role="status">{pushNotice}</p>}
+    {deviceKeys && <p className="gym-chat-encryption-note"><LockKeyhole size={13}/> New messages are end-to-end encrypted. This device can read messages sent after it was registered. Older messages are marked if they predate encryption.</p>}
+    {deviceKeys && <details className="gym-chat-devices">
+      <summary>Your encrypted devices ({ownDevices.length})</summary>
+      <ul>{ownDevices.map(device => <li key={device.id}>
+        <span><b>{device.id === deviceKeys.id ? 'This device' : `Device · ${device.id.slice(-6)}`}</b><small>Added {new Date(device.created_at).toLocaleDateString('en-IN')}</small></span>
+        {device.id !== deviceKeys.id && <button type="button" disabled={!!revokingDeviceId} onClick={() => void revokeChatDevice(device.id)}>{revokingDeviceId === device.id ? 'Revoking…' : 'Revoke'}</button>}
+      </li>)}</ul>
+      <p>Revoking prevents future messages from being encrypted for that device. It cannot erase messages the device already received. These keys are stored in this browser; clearing browser data can make older encrypted messages unreadable here.</p>
+      {deviceNotice && <p role="status">{deviceNotice}</p>}
+    </details>}
     {pinnedMessages.length > 0 && <aside className="gym-chat-pinned" aria-label="Pinned announcements">
       <div className="gym-chat-pinned-heading"><Pin size={14}/><b>Pinned announcements</b><span>{pinnedMessages.length}</span></div>
       <ul>{[...pinnedMessages].reverse().map(message => <li key={message.id}>
         <span>{message.sender_name}</span>
+        {message.encryptionStatus !== 'encrypted' && <small>{message.encryptionStatus === 'legacy' ? 'Older message, not end-to-end encrypted' : 'Not available on this device'}</small>}
         <p>{message.body}</p>
       </li>)}</ul>
     </aside>}
@@ -338,6 +444,7 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
         return <article key={message.id} className={'gym-chat-message ' + (ownMessage ? 'is-own-message' : '')}>
           {!ownMessage && <b className="gym-chat-sender">{message.sender_name}</b>}
           {message.is_pinned && <span className="gym-chat-message-pin"><Pin size={11}/> Pinned announcement</span>}
+          {message.encryptionStatus !== 'encrypted' && <span className="gym-chat-encryption-status">{message.encryptionStatus === 'legacy' ? 'Older message · not encrypted' : 'Not available on this device'}</span>}
           <p>{message.body}</p>
           <div className="gym-chat-message-footer">
             <time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>
@@ -358,10 +465,10 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
 
     <form className="gym-chat-composer" onSubmit={sendMessage}>
       <label className="sr-only" htmlFor="gym-chat-message">Message for everyone in {gymName}</label>
-      <textarea id="gym-chat-message" value={draft} maxLength={2000} rows={2} placeholder="Write a message…" onChange={event => setDraft(event.target.value)} onKeyDown={event => {
+      <textarea id="gym-chat-message" value={draft} maxLength={2000} rows={2} disabled={!deviceKeys} placeholder={deviceKeys ? 'Write an encrypted message…' : 'Setting up encrypted chat…'} onChange={event => setDraft(event.target.value)} onKeyDown={event => {
         if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit() }
       }}/>
-      <div className="gym-chat-composer-actions"><span>{draft.length}/2000 · Enter to send</span><button type="submit" className="button-primary" disabled={!draft.trim() || sending} aria-label="Send message">{sending ? 'Sending…' : <><Send size={15}/> Send</>}</button></div>
+      <div className="gym-chat-composer-actions"><span>{draft.length}/2000 · Enter to send</span><button type="submit" className="button-primary" disabled={!deviceKeys || !draft.trim() || sending} aria-label="Send message">{sending ? 'Sending…' : <><Send size={15}/> Send</>}</button></div>
     </form>
   </section>
 }

@@ -1703,6 +1703,18 @@ svg {
 .gym-chat-notification-control button:hover{background:var(--theme-canvas,#f4f1e9)}
 .gym-chat-notification-control button:focus-visible{outline:2px solid var(--theme-accent,#a7ce56);outline-offset:2px}
 .gym-chat-push-notice{margin:0;padding:8px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#73756f);font-size:10px;line-height:1.4}
+.gym-chat-encryption-note{display:flex;align-items:center;gap:7px;margin:0;padding:8px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#73756f);font-size:10px;line-height:1.45}
+.gym-chat-encryption-note svg{flex:0 0 auto;color:var(--theme-accent-ink,#52682c)}
+.gym-chat-encryption-status{display:inline-flex;align-self:flex-start;margin:2px 0;color:var(--theme-muted,#73756f);font-size:9px;font-weight:650}
+.gym-chat-pinned li small{color:var(--theme-muted,#73756f);font-size:9px}
+.gym-chat-devices{padding:8px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#73756f);font-size:10px}
+.gym-chat-devices summary{width:max-content;max-width:100%;cursor:pointer;font-weight:650}
+.gym-chat-devices ul{display:grid;gap:6px;margin:8px 0;padding:0;list-style:none}
+.gym-chat-devices li{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.gym-chat-devices li span{display:grid;gap:2px;min-width:0}
+.gym-chat-devices li small,.gym-chat-devices>p{color:var(--theme-muted,#73756f);font-size:9px;line-height:1.45}
+.gym-chat-devices li button{padding:4px 8px;border:1px solid var(--theme-line,#e4e3dc);border-radius:6px;background:var(--theme-surface,#fff);color:var(--theme-ink,#202124);font-size:10px;cursor:pointer}
+.gym-chat-devices li button:focus-visible,.gym-chat-devices summary:focus-visible{outline:2px solid var(--theme-accent,#a7ce56);outline-offset:2px}
 .gym-chat-pinned{display:grid;gap:7px;max-height:150px;overflow:auto;padding:10px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);background:color-mix(in srgb,var(--theme-accent,#c5f36b) 10%,var(--theme-surface,#fff))}
 .gym-chat-pinned-heading{display:flex;align-items:center;gap:7px;color:var(--theme-ink,#202124);font-size:11px}
 .gym-chat-pinned-heading svg{color:var(--theme-muted,#73756f)}
