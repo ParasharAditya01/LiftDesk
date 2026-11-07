@@ -6,8 +6,11 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 
 - Member management and membership expiry tracking.
 - Trainer-recorded attendance with gym-scoped authorization.
-- Inactivity and renewal follow-ups.
+- Attendance-based follow-up tracking, including time since each member's last visit and saved follow-up records.
 - Basic attendance and membership reports.
+- Trainer coaching workspace for member-specific plans, progress and notes.
+- A restricted member portal for a member's own profile, published plans and permitted progress records.
+- Gym-scoped staff workspace and invitations, plus gym chat with optional web push notifications.
 - Multi-gym architecture with gym-level isolation enforced by PostgreSQL Row Level Security (RLS).
 
 ## Roles
@@ -15,7 +18,7 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 - **Owner**: owns and controls their own gym workspace.
 - **Admin**: existing operational administrator role; permissions remain as currently enforced.
 - **Trainer**: the active role for trainer-assisted attendance and permitted gym operations. The former `staff` enum value is renamed to `trainer` by migration `0007`; existing memberships are preserved.
-- **Member**: role value is reserved in the schema, but member-facing access is intentionally blocked until its permissions are explicitly defined. A member role must not inherit trainer access or expose other members' records.
+- **Member**: has a restricted member portal for their own profile, published coaching plans and permitted progress records. Members do not receive staff workspace permissions or access to other members' records.
 
 Existing `staff` memberships are migrated in place to `trainer`; user accounts and gym membership rows are preserved.
 
@@ -27,7 +30,7 @@ Existing `staff` memberships are migrated in place to `trainer`; user accounts a
 
 ## Current rebuild status
 
-The current branch contains sign-in, gym workspace setup, member records, manual check-in, attendance history, saved follow-up display and basic counts. `/preview` is a separate sample-data walkthrough and is **not connected to a database**. The current production deployment must be checked separately; source code on this branch does not prove what is live.
+The current branch includes sign-in and owner access requests, gym workspaces, member and staff management, member invitations and the member portal, trainer coaching tools, manual check-in and attendance history, attendance-based follow-up tracking, basic live workspace reports, and gym chat. `/preview` is a separate sample-data walkthrough and is **not connected to a database**. The current production deployment must be checked separately; source code on this branch does not prove what is live.
 
 Member QR/WhatsApp OTP check-in has been removed from the interface. Trainers record attendance from the Members screen with the Manual check-in action. Migration `0006_disable_phone_otp_checkin.sql` revokes and removes the old phone-OTP RPC; its production application status must be verified separately. Local source changes are not automatically live.
 
@@ -65,11 +68,17 @@ Member QR/WhatsApp OTP check-in has been removed from the interface. Trainers re
 
 ## Not yet implemented or verified
 
-Automated inactivity/renewal reminder creation, richer live reports, billing, and audit logs are not complete. Preview CSV export contains sample data only. Do not claim that the OTP RPC is removed from production until migration `0006_disable_phone_otp_checkin.sql` has been verified there.
+- **Automated reminders:** Follow-ups reports each member's most recent attendance and days away, and the app can store follow-up records. It does not automatically send inactivity or renewal reminders to members.
+- **Advanced reports:** Live reports currently show basic workspace counts. Trend analysis, configurable reporting periods and live-data CSV export are not implemented. The `/preview` CSV export uses sample records only.
+- **Billing:** Gym subscription and payment processing are not implemented.
+- **Audit history:** Staff role and active-status changes have an append-only access audit. Staff attendance corrections retain updater and timestamp fields. A comprehensive audit trail for all important changes across the app is not implemented.
+- **Production database verification:** The repository includes migration `0006_disable_phone_otp_checkin.sql`, which revokes the old phone-OTP check-in RPC when applied. Its presence in this branch does not prove it has been applied to the production Supabase database. Verify the production database before saying that RPC is removed there.
+
+These limitations describe the current `liftdesk-rebuild` source. They do not by themselves establish which features or migrations are present in the live production deployment.
 
 ## Routes, indexing and static assets
 
-- `/` is the owner sign-in and workspace setup application.
+- `/` is the sign-in and workspace entry point. Gym owners submit an access request before receiving an owner workspace; approved members and staff enter their role-specific workspace after sign-in.
 - `/preview` is a sample-data walkthrough, not a customer-facing marketing page and never writes to Supabase.
 - Both application routes are marked `noindex, nofollow`; `robots.txt` disallows crawling because this repository currently has no public, indexable product pages. No sitemap is published until such pages exist.
 - Cloudflare Pages serves the top-level `404.html` for unmatched file routes; the React router also renders a branded 404 view if an unknown path reaches the app shell.
