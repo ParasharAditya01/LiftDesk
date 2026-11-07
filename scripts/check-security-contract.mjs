@@ -346,7 +346,7 @@ requireText(staffDataClient, "rpc('update_gym_staff_directory'", 'The frontend m
 
 // Invitation RPCs receive simple per-user bounds with transaction locks so
 // concurrent requests cannot bypass the limits.
-const invitationRateLimit = compact(read('supabase/migrations/0017_invitation_rate_limits.sql'))
+const invitationRateLimit = compact(read('supabase/migrations/20261107145002_invitation_rate_limits.sql'))
 for (const name of ['create_member_invitation', 'create_gym_staff_invitation']) {
   const fn = requireFunction(name, invitationRateLimit)[0]
   if (!fn?.body.includes('pg_advisory_xact_lock') || !fn.body.includes('created_by = requesting_user') ||
@@ -358,6 +358,18 @@ requireText(invitationRateLimit, 'if recent_count >= 20 then', 'Member invitatio
 requireText(invitationRateLimit, 'if recent_count >= 10 then', 'Staff invitation RPC must cap creations at 10 per hour')
 requireText(invitationRateLimit, 'revoke all on function public.create_member_invitation(uuid) from public, anon', 'Rate-limited member invitation RPC must stay private')
 requireText(invitationRateLimit, 'revoke all on function public.create_gym_staff_invitation(uuid) from public, anon', 'Rate-limited staff invitation RPC must stay private')
+
+const ownerCityMigration = compact(read('supabase/migrations/20261107145008_require_owner_city.sql'))
+const ownerRequestFunction = requireFunction('request_owner_workspace', ownerCityMigration)[0]
+if (ownerRequestFunction && (!ownerRequestFunction.body.includes('char_length(trim(coalesce(gym_city') ||
+    !ownerRequestFunction.body.includes('enter a city name between 2 and 100 characters'))) {
+  fail('Owner workspace requests must validate a nonblank city on the database side')
+}
+
+const memberStaffEmailMigration = compact(read('supabase/migrations/20261107145021_require_member_staff_email.sql'))
+requireText(memberStaffEmailMigration, 'create trigger members_require_email before insert or update of email on public.members', 'New member records must require a valid email at the database boundary')
+requireText(memberStaffEmailMigration, 'create trigger gym_staff_require_email before insert or update of email on public.gym_staff', 'New staff records must require a valid email at the database boundary')
+requireText(memberStaffEmailMigration, "normalized_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'", 'Member and staff emails must be syntactically validated')
 
 // LiftDesk platform administrators can see aggregate gym health/counts only.
 const platformDirectory = compact(read('supabase/migrations/20261107122256_platform_admin_gym_directory.sql'))

@@ -1,6 +1,6 @@
 # LiftDesk 27-point security checklist
 
-Reviewed against the repository on 5 November 2026. A source check or a migration
+Reviewed against the repository and live Supabase/Cloudflare configuration on 7 November 2026. A source check or a migration
 file does not prove that production has that setting or migration. The statuses
 below distinguish code evidence from controls that need account access.
 
@@ -10,7 +10,7 @@ below distinguish code evidence from controls that need account access.
 |---|---|---|---|
 | 1 | Proper authentication | PASS (code) | Supabase Auth password signup/sign-in and confirmed-email invitation acceptance are used. Live provider configuration still needs dashboard verification. |
 | 2 | API key protection | PASS (code) | Browser client accepts only the Supabase publishable/anon key; no service-role key is referenced. Keep real environment files out of Git. |
-| 3 | Database access restrictions | NEEDS LIVE TEST | RLS and role-scoped RPCs exist in migrations. Apply all migrations through `0017`, then run the two-gym test below with test accounts. |
+| 3 | Database access restrictions | PARTIAL (live metadata verified) | Live sensitive tables have RLS enabled and direct anonymous `SELECT` is not granted. Tenant isolation still needs a fixture-backed two-gym test; the current production project does not have isolated test credentials. |
 | 4 | HTTPS | PASS (deployment configuration) | Cloudflare Pages serves the production host over HTTPS; HTTP redirects to HTTPS. HSTS is now configured in `_headers` and must be verified after deployment. |
 | 5 | Password hashing | PASS (provider) | Supabase Auth owns password storage and hashing; LiftDesk does not store passwords. Confirm the Auth provider remains Supabase. |
 | 6 | Server-side input validation | PASS (code, scoped) | Authorization-checking RPCs and database constraints validate sensitive writes. Keep equivalent validation in new RPCs and migrations. |
@@ -19,9 +19,9 @@ below distinguish code evidence from controls that need account access.
 | 9 | Privileged access | PASS (code) | Gym role checks, RLS, invitation linking, and staff access synchronization protect privileged operations. Live role-boundary tests remain required. |
 | 10 | SQL injection | PASS (source review) | App queries use Supabase's parameterized client and SQL RPCs use fixed SQL; dynamic SQL was not found. Static contract check covers sensitive RPCs. |
 | 11 | Environment variables | PASS (repository) | `.env`/`.env.local` are ignored, `.env.example` contains placeholders, and privileged keys are explicitly forbidden in browser variables. Verify Cloudflare variables in its dashboard. |
-| 12 | Rate limiting | PARTIAL | Supabase Auth/provider limits are external. New database-side limits cap member invitations at 20/hour and staff invitations at 10/hour per authenticated account; migration `0017` must be applied. Configure provider limits for Auth and edge/API endpoints in dashboards. |
-| 13 | CORS | PASS (static-site configuration; deploy check pending) | `_headers` restricts static-site CORS to `https://liftdesk.pages.dev`. Supabase Auth/API CORS is configured separately and must include the intended app origins only. |
-| 14 | Security headers | PASS (configuration; deploy check pending) | CSP, frame denial, MIME sniffing protection, referrer and permissions policies are configured. HSTS was added; verify response headers on the live site after deployment. |
+| 12 | Rate limiting | PARTIAL | Production now enforces per-account limits of 20 member invitations/hour and 10 staff invitations/hour. Supabase Auth/provider limits remain external; review Auth and edge/API limits in the provider dashboards. |
+| 13 | CORS | PASS (live response checked) | Production returns `Access-Control-Allow-Origin: https://liftdesk.pages.dev`. Supabase Auth/API CORS is configured separately and must include only intended app origins. |
+| 14 | Security headers | PASS (live response checked) | Production returns HSTS, CSP, frame denial, MIME sniffing protection, referrer and permissions policies. |
 | 15 | HttpOnly session cookies | NEEDS ARCHITECTURE DECISION | This is a browser-only SPA using Supabase JS persisted sessions; JavaScript can access its auth session. HttpOnly cookies require a server-side/BFF session architecture. Do not call current storage HttpOnly-secure. |
 | 16 | CSRF | N/A for current bearer-token requests | The app does not authenticate with ambient cookies, so classic cookie CSRF is not the primary risk. Reassess if a BFF/HttpOnly cookie session is introduced. |
 | 17 | Password reset | N/A (feature not present) | LiftDesk has no password-reset UI or custom reset endpoint. If added, use Supabase's expiring, single-use recovery links and a fixed allow-listed redirect. |
@@ -34,14 +34,24 @@ below distinguish code evidence from controls that need account access.
 | 24 | Git history secrets | PASS (targeted scan, limited) | A targeted scan in the previous review found no known secret patterns. This is not a complete secret-scanner guarantee; enable GitHub secret scanning/push protection and scan the full history. |
 | 25 | Credential rotation | NEEDS OWNER REVIEW | No compromised key was identified. Rotate any key ever committed, shared, or exposed; this requires owner/provider dashboard action. |
 | 26 | Comprehensive review | PASS (source review, scoped) | Core auth, RLS, invitation, staff, coaching, attendance, and deployment code was reviewed. This is not a professional penetration test or formal certification. |
-| 27 | Security testing/report | PARTIAL | Static contract and unit tests run locally; the new live RLS harness requires two isolated test gyms and applied migrations. Production settings were not changed. |
+| 27 | Security testing/report | PARTIAL | Static contract checks and live database metadata checks were run. The live RLS harness still requires two isolated test gyms and short-lived test sessions; do not use real member data for that test. |
 
 ## Repository fixes in this review
 
 - Added HSTS and an exact production-origin CORS response header to
   `public/_headers`.
-- Added migration `0017_invitation_rate_limits.sql` with concurrency-safe
-  per-account limits for creating member and staff invitations.
+- Applied and verified production migration `20261107145002_invitation_rate_limits.sql`:
+  concurrency-safe limits of 20 member invites/hour and 10 staff invites/hour per account.
+- Applied and verified production migration `20261107145008_require_owner_city.sql`:
+  the owner workspace RPC now rejects missing or invalid city values server-side.
+- Applied and verified production migration `20261107145021_require_member_staff_email.sql`:
+  new or changed member/staff email values are normalized and validated by database triggers;
+  existing legacy blank values are not rewritten.
+- Applied `20261107143754_tighten_sensitive_rpc_grants.sql`: anonymous execution is
+  denied for sensitive RPCs; authenticated execute remains only where required.
+- Live chat aggregate check found 3 encrypted and 10 legacy plaintext messages;
+  none of the legacy messages are older than 48 hours or pinned. The retention
+  cron is active every minute, and new inserts are required to be encrypted.
 - Added `npm run security:tenant-test`, a non-destructive test harness that
   checks own-gym visibility and cross-gym denial using HEAD requests that return
   counts only. It never reads or prints member/staff private fields or tokens.
@@ -50,7 +60,7 @@ below distinguish code evidence from controls that need account access.
 
 ## Live tenant isolation test
 
-Apply migrations through `0017` in a **non-production test project** first.
+Use a **separate non-production test project** with the current migrations.
 Create two separate gym-owner test users and gyms. Seed each gym with at least
 one harmless row in every table listed by the script; otherwise that table is
 reported as `NEEDS_FIXTURE_OR_REVIEW`, because an empty table cannot prove an
@@ -74,9 +84,10 @@ Do not use real member records or production tokens.
 
 ## Manual dashboard actions
 
-1. Apply and verify migrations `0011` through `0017` against the intended
-   Supabase project. This review did not alter the database.
-2. Run the fixture-backed isolation test above on staging before production.
+1. Verified in production: the current migration records through
+   `20261107145021`; keep local migration files aligned with those exact versions.
+2. Run the fixture-backed isolation test above on staging before claiming live
+   cross-gym denial has been end-to-end proven.
 3. In Supabase Auth, restrict Site URL and redirect allow-list entries to the
    production app and actively used development origins. Review Auth rate
    limits, email SMTP, log retention, and alert destinations.
@@ -92,6 +103,6 @@ Do not use real member records or production tokens.
 
 ## Checks from this implementation
 
-Results are recorded in the task summary after running the available tests and
-build. A successful local check proves repository behavior only; it does not
-prove a production migration, dashboard setting, or live tenant-isolation test.
+Local and live results are recorded in the task summary. A successful local
+check proves repository behavior only; it does not prove a dashboard setting,
+live tenant-isolation test, or email delivery.
