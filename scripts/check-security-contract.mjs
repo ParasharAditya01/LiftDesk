@@ -374,6 +374,22 @@ if (directoryFunction && (!directoryFunction.body.includes('(select auth.uid()) 
 requireText(platformDirectory, 'revoke all on function public.list_liftdesk_platform_gym_directory() from public, anon', 'Platform gym directory RPC must not be public or anonymous')
 requireText(platformDirectory, 'grant execute on function public.list_liftdesk_platform_gym_directory() to authenticated', 'Platform gym directory RPC must be callable only by authenticated users and enforce its own role check')
 
+// Do not expose SECURITY DEFINER helpers to anonymous API callers. Keep only
+// the authenticated execute grants needed by the app and RLS policy helpers.
+const rpcGrantHardening = compact(read('supabase/migrations/20261107143655_tighten_sensitive_rpc_grants.sql'))
+for (const [signature, label] of [
+  ['public.check_in_with_qr(uuid, uuid)', 'QR check-in'],
+  ['public.record_manual_check_in(uuid, uuid)', 'manual check-in'],
+  ['public.has_gym_role(uuid, public.gym_role[])', 'gym role helper'],
+  ['public.is_gym_member(uuid)', 'gym membership helper'],
+]) {
+  requireText(rpcGrantHardening, `revoke execute on function ${signature} from public, anon`, `${label} must not be executable by PUBLIC or anon`)
+  requireText(rpcGrantHardening, `grant execute on function ${signature} to authenticated`, `${label} must remain available to authenticated callers`)
+}
+for (const name of ['rls_auto_enable', 'snapshot_coaching_plan_revision']) {
+  requireText(rpcGrantHardening, `revoke execute on function public.${name}() from public, anon, authenticated`, `${name} must be trigger-only, not callable through client roles`)
+}
+
 // Cloudflare Pages response headers provide defense in depth for browser data.
 const pagesHeaders = compact(read('public/_headers'))
 for (const [fragment, message] of [
@@ -392,5 +408,5 @@ if (failures.length) {
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, aggregate platform-admin directory, and browser headers are present.')
+console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, aggregate platform-admin directory, sensitive RPC grants, and browser headers are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')
