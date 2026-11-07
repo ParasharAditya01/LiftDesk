@@ -56,14 +56,14 @@ export async function getMyOwnerAccessRequest(userId: string): Promise<OwnerAcce
 export async function requestOwnerWorkspace(input: {
   gymName: string
   ownerName: string
-  city?: string
+  city: string
   phone?: string
   theme: GymThemeId
 }): Promise<string> {
   const { data, error } = await requireSupabase().rpc('request_owner_workspace', {
     gym_name: input.gymName.trim(),
     owner_name: input.ownerName.trim(),
-    gym_city: input.city?.trim() || null,
+    gym_city: input.city.trim(),
     gym_phone: input.phone?.trim() || null,
     gym_theme: input.theme,
   })

@@ -346,9 +346,14 @@ export default function AuthGate() {
   async function submitWorkspace(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!session?.user) return
+    const normalizedCity = city.trim()
+    if (normalizedCity.length < 2 || normalizedCity.length > 100) {
+      setError('Enter a city name between 2 and 100 characters.')
+      return
+    }
     setError(''); setSaving(true)
     try {
-      await requestOwnerWorkspace({ gymName, ownerName, city, phone, theme: gymTheme })
+      await requestOwnerWorkspace({ gymName, ownerName, city: normalizedCity, phone, theme: gymTheme })
       const request = await getMyOwnerAccessRequest(session.user.id)
       if (!request) throw new Error('LiftDesk saved the request, but its status could not be loaded. Refresh this page.')
       setOwnerRequest(request); setNeedsWorkspace(false)
@@ -469,7 +474,7 @@ export default function AuthGate() {
     <form className="auth-form" onSubmit={submitWorkspace}>
       <label>Gym name<input required minLength={2} maxLength={120} value={gymName} onChange={e => setGymName(e.target.value)} placeholder="e.g. Power Fitness Club" /></label>
       <label>Owner name<input required minLength={2} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>
-      <label>City <span className="optional-label">Optional</span><input value={city} onChange={e => setCity(e.target.value)} placeholder="Pune" /></label>
+      <label>City <span className="required-label">Required</span><input required minLength={2} maxLength={100} value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Pune" /></label>
       <label>Gym phone <span className="optional-label">Optional</span><input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91…" /></label>
       <GymThemeSelector value={gymTheme} onChange={setGymTheme} />
       {error && <p className="auth-error" role="alert">{error}</p>}
