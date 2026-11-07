@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { Activity, CalendarDays, CheckCircle2, Clock3, Dumbbell, LoaderCircle, LogOut, ShieldCheck, Utensils, Weight } from 'lucide-react'
+import { Activity, CalendarDays, CheckCircle2, Clock3, Dumbbell, LoaderCircle, ShieldCheck, Utensils, Weight } from 'lucide-react'
 import type { Gym } from './lib/gymData'
 import { getOwnCoachingRecords, getOwnMemberProfile, type CoachingPlan, type MemberProfile, type MemberProgress } from './lib/gymData'
-import { signOutWithPushCleanup } from './lib/pushNotifications'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
 import FloatingGymChat from './FloatingGymChat'
@@ -70,21 +69,18 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
   return <main className="member-portal-shell">
     <header className="member-portal-header">
       <div className="member-portal-brand"><LiftDeskMark size={38}/><div><b>Lift<span>Desk</span></b><small>MEMBER PORTAL</small></div></div>
-      <div className="member-portal-gym"><span className="member-portal-gym-label">YOUR GYM</span><b>{gym.name}</b></div>
-      <button type="button" className="member-portal-signout" onClick={() => void signOutWithPushCleanup()}><LogOut size={16}/><span>Sign out</span></button>
     </header>
 
     <div className="member-portal-content">
       {loading ? <section className="member-portal-loading" role="status"><LoaderCircle className="spin" size={23}/><p>Loading your membership…</p></section> : error ? <section className="member-portal-error" role="alert"><h1>We couldn’t load your member profile</h1><p>{error}</p><button type="button" className="member-portal-retry" onClick={reload}>Try again</button></section> : profile && <>
         <section className="member-portal-hero" aria-labelledby="member-portal-title">
           <div className="member-portal-hero-copy">
-            <p className="member-portal-kicker">YOUR MEMBERSHIP</p>
-            <h1 id="member-portal-title">Your training, in one place.</h1>
-            <p>Review your membership, the plans your coach shared, and your progress updates.</p>
+            <h1 id="member-portal-title">Your membership, at a glance.</h1>
+            <p>Review your membership, coaching plans and progress at {gym.name}.</p>
           </div>
           <div className="member-portal-person">
             <div className="member-portal-avatar" aria-hidden="true">{initials(profile.full_name)}</div>
-            <div className="member-portal-person-copy"><b>{profile.full_name}</b><span>Member at {gym.name}</span></div>
+            <div className="member-portal-person-copy"><b>{profile.full_name}</b><span>Your member account</span></div>
             <span className={'member-portal-status member-status-' + profile.status}><i aria-hidden="true"/>{readableStatus}</span>
           </div>
         </section>
