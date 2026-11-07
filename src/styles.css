@@ -139,8 +139,44 @@
 .owner-request-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:14px;border-top:1px solid #EEECE7}.owner-request-actions .button-primary{border-color:#202124;background:#202124;color:#fff}.owner-request-actions .button-primary:hover{background:#34363A}
 .platform-admin-empty{min-height:110px;display:flex;align-items:center;justify-content:center;gap:12px;padding:20px;border:1px dashed #D8D4CC;border-radius:14px;color:#77736B;font-size:13px}.platform-admin-empty>div{display:grid;gap:4px}.platform-admin-empty b{color:#292A2D}.platform-admin-empty span{font-size:12px}
 .platform-admin-footnote{display:flex;align-items:flex-start;gap:8px;margin:24px 0 0;color:#77736B;font-size:11px;line-height:1.5}.platform-admin-footnote svg{flex-shrink:0;color:#8B7350}
+.platform-admin-tabs{display:flex;gap:8px;margin:26px 0 20px;border-bottom:1px solid #E7E3DB}
+.platform-admin-tabs button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 13px;margin-bottom:-1px;border:0;border-bottom:2px solid transparent;background:transparent;color:#77736B;font-size:12px;font-weight:650}
+.platform-admin-tabs button:hover{color:#202124;background:#F2F0EB;border-radius:8px 8px 0 0}
+.platform-admin-tabs button.is-active{border-bottom-color:#8B7350;color:#202124}
+.platform-admin-tabs button>span{min-width:20px;padding:2px 6px;border-radius:99px;background:#F2F0EB;color:#6F6B63;font-size:10px;text-align:center}
+.platform-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.platform-stat{min-width:0;padding:15px 16px;background:#fff;border:1px solid #E7E3DB;border-radius:13px}
+.platform-stat-top{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#77736B;font-size:11px}
+.platform-stat-top i{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:#F2F0EB;color:#8B7350;font-style:normal}
+.platform-stat>strong{display:block;margin:10px 0 3px;color:#202124;font-size:25px;line-height:1.1;letter-spacing:-.6px}
+.platform-stat>small{color:#77736B;font-size:10px}
+.platform-directory-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.platform-search{flex:1;display:flex;align-items:center;gap:9px;min-width:160px;min-height:42px;padding:0 12px;border:1px solid #E7E3DB;border-radius:9px;background:#fff;color:#77736B}
+.platform-search:focus-within{border-color:#8B7350;box-shadow:0 0 0 3px #8B73501A}
+.platform-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#202124;font:inherit;font-size:12px}
+.platform-search input::placeholder{color:#99958D}
+.platform-filter select{min-height:42px;padding:0 30px 0 11px;border:1px solid #E7E3DB;border-radius:9px;background:#fff;color:#292A2D;font-size:11px}
+.platform-result-count{color:#77736B;font-size:11px;white-space:nowrap}
+.platform-gym-list{display:grid;gap:10px}
+.platform-gym-card{padding:17px 18px;background:#fff;border:1px solid #E7E3DB;border-radius:13px;box-shadow:0 4px 14px #20212405}
+.platform-gym-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.platform-gym-identity{display:flex;align-items:center;gap:11px;min-width:0}
+.platform-gym-identity>i{width:39px;height:39px;flex-shrink:0;display:grid;place-items:center;border-radius:11px;background:#F2F0EB;color:#8B7350;font-style:normal}
+.platform-gym-identity h2{margin:0;color:#202124;font-size:16px;letter-spacing:-.2px;overflow-wrap:anywhere}
+.platform-gym-identity p{margin:5px 0 0;color:#77736B;font-size:11px}.platform-gym-identity p span{padding:0 4px;color:#B7A17A}
+.platform-health{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;padding:6px 9px;border-radius:999px;background:#F2F0EB;color:#6F6B63;font-size:10px;font-weight:700}
+.platform-health i{width:6px;height:6px;border-radius:50%;background:#8B7350}
+.platform-health.is-active{background:#EDF4EB;color:#356B45}.platform-health.is-active i{background:#3F8051}
+.platform-health.needs-owner{background:#FAF0E7;color:#87572E}
+.platform-gym-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid #EEECE7}
+.platform-gym-metrics>div{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.platform-gym-metrics span{color:#77736B;font-size:10px}.platform-gym-metrics strong{color:#202124;font-size:17px;line-height:1.2}.platform-gym-metrics small{color:#8A867E;font-size:10px;line-height:1.4}
+.platform-gym-metrics .platform-gym-last-seen{font-size:12px;overflow-wrap:anywhere}
+.platform-section-title{margin:4px 0 4px;font-size:18px;letter-spacing:-.3px}.platform-section-intro{margin:0 0 16px;color:#77736B;font-size:12px;line-height:1.55}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .owner-pending-card{width:min(100%,520px)}.owner-pending-icon{width:44px;height:44px;display:grid;place-items:center;margin:6px 0 16px;border-radius:13px;background:#F2F0EB;color:#8B7350}.owner-pending-summary{display:grid;grid-template-columns:100px 1fr;gap:10px 14px;margin:0 0 22px;padding:15px;background:#F8F7F4;border-radius:11px;font-size:12px}.owner-pending-summary span{color:#77736B}.owner-pending-summary b{overflow-wrap:anywhere}
-@media(max-width:620px){.platform-admin-header{align-items:flex-start;flex-direction:column;padding-block:14px}.platform-admin-actions{width:100%;justify-content:flex-start}.platform-admin-actions button{flex:1 1 auto}.owner-request-heading{flex-direction:column}.owner-request-status{align-self:flex-start}.owner-request-actions{display:grid;grid-template-columns:1fr 1fr}.owner-request-actions button{min-height:44px}.platform-admin-content{width:min(100% - 28px,920px)}}
+@media(max-width:720px){.platform-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.platform-gym-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.platform-admin-header{align-items:flex-start;flex-direction:column;padding-block:14px}.platform-admin-actions{width:100%;justify-content:flex-start}.platform-admin-actions button{flex:1 1 auto}.owner-request-heading{flex-direction:column}.owner-request-status{align-self:flex-start}.owner-request-actions{display:grid;grid-template-columns:1fr 1fr}.owner-request-actions button{min-height:44px}.platform-admin-content{width:min(100% - 28px,920px)}.platform-directory-toolbar{align-items:stretch;flex-wrap:wrap}.platform-search{flex:1 1 100%}.platform-filter{flex:1}.platform-filter select{width:100%}.platform-result-count{align-self:center}.platform-gym-heading{align-items:flex-start}.platform-gym-identity p{line-height:1.45}.platform-admin-tabs button{flex:1;justify-content:center;padding-inline:8px}}
 @media(prefers-reduced-motion:reduce){.platform-admin-screen *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 /* First-run gym theme selector */

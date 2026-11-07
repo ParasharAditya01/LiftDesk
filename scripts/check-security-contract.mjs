@@ -359,6 +359,21 @@ requireText(invitationRateLimit, 'if recent_count >= 10 then', 'Staff invitation
 requireText(invitationRateLimit, 'revoke all on function public.create_member_invitation(uuid) from public, anon', 'Rate-limited member invitation RPC must stay private')
 requireText(invitationRateLimit, 'revoke all on function public.create_gym_staff_invitation(uuid) from public, anon', 'Rate-limited staff invitation RPC must stay private')
 
+// LiftDesk platform administrators can see aggregate gym health/counts only.
+const platformDirectory = compact(read('supabase/migrations/20261107122256_platform_admin_gym_directory.sql'))
+const directoryFunction = requireFunction('list_liftdesk_platform_gym_directory', platformDirectory)[0]
+if (directoryFunction && (!directoryFunction.body.includes('(select auth.uid()) is null') ||
+    !directoryFunction.body.includes('not public.is_liftdesk_platform_admin()') ||
+    !directoryFunction.body.includes('raise exception using errcode = \'42501\'') ||
+    !directoryFunction.body.includes('from public.gym_staff') ||
+    !directoryFunction.body.includes('from public.members') ||
+    !directoryFunction.body.includes('from public.attendance') ||
+    /auth\.users|public\.profiles|full_name|owner_email|staff\.email|staff\.phone/.test(directoryFunction.body))) {
+  fail('Platform gym directory must authorize explicit platform admins and return only gym-level aggregates')
+}
+requireText(platformDirectory, 'revoke all on function public.list_liftdesk_platform_gym_directory() from public, anon', 'Platform gym directory RPC must not be public or anonymous')
+requireText(platformDirectory, 'grant execute on function public.list_liftdesk_platform_gym_directory() to authenticated', 'Platform gym directory RPC must be callable only by authenticated users and enforce its own role check')
+
 // Cloudflare Pages response headers provide defense in depth for browser data.
 const pagesHeaders = compact(read('public/_headers'))
 for (const [fragment, message] of [
@@ -377,5 +392,5 @@ if (failures.length) {
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, and browser headers are present.')
+console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, aggregate platform-admin directory, and browser headers are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')

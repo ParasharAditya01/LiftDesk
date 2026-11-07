@@ -15,10 +15,32 @@ export type OwnerAccessRequest = {
   created_at: string
 }
 
+/** Aggregate-only platform view. Never includes individual member or staff data. */
+export type PlatformGymSummary = {
+  gym_id: string
+  gym_name: string
+  city: string | null
+  created_at: string
+  active_owner_count: number
+  member_count: number
+  active_member_count: number
+  admin_count: number
+  active_admin_count: number
+  trainer_count: number
+  active_trainer_count: number
+  last_attendance_at: string | null
+}
+
 export async function isLiftDeskPlatformAdmin(): Promise<boolean> {
   const { data, error } = await requireSupabase().rpc('is_liftdesk_platform_admin')
   if (error) throw error
   return data === true
+}
+
+export async function listPlatformGymDirectory(): Promise<PlatformGymSummary[]> {
+  const { data, error } = await requireSupabase().rpc('list_liftdesk_platform_gym_directory')
+  if (error) throw error
+  return (data ?? []) as PlatformGymSummary[]
 }
 
 export async function getMyOwnerAccessRequest(userId: string): Promise<OwnerAccessRequest | null> {
