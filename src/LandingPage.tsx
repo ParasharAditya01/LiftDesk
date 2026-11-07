@@ -30,6 +30,7 @@ const previewRows: Record<PreviewTab, { label: string; detail: string; badge: st
 const sections = [
   { id: 'workspace', label: 'Workspace' },
   { id: 'how-it-works', label: 'How it works' },
+  { id: 'privacy', label: 'Privacy' },
   { id: 'questions', label: 'Questions' },
 ]
 
@@ -105,8 +106,18 @@ export default function LandingPage() {
         <div className="process-steps"><article><span>01</span><h3>Set up your gym</h3><p>An owner requests a workspace and shares the gym details for LiftDesk approval.</p></article><article><span>02</span><h3>Bring in your team</h3><p>Owners and admins manage staff access. Trainers work with members in their gym.</p></article><article><span>03</span><h3>Keep the record current</h3><p>Update memberships, record check-ins and keep coaching follow-ups moving.</p></article></div>
       </section>
 
+      <section className="landing-privacy" id="privacy" aria-labelledby="privacy-title">
+        <div className="landing-privacy-intro"><span className="landing-index">03 / PRIVACY BASICS</span><h2 id="privacy-title">Privacy, clearly explained.</h2><p>A plain-language summary of the records LiftDesk handles and who can access them.</p></div>
+        <div className="landing-privacy-list">
+          <article className="privacy-row"><span>01</span><div><h3>What your gym may record</h3><p>Your name, email, phone or WhatsApp number, membership and attendance. If your gym uses coaching, trainers may add plans, notes and details you share, such as weight, measurements, or food allergies and preferences.</p></div></article>
+          <article className="privacy-row"><span>02</span><div><h3>Who can see gym records</h3><p>Your gym’s Owner, Admins and Trainers can access records for their gym. A linked member account can see its own membership, shared plans, progress and gym chat. The LiftDesk admin screen shows gym names, cities, role counts and latest attendance time—not individual member or staff records.</p></div></article>
+          <article className="privacy-row"><span>03</span><div><h3>How gym chat works</h3><p>New chat messages are end-to-end encrypted for registered devices; messages sent before encryption may not be. Regular messages are deleted after 48 hours. Pinned announcements stay until unpinned. Optional browser notifications show no message text. Chat keys stay in your browser, so clearing its data may make older messages unreadable on that device.</p></div></article>
+          <article className="privacy-row"><span>04</span><div><h3>Sign-in, storage and questions</h3><p>Supabase handles sign-in and stores LiftDesk records. If you choose Google sign-in, LiftDesk receives basic account details such as your name and email. LiftDesk does not publish a fixed deletion timeline for non-chat gym records; ask your gym Owner or Admin about its retention and record corrections.</p></div></article>
+        </div>
+      </section>
+
       <section className="landing-faq" id="questions">
-        <div className="faq-intro"><span className="landing-index">03 / GOOD TO KNOW</span><h2>Clear answers.<br /><em>No guesswork.</em></h2><p>What LiftDesk does today, in plain language.</p><a href="/?mode=signin">Already have access? Sign in <ArrowUpRight size={15} /></a></div>
+        <div className="faq-intro"><span className="landing-index">04 / GOOD TO KNOW</span><h2>Clear answers.<br /><em>No guesswork.</em></h2><p>What LiftDesk does today, in plain language.</p><a href="/?mode=signin">Already have access? Sign in <ArrowUpRight size={15} /></a></div>
         <div className="faq-list">
           {[
             { q: 'How is attendance recorded?', a: 'A staff member finds the person in Members and uses Manual check-in. LiftDesk records the visit after the membership and gym-access checks pass. Camera or member self-service QR check-in is not currently active.' },
@@ -120,6 +131,6 @@ export default function LandingPage() {
       <section className="landing-final-cta"><div><span className="landing-index">A CLEARER GYM WORKSPACE</span><h2>Bring the daily details together.</h2><p>Request LiftDesk owner access to get started.</p></div><a className="landing-primary" href="/?mode=signup">Request owner access <ArrowRight size={17} /></a></section>
     </main>
 
-    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={32} /><span>LiftDesk</span></a><span>Gym operations, simplified.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#questions">Questions</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
+    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={32} /><span>LiftDesk</span></a><span>Gym operations, simplified.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
   </div>
 }
