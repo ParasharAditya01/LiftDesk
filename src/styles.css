@@ -707,6 +707,62 @@ svg {
 .app-shell .directory-panel > .surface-heading { margin: 0; padding: 15px 18px; border-bottom: 1px solid var(--ld-line); }
 .app-shell .attendance-history-heading { align-items: center; padding: 15px 18px; }
 .app-shell .directory-panel > .surface-heading > span { flex: 0 0 auto; color: var(--ld-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.app-shell .member-filter-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ld-line);
+}
+.app-shell .member-filter-nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 37px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ld-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.app-shell .member-filter-nav button:hover:not([aria-pressed="true"]) {
+  border-color: var(--ld-line);
+  background: var(--theme-canvas, #f4f1e9);
+  color: var(--ld-ink);
+}
+.app-shell .member-filter-nav button[aria-pressed="true"] {
+  border-color: var(--ld-ink);
+  background: var(--ld-ink);
+  color: var(--theme-surface, #fff);
+}
+.app-shell .member-filter-count {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--theme-canvas, #f4f1e9);
+  color: var(--ld-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.app-shell .member-filter-nav button[aria-pressed="true"] .member-filter-count {
+  background: var(--theme-accent, #b7a17a);
+  color: var(--theme-accent-ink, #202124);
+}
+.app-shell .member-filter-nav button:focus-visible {
+  outline: 3px solid var(--theme-accent, #b7a17a);
+  outline-offset: 2px;
+}
 .app-shell .directory-toolbar { min-width: 0; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--ld-line); }
 .app-shell .search-box { width: min(100%, 400px); min-width: 0; min-height: 42px; padding: 0 12px; border-radius: 8px; }
 .app-shell .search-box input { min-width: 0; padding: 9px 0; font-size: 13px; line-height: 1.4; letter-spacing: 0; }
@@ -756,6 +812,9 @@ svg {
   .app-shell .report-surface { padding: 17px 15px; }
   .app-shell .metric-card { padding: 15px 13px; }
   .app-shell .metric-value { font-size: 29px; }
+  .app-shell .member-filter-nav { gap: 5px; padding: 10px 13px; }
+  .app-shell .member-filter-nav button { min-height: 36px; padding: 0 9px; font-size: 11px; }
+  .app-shell .member-filter-nav button .member-filter-count { min-width: 19px; height: 19px; }
   .app-shell .directory-toolbar { align-items: stretch; flex-direction: column; gap: 10px; padding: 13px; }
   .app-shell .search-box { width: 100%; min-height: 44px; }
   .app-shell .directory-filters { justify-content: flex-end; margin-left: 0; }

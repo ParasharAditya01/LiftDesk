@@ -218,7 +218,7 @@ export default function LiveApp({ gym, role, user }: Props) {
           </>}
           {section === 'Members' && <section className="surface directory-panel" data-motion-reveal>
             <nav className="member-filter-nav" aria-label="Filter members by membership status">
-              {memberFilterOptions.map(option => <button key={option.id} type="button" aria-pressed={memberFilter === option.id} onClick={() => setMemberFilter(option.id)}>
+              {memberFilterOptions.map(option => <button key={option.id} type="button" aria-label={`${option.label}, ${option.count} ${option.count === 1 ? 'member' : 'members'}`} aria-pressed={memberFilter === option.id} onClick={() => setMemberFilter(option.id)}>
                 <span>{option.label}</span><span className="member-filter-count">{option.count}</span>
               </button>)}
             </nav>
