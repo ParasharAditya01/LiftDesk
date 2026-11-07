@@ -36,7 +36,10 @@ export default function AuthGate() {
   const [platformAdmin, setPlatformAdmin] = useState(false)
   const [platformAdminView, setPlatformAdminView] = useState(true)
   const [memberProfileRequired, setMemberProfileRequired] = useState(false)
-  const [mode, setMode] = useState<Mode>('signin')
+  const [mode, setMode] = useState<Mode>(() => {
+    const requestedMode = new URLSearchParams(window.location.search).get('mode')
+    return requestedMode === 'signup' || window.location.pathname === '/signup' ? 'signup' : 'signin'
+  })
   const [busy, setBusy] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
