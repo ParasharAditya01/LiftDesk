@@ -167,7 +167,7 @@ export async function listMembers(gymId: string): Promise<GymMember[]> {
 export async function createMember(gymId: string, input: {
   fullName: string
   phone: string
-  email?: string
+  email: string
   planName: string
   monthlyFee: number
   membershipExpiresOn?: string
@@ -182,7 +182,7 @@ export async function createMember(gymId: string, input: {
       gym_id: gymId,
       full_name: input.fullName.trim(),
       phone: input.phone.trim(),
-      email: input.email?.trim() || null,
+      email: input.email.trim().toLowerCase(),
       plan_name: input.planName,
       monthly_fee: input.monthlyFee,
       membership_expires_on: input.membershipExpiresOn || null,

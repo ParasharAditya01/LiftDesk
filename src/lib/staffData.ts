@@ -42,12 +42,12 @@ export async function listGymStaff(gymId: string): Promise<GymStaff[]> {
 }
 export async function saveGymStaff(gymId: string, input: {
   id?: string; staffCode: string; fullName: string; role: StaffRole; phone: string
-  email?: string; joiningDate: string; employmentStatus: StaffEmploymentStatus
+  email: string; joiningDate: string; employmentStatus: StaffEmploymentStatus
   profilePhotoUrl?: string; notes?: string
 }): Promise<GymStaff> {
   const payload = {
     gym_id: gymId, staff_code: input.staffCode.trim(), full_name: input.fullName.trim(),
-    role: input.role, phone: input.phone.trim(), email: input.email?.trim() || null,
+    role: input.role, phone: input.phone.trim(), email: input.email.trim().toLowerCase(),
     joining_date: input.joiningDate, employment_status: input.employmentStatus,
     profile_photo_url: input.profilePhotoUrl?.trim() || null, notes: input.notes?.trim() || null,
   }
