@@ -1,6 +1,6 @@
 # LiftDesk
 
-LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is being rebuilt incrementally in this repository with a strict pre-revenue budget of ₹0–₹1,000.
+LiftDesk is an India-first gym operations SaaS for independent gyms.
 
 ## MVP scope
 
