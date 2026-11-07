@@ -376,7 +376,7 @@ requireText(platformDirectory, 'grant execute on function public.list_liftdesk_p
 
 // Do not expose SECURITY DEFINER helpers to anonymous API callers. Keep only
 // the authenticated execute grants needed by the app and RLS policy helpers.
-const rpcGrantHardening = compact(read('supabase/migrations/20261107143655_tighten_sensitive_rpc_grants.sql'))
+const rpcGrantHardening = compact(read('supabase/migrations/20261107143754_tighten_sensitive_rpc_grants.sql'))
 for (const [signature, label] of [
   ['public.check_in_with_qr(uuid, uuid)', 'QR check-in'],
   ['public.record_manual_check_in(uuid, uuid)', 'manual check-in'],
