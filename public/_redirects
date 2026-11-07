@@ -1,0 +1,4 @@
+/signin /index.html 200
+/signup /index.html 200
+/auth/callback /index.html 200
+/preview /index.html 200
