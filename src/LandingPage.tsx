@@ -59,7 +59,7 @@ export default function LandingPage() {
       <button className="landing-menu-toggle" type="button" aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={menuOpen} aria-controls="landing-navigation" onClick={() => setMenuOpen(open => !open)}>{menuOpen ? <X size={21} /> : <Menu size={21} />}</button>
       <nav className={'landing-nav' + (menuOpen ? ' is-open' : '')} id="landing-navigation" aria-label="Main navigation">
         {sections.map(section => <a key={section.id} href={`#${section.id}`} onClick={closeMenu}>{section.label}</a>)}
-        <a className="landing-signin" href="/signin" onClick={closeMenu}>Sign in <ArrowUpRight size={15} /></a>
+        <a className="landing-signin" href="/?mode=signin" onClick={closeMenu}>Sign in <ArrowUpRight size={15} /></a>
         <a className="landing-nav-cta" href="/?mode=signup" onClick={closeMenu}>Request a workspace <ArrowRight size={15} /></a>
       </nav>
     </header>
@@ -106,7 +106,7 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-faq" id="questions">
-        <div className="faq-intro"><span className="landing-index">03 / GOOD TO KNOW</span><h2>Clear answers.<br /><em>No guesswork.</em></h2><p>What LiftDesk does today, in plain language.</p><a href="/signin">Already have access? Sign in <ArrowUpRight size={15} /></a></div>
+        <div className="faq-intro"><span className="landing-index">03 / GOOD TO KNOW</span><h2>Clear answers.<br /><em>No guesswork.</em></h2><p>What LiftDesk does today, in plain language.</p><a href="/?mode=signin">Already have access? Sign in <ArrowUpRight size={15} /></a></div>
         <div className="faq-list">
           {[
             { q: 'How is attendance recorded?', a: 'A staff member finds the person in Members and uses Manual check-in. LiftDesk records the visit after the membership and gym-access checks pass. Camera or member self-service QR check-in is not currently active.' },
@@ -120,6 +120,6 @@ export default function LandingPage() {
       <section className="landing-final-cta"><div><span className="landing-index">A CLEARER GYM WORKSPACE</span><h2>Bring the daily details together.</h2><p>Request LiftDesk owner access to get started.</p></div><a className="landing-primary" href="/?mode=signup">Request owner access <ArrowRight size={17} /></a></section>
     </main>
 
-    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={32} /><span>LiftDesk</span></a><span>Gym operations, simplified.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#questions">Questions</a><a href="/signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
+    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={32} /><span>LiftDesk</span></a><span>Gym operations, simplified.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#questions">Questions</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
   </div>
 }
