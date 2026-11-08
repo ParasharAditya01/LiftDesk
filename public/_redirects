@@ -1,4 +1,4 @@
 /signin / 200
 /signup / 200
 /auth/callback / 200
-/preview / 200
+/preview /preview.html 200
