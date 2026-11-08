@@ -46,7 +46,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
     setLoading(true)
     const [requestResult, gymResult] = await Promise.allSettled([
         (async () => requireSupabase().from('owner_access_requests')
-          .select('id, user_id, owner_email, owner_name, gym_name, city, phone, gym_theme, status, review_note, created_at')
+          .select('id, user_id, owner_email, owner_name, gym_name, city, phone, owner_mobile_phone, gym_theme, status, review_note, created_at')
           .eq('status', 'pending').order('created_at', { ascending: true }))(),
         listPlatformGymDirectory(),
       ])
@@ -62,7 +62,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
   useEffect(() => { void load() }, [load])
 
   const filteredGyms = useMemo(() => gyms.filter(gym => {
-    const matchesQuery = `${gym.gym_name} ${gym.city ?? ''}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
+    const matchesQuery = `${gym.gym_name} ${gym.city ?? ''} ${gym.owner_phone ?? ''}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
     const matchesFilter = filter === 'all' || (filter === 'active' ? gym.active_owner_count > 0 : gym.active_owner_count === 0)
     return matchesQuery && matchesFilter
   }), [gyms, query, filter])
@@ -106,7 +106,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
     <section className="platform-admin-content">
       <p className="platform-admin-eyebrow"><ShieldCheck size={15}/> PLATFORM ADMINISTRATION</p>
       <h1>LiftDesk overview</h1>
-      <p className="platform-admin-intro">See which gyms use LiftDesk, review high-level membership and staff counts, and approve new workspace requests. This overview does not expose personal member or staff records.</p>
+      <p className="platform-admin-intro">See which gyms use LiftDesk, review high-level membership and staff counts, approve workspace requests, and view each owner’s current contact number for account support. Member and staff contact details are not shown.</p>
       {(visibleError || error) && <p className="auth-error" role="alert">{visibleError || error}</p>}
       {notice && <p className="auth-message" role="status">{notice}</p>}
 
@@ -130,7 +130,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
         {loading ? <div className="platform-admin-empty"><LoaderCircle className="spin" size={20}/> Loading gym overview…</div>
           : filteredGyms.length === 0 ? <div className="platform-admin-empty"><Building2 size={20}/><div><b>{gyms.length ? 'No gyms match this search' : 'No gym workspaces yet'}</b><span>{gyms.length ? 'Try a different name, city, or filter.' : 'Approved workspaces will appear here.'}</span></div></div>
             : <div className="platform-gym-list">{filteredGyms.map(gym => <article className="platform-gym-card" key={gym.gym_id}>
-              <div className="platform-gym-heading"><div className="platform-gym-identity"><i><Building2 size={18}/></i><div><h2>{gym.gym_name}</h2><p>{gym.city || 'City not provided'} <span>·</span> Added {dateLabel(gym.created_at)}</p></div></div><span className={`platform-health ${gym.active_owner_count ? 'is-active' : 'needs-owner'}`}><i/>{gym.active_owner_count ? 'Owner active' : 'Needs owner'}</span></div>
+              <div className="platform-gym-heading"><div className="platform-gym-identity"><i><Building2 size={18}/></i><div><h2>{gym.gym_name}</h2><p>{gym.city || 'City not provided'} <span>·</span> Added {dateLabel(gym.created_at)}</p><p>Owner contact: {gym.owner_phone ? <a href={`tel:${gym.owner_phone}`}>{gym.owner_phone}</a> : 'Not provided'}</p></div></div><span className={`platform-health ${gym.active_owner_count ? 'is-active' : 'needs-owner'}`}><i/>{gym.active_owner_count ? 'Owner active' : 'Needs owner'}</span></div>
               <div className="platform-gym-metrics">
                 <div><span>Members</span><strong>{Number(gym.member_count).toLocaleString('en-IN')}</strong><small>{Number(gym.active_member_count).toLocaleString('en-IN')} active</small></div>
                 <div><span>Admins</span><strong>{Number(gym.admin_count).toLocaleString('en-IN')}</strong><small>{Number(gym.active_admin_count).toLocaleString('en-IN')} active</small></div>
@@ -138,7 +138,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
                 <div><span>Latest attendance</span><strong className="platform-gym-last-seen">{dateLabel(gym.last_attendance_at, true)}</strong><small>Most recent recorded check-in</small></div>
               </div>
             </article>)}</div>}
-        <p className="platform-admin-footnote"><ShieldCheck size={15}/> Counts are aggregate summaries. Admin and trainer totals are gym staff-directory records, which may not all have linked login accounts. No individual member, staff, or owner contact information is shown.</p>
+        <p className="platform-admin-footnote"><ShieldCheck size={15}/> Member and staff contact information is not shown. The owner contact number is private account-support data and is visible only in this LiftDesk platform-admin view; it updates when the Owner saves a new number.</p>
       </> : <>
         <h2 className="platform-section-title">Owner access requests</h2>
         <p className="platform-section-intro">New gym workspaces stay private until you approve them here. Gym Owner and Admin roles cannot approve LiftDesk accounts.</p>
@@ -146,7 +146,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
           : requests.length === 0 ? <div className="platform-admin-empty"><Check size={20}/><div><b>No pending owner requests</b><span>New requests will appear here after an owner submits gym details.</span></div></div>
             : <div className="owner-request-list">{requests.map(request => <article className="owner-request-card" key={request.id}>
               <div className="owner-request-heading"><div><h2>{request.gym_name}</h2><p>{request.owner_name} · {request.owner_email}</p></div><span className="owner-request-status"><Clock3 size={13}/> Awaiting review</span></div>
-              <dl><div><dt>Submitted</dt><dd>{dateLabel(request.created_at, true)}</dd></div>{request.city && <div><dt>City</dt><dd>{request.city}</dd></div>}{request.phone && <div><dt>Phone</dt><dd>{request.phone}</dd></div>}</dl>
+              <dl><div><dt>Submitted</dt><dd>{dateLabel(request.created_at, true)}</dd></div>{request.city && <div><dt>City</dt><dd>{request.city}</dd></div>}<div><dt>Owner mobile</dt><dd>{request.owner_mobile_phone || 'Not provided'}</dd></div>{request.phone && <div><dt>Gym phone</dt><dd>{request.phone}</dd></div>}</dl>
               <div className="owner-request-actions"><button type="button" className="button-secondary" disabled={busyId === request.id} onClick={() => void decide(request, 'reject')}><X size={15}/> Reject</button><button type="button" className="button-primary" disabled={busyId === request.id} onClick={() => void decide(request, 'approve')}><Check size={15}/>{busyId === request.id ? 'Processing…' : 'Approve owner'}</button></div>
             </article>)}</div>}
       </>}

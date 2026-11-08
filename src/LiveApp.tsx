@@ -11,6 +11,7 @@ import { useScrollMotion } from './lib/useScrollMotion'
 import CoachingWorkspace from './CoachingWorkspace'
 import FloatingGymChat from './FloatingGymChat'
 import GymThemeSelector from './GymThemeSelector'
+import { getMyOwnerPhone, updateMyOwnerPhone } from './lib/ownerApprovals'
 
 type Props = { gym: Gym; role: GymRole; user: User }
 type Section = 'Overview' | 'Members' | 'Coaching' | 'Attendance' | 'Follow-ups' | 'Reports' | 'Staff' | 'Settings' | 'Help'
@@ -92,6 +93,9 @@ export default function LiveApp({ gym, role, user }: Props) {
   const [form, setForm] = useState({ name: '', phone: '', email: '', plan: 'Monthly', fee: '999', expiry: '' })
   const [settingsForm, setSettingsForm] = useState({ name: gym.name, city: gym.city ?? '', phone: gym.phone ?? '', theme: gym.theme })
   const [savingSettings, setSavingSettings] = useState(false)
+  const [ownerPhone, setOwnerPhone] = useState('')
+  const [loadingOwnerPhone, setLoadingOwnerPhone] = useState(false)
+  const [savingOwnerPhone, setSavingOwnerPhone] = useState(false)
 
   useScrollMotion(pageContentRef, `${section}:${loading}`)
 
@@ -108,6 +112,17 @@ export default function LiveApp({ gym, role, user }: Props) {
   }, [workspaceGym.id])
 
   useEffect(() => { void refresh() }, [refresh])
+
+  useEffect(() => {
+    if (section !== 'Settings' || role !== 'owner') return
+    let active = true
+    setLoadingOwnerPhone(true)
+    getMyOwnerPhone()
+      .then(value => { if (active) setOwnerPhone(value?.replace(/^\+91/, '') ?? '') })
+      .catch(error => { if (active) setError(userFacingError(error, 'Could not load your private contact number. Refresh and try again.')) })
+      .finally(() => { if (active) setLoadingOwnerPhone(false) })
+    return () => { active = false }
+  }, [section, role, user.id])
 
   useEffect(() => {
     if (!showAdd) return
@@ -229,6 +244,18 @@ export default function LiveApp({ gym, role, user }: Props) {
     } finally { setSavingSettings(false) }
   }
 
+  async function saveOwnerPhone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setError(''); setNotice('')
+    if (role !== 'owner') { setError('Only the gym Owner can update this private contact number.'); return }
+    if (!/^[6-9]\d{9}$/.test(ownerPhone)) { setError('Enter a valid 10-digit Indian mobile number.'); return }
+    setSavingOwnerPhone(true)
+    try {
+      await updateMyOwnerPhone(ownerPhone)
+      setNotice('Your contact number is updated. LiftDesk admin will see the latest number.')
+    } catch (e) { setError(userFacingError(e, 'Could not update your private contact number. Try again.')) }
+    finally { setSavingOwnerPhone(false) }
+  }
+
   return <div className="gym-theme-boundary app-shell" data-theme={workspaceGym.theme}>
     {mobileNavOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => closeMenu(true)} />}
     <aside ref={sidebarRef} id="workspace-navigation" className={'sidebar ' + (mobileNavOpen ? 'sidebar-open' : '')}>
@@ -277,7 +304,7 @@ export default function LiveApp({ gym, role, user }: Props) {
           {section === 'Staff' && (role === 'owner' || role === 'admin') && <StaffWorkspace gymId={workspaceGym.id} role={role} />}
           {section === 'Reports' && <div className="page-stack" data-motion-reveal><div className="metric-grid"><Metric label="Total members" value={String(members.length)} detail="Records in this gym" icon={Users}/><Metric label="Active memberships" value={String(reportActiveMemberships.length)} detail="Active, not expiring this week" icon={Activity}/><Metric label="Attendance rows" value={String(attendance.length)} detail="Check-ins in the last 30 days" icon={ClipboardCheck}/><Metric label="Away 7+ days" value={String(awayMemberCount)} detail="Based on latest member visit" icon={Bell}/></div><section className="surface report-surface"><div className="surface-heading"><div><h2>Workspace summary</h2><p>Membership status breakdown for this gym.</p></div><span className="period-label">{new Intl.DateTimeFormat('en-IN', { timeZone: BUSINESS_TIME_ZONE, day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}</span></div><div className="report-bars"><ReportBar label="Active membership" count={reportActiveMemberships.length} total={members.length} color="green"/><ReportBar label="Expiring membership" count={reportExpiringMemberships.length} total={members.length} color="amber"/><ReportBar label="Inactive membership" count={reportInactiveMemberships} total={members.length} color="grey"/></div><div className="report-note"><Activity size={16}/><span>Expiring means the membership ends within 7 days. Inactive includes paused, inactive, and expired memberships. Attendance rows cover the last 30 days.</span></div></section></div>}
           {section === 'Reports' && <div className="page-stack" data-motion-reveal><div className="metric-grid"><Metric label="Total members" value={String(members.length)} detail="Records in this gym" icon={Users}/><Metric label="Active memberships" value={String(reportActiveMemberships.length)} detail="Active, not expiring this week" icon={Activity}/><Metric label="Attendance rows" value={String(attendance.length)} detail="Check-ins in the last 30 days" icon={ClipboardCheck}/><Metric label="Away 7+ days" value={String(awayMemberCount)} detail="Based on latest member visit" icon={Bell}/></div><section className="surface report-surface"><div className="surface-heading"><div><h2>Workspace summary</h2><p>Membership status breakdown for this gym.</p></div><span className="period-label">{new Intl.DateTimeFormat('en-IN', { timeZone: BUSINESS_TIME_ZONE, day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}</span></div><div className="report-bars"><ReportBar label="Active membership" count={reportActiveMemberships.length} total={members.length} color="green"/><ReportBar label="Expiring membership" count={reportExpiringMemberships.length} total={members.length} color="amber"/><ReportBar label="Inactive membership" count={reportInactiveMemberships} total={members.length} color="grey"/></div><div className="report-note"><Activity size={16}/><span>Expiring means the membership ends within 7 days. Inactive includes paused, inactive, and expired memberships. Attendance rows cover the last 30 days.</span></div></section></div>}
-          {section === 'Settings' && role === 'owner' && <form className="surface gym-settings-panel" onSubmit={saveSettings} data-motion-reveal><div className="settings-panel-heading"><div><h2>Gym workspace</h2><p>These details appear in your workspace and team tools.</p></div><span className="settings-role-badge">{roleLabel} access</span></div><div className="gym-settings-fields"><label>Gym name<input required minLength={2} maxLength={120} value={settingsForm.name} onChange={event => setSettingsForm({ ...settingsForm, name: event.target.value })}/></label><label>City<input required minLength={2} maxLength={100} value={settingsForm.city} onChange={event => setSettingsForm({ ...settingsForm, city: event.target.value })}/></label><label>Gym phone <span className="settings-optional">Optional</span><input type="tel" minLength={5} maxLength={30} value={settingsForm.phone} onChange={event => setSettingsForm({ ...settingsForm, phone: event.target.value })} placeholder="Gym contact number"/></label></div><GymThemeSelector value={settingsForm.theme} onChange={theme => setSettingsForm({ ...settingsForm, theme })}/><div className="settings-panel-footer"><p>Saving updates only this gym. Only its Owner can edit these workspace settings.</p><button type="submit" className="button-primary" disabled={savingSettings}>{savingSettings ? 'Saving…' : 'Save settings'}</button></div></form>}
+          {section === 'Settings' && role === 'owner' && <div className="page-stack"><form className="surface gym-settings-panel" onSubmit={saveSettings} data-motion-reveal><div className="settings-panel-heading"><div><h2>Gym workspace</h2><p>These details appear in your workspace and team tools.</p></div><span className="settings-role-badge">{roleLabel} access</span></div><div className="gym-settings-fields"><label>Gym name<input required minLength={2} maxLength={120} value={settingsForm.name} onChange={event => setSettingsForm({ ...settingsForm, name: event.target.value })}/></label><label>City<input required minLength={2} maxLength={100} value={settingsForm.city} onChange={event => setSettingsForm({ ...settingsForm, city: event.target.value })}/></label><label>Gym phone <span className="settings-optional">Optional</span><input type="tel" minLength={5} maxLength={30} value={settingsForm.phone} onChange={event => setSettingsForm({ ...settingsForm, phone: event.target.value })} placeholder="Gym contact number"/></label></div><GymThemeSelector value={settingsForm.theme} onChange={theme => setSettingsForm({ ...settingsForm, theme })}/><div className="settings-panel-footer"><p>Saving updates only this gym. Only its Owner can edit these workspace settings.</p><button type="submit" className="button-primary" disabled={savingSettings}>{savingSettings ? 'Saving…' : 'Save settings'}</button></div></form><form className="surface gym-settings-panel" onSubmit={saveOwnerPhone} data-motion-reveal><div className="settings-panel-heading"><div><h2>Owner contact</h2><p>This private number is visible to LiftDesk platform admins for account support. It is separate from your gym’s contact number.</p></div><span className="settings-role-badge">Private</span></div><div className="gym-settings-fields"><label>Your mobile number <span className="required-label">Required</span><input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[6-9][0-9]{9}" value={ownerPhone} onChange={event => setOwnerPhone(event.target.value.replace(/\D/g, '').slice(0, 10))} placeholder={loadingOwnerPhone ? 'Loading…' : '10-digit mobile number'} disabled={loadingOwnerPhone}/></label></div><div className="settings-panel-footer"><p>Changes appear in the LiftDesk admin gym directory after refresh.</p><button type="submit" className="button-primary" disabled={savingOwnerPhone || loadingOwnerPhone}>{savingOwnerPhone ? 'Saving…' : 'Save owner contact'}</button></div></form></div>}
           {section === 'Help' && <div className="help-center" data-motion-reveal><section className="surface help-intro"><div><span className="help-kicker">LIFTDESK HELP</span><h2>Find your way around the workspace.</h2><p>These guides describe what the current LiftDesk tools do. Your access depends on your gym role.</p></div></section><div className="help-topic-grid"><HelpTopic title="Members" description="Add members, update their contact and membership details, and record a manual check-in from the member list." action="Open Members" onClick={() => navigate('Members')}/><HelpTopic title="Attendance" description="Check today’s visits and recent records. Staff record a check-in from Members after confirming the correct person." action="Open Attendance" onClick={() => navigate('Attendance')}/><HelpTopic title="Members away" description="Follow-ups tracks each member’s latest visit and how many days they have been away. It does not automatically message members." action="Open Follow-ups" onClick={() => navigate('Follow-ups')}/><HelpTopic title="Coaching" description="Trainers can review members in this gym and manage their diet plans, workout plans, progress, and coaching notes." action="Open Coaching" onClick={() => navigate('Coaching')}/><HelpTopic title="Reports" description="See gym-scoped membership counts, attendance records from the last 30 days, and members away for at least 7 days." action="Open Reports" onClick={() => navigate('Reports')}/>{(role === 'owner' || role === 'admin') && <HelpTopic title="Staff access" description="Owners and Admins manage staff records and invitations. Staff use the invited email account and are linked to this gym and assigned role." action="Open Staff" onClick={() => navigate('Staff')}/>}<HelpTopic title="Gym chat" description={role === 'owner' || role === 'admin' ? 'Owners and Admins can send and pin messages. Trainers and members can read gym messages but cannot send them.' : 'You can read gym messages here. Only Owners and Admins can send or pin messages.'} action="Open chat" onClick={() => document.querySelector<HTMLButtonElement>('.gym-chat-floating-launcher')?.click()}/></div></div>}
         </>}
         <footer className="page-footer"><span><button type="button" className="footer-home" onClick={() => navigate('Overview')} aria-label="LiftDesk home, Overview"><LiftDeskLogo compact /></button> · {workspaceGym.name} · © {new Date().getFullYear()}</span><span>Private gym workspace · {workspaceGym.name}</span></footer>

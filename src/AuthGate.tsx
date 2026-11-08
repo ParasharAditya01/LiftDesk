@@ -53,6 +53,7 @@ export default function AuthGate() {
   const [gymName, setGymName] = useState('')
   const [city, setCity] = useState('')
   const [phone, setPhone] = useState('')
+  const [ownerMobilePhone, setOwnerMobilePhone] = useState('')
   const [gymTheme, setGymTheme] = useState<GymThemeId>(DEFAULT_GYM_THEME)
   const authRequestLock = useRef(createRequestLock())
 
@@ -377,9 +378,13 @@ export default function AuthGate() {
       setError('Enter a city name between 2 and 100 characters.')
       return
     }
+    if (!/^[6-9]\d{9}$/.test(ownerMobilePhone)) {
+      setError('Enter a valid 10-digit Indian mobile number for the gym owner.')
+      return
+    }
     setError(''); setSaving(true)
     try {
-      await requestOwnerWorkspace({ gymName, ownerName, city: normalizedCity, phone, theme: gymTheme })
+      await requestOwnerWorkspace({ gymName, ownerName, city: normalizedCity, ownerMobilePhone, gymPhone: phone, theme: gymTheme })
       const request = await getMyOwnerAccessRequest(session.user.id)
       if (!request) throw new Error('LiftDesk saved the request, but its status could not be loaded. Refresh this page.')
       setOwnerRequest(request); setNeedsWorkspace(false)
@@ -500,6 +505,7 @@ export default function AuthGate() {
     <form className="auth-form" onSubmit={submitWorkspace}>
       <label>Gym name<input required minLength={2} maxLength={120} value={gymName} onChange={e => setGymName(e.target.value)} placeholder="e.g. Power Fitness Club" /></label>
       <label>Owner name<input required minLength={2} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>
+      <label>Your mobile number <span className="required-label">Required</span><input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[6-9][0-9]{9}" title="Enter a valid 10-digit Indian mobile number." value={ownerMobilePhone} onChange={e => setOwnerMobilePhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit mobile number" /></label>
       <label>City <span className="required-label">Required</span><input required minLength={2} maxLength={100} value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Pune" /></label>
       <label>Gym phone <span className="optional-label">Optional</span><input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91…" /></label>
       <GymThemeSelector value={gymTheme} onChange={setGymTheme} />
