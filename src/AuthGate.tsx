@@ -57,6 +57,29 @@ export default function AuthGate() {
   const authRequestLock = useRef(createRequestLock())
 
   useEffect(() => {
+    if (platformAdmin && platformAdminView) {
+      document.title = 'LiftDesk admin | LiftDesk'
+      return
+    }
+    if (workspace) {
+      const workspaceLabel = workspace.role === 'member'
+        ? 'Member portal'
+        : `${workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)} workspace`
+      document.title = `${workspace.gym.name} · ${workspaceLabel} | LiftDesk`
+      return
+    }
+    if (session && busy) {
+      document.title = 'Loading workspace | LiftDesk'
+      return
+    }
+    if (session && needsWorkspace) {
+      document.title = 'Workspace setup | LiftDesk'
+      return
+    }
+    document.title = `${mode === 'signup' ? 'Create account' : 'Sign in'} | LiftDesk`
+  }, [platformAdmin, platformAdminView, workspace, session, busy, needsWorkspace, mode])
+
+  useEffect(() => {
     if (emailWaitSeconds <= 0) return
     const timer = window.setTimeout(() => setEmailWaitSeconds(seconds => Math.max(0, seconds - 1)), 1000)
     return () => window.clearTimeout(timer)
