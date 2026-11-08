@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { Activity, Bell, CalendarDays, ClipboardCheck, Dumbbell, LayoutDashboard, LoaderCircle, LogOut, Menu, Plus, Search, Users, X } from 'lucide-react'
+import { Activity, ArrowUpRight, Bell, CalendarDays, ClipboardCheck, Dumbbell, LayoutDashboard, LoaderCircle, LogOut, Menu, Plus, Search, Users, X } from 'lucide-react'
 import { createMember, createMemberInvitation, listAttendance, listFollowUps, listMemberFollowUpSummary, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole, type MemberFollowUpSummary } from './lib/gymData'
 import { signOutWithPushCleanup } from './lib/pushNotifications'
 import { userFacingError } from './lib/userFacingError'
@@ -21,10 +21,12 @@ const sections: { name: Section; icon: typeof LayoutDashboard }[] = [
 const BUSINESS_TIME_ZONE = 'Asia/Kolkata'
 const indiaDateKey = (value: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: BUSINESS_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(value)
 const dateLabel = (value: string | null) => value ? new Date(value + (value.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('en-IN', { timeZone: BUSINESS_TIME_ZONE, day: '2-digit', month: 'short', year: 'numeric' }) : 'Not set'
-const daysSinceVisit = (lastVisit: string) => {
+const daysSinceDate = (value: string) => {
   const toDayNumber = (key: string) => { const [year, month, day] = key.split('-').map(Number); return Math.floor(Date.UTC(year, month - 1, day) / 86400000) }
-  return Math.max(0, toDayNumber(indiaDateKey(new Date())) - toDayNumber(indiaDateKey(new Date(lastVisit))))
+  const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : indiaDateKey(new Date(value))
+  return Math.max(0, toDayNumber(indiaDateKey(new Date())) - toDayNumber(dateKey))
 }
+const daysSinceVisit = daysSinceDate
 const timeLabel = (value: string) => new Date(value).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 const initials = (name: string) => name.split(/\s+/).slice(0, 2).map(p => p[0] ?? '').join('').toUpperCase()
 const money = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value)
@@ -145,6 +147,17 @@ export default function LiveApp({ gym, role, user }: Props) {
   const expiring = members.filter(m => m.membership_expires_on && m.membership_expires_on >= today && m.membership_expires_on <= renewalWindowEnd)
   const inactiveFollowUps = followUps.filter(f => f.kind === 'inactive' && f.status !== 'resolved')
   const openFollowUps = followUps.filter(f => f.status !== 'resolved')
+  const awayMembers = useMemo(() => followUpMembers
+    .map(member => ({ member, daysAway: daysSinceDate(member.last_visit_at || member.joined_on), neverVisited: !member.last_visit_at }))
+    .filter(item => item.daysAway >= 7)
+    .sort((a, b) => b.daysAway - a.daysAway)
+    .slice(0, 5), [followUpMembers])
+  const awayMemberCount = useMemo(() => followUpMembers.filter(member => daysSinceDate(member.last_visit_at || member.joined_on) >= 7).length, [followUpMembers])
+
+  function openAwayMember(name: string) {
+    setQuery(name)
+    navigate('Follow-ups')
+  }
 
   async function addMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(''); setNotice('')
@@ -217,7 +230,10 @@ export default function LiveApp({ gym, role, user }: Props) {
               <Metric label="Renewals soon" value={String(expiring.length)} detail="Next 7 days" icon={CalendarDays}/>
               <Metric label="Open follow-ups" value={String(openFollowUps.length)} detail={inactiveFollowUps.length + ' inactivity reminders'} icon={Bell}/>
             </div>
-            <section className="surface attendance-trend-panel" data-motion-reveal><div className="surface-heading"><div><h2>Attendance activity</h2><p>Daily check-ins across the last 7 days, from your live gym records</p></div><span className="trend-period">LAST 7 DAYS</span></div><AttendanceTrend attendance={attendance}/></section>
+            <div className="overview-grid live-overview-grid" data-motion-reveal>
+              <section className="surface attendance-panel live-attendance-panel"><div className="surface-heading"><div><h2>Attendance activity</h2><p>Daily check-ins compared with the previous 7 days</p></div><button type="button" className="subtle-select" onClick={() => navigate('Attendance')}>View attendance <ArrowUpRight size={14}/></button></div><div className="chart-legend"><span><i className="live-legend-current"/>Check-ins</span><span><i className="live-legend-previous"/>Previous week</span></div><AttendanceTrend attendance={attendance}/></section>
+              <section className="surface attention-panel live-away-panel"><div className="surface-heading"><div><h2>Members away</h2><p>No visit in 7 or more days</p></div><span className="count-bubble">{awayMemberCount}</span></div>{awayMembers.length > 0 ? awayMembers.map(({ member, daysAway, neverVisited }) => <button type="button" className="live-away-row" key={member.id} onClick={() => openAwayMember(member.full_name)}><span className="live-away-avatar">{initials(member.full_name)}</span><span className="live-away-copy"><b>{member.full_name}</b><small>{neverVisited ? `No visit recorded · joined ${daysAway} ${daysAway === 1 ? 'day' : 'days'} ago` : `Last visit ${daysAway} ${daysAway === 1 ? 'day' : 'days'} ago`}</small></span><span className="live-away-badge">Away</span><ArrowUpRight size={15} className="live-away-arrow"/></button>) : <div className="live-away-empty">No members have been away for 7 or more days.</div>}<button type="button" className="full-width-link" onClick={() => navigate('Follow-ups')}>Open follow-up queue <ArrowUpRight size={15}/></button></section>
+            </div>
             <section className="surface recent-panel" data-motion-reveal><div className="surface-heading"><div><h2>Recent check-ins</h2><p>Latest attendance records from the last 30 days</p></div><button className="subtle-select" onClick={() => setSection('Attendance')}>View attendance ↗</button></div><RecordsTable attendance={attendance.slice(0,8)} members={members}/></section>
           </>}
           {section === 'Members' && <section className="surface directory-panel" data-motion-reveal>
@@ -244,15 +260,21 @@ export default function LiveApp({ gym, role, user }: Props) {
 }
 
 function AttendanceTrend({attendance}:{attendance:AttendanceRecord[]}) {
-  const days=Array.from({length:7},(_,index)=>{
-    const date=new Date(); date.setHours(12,0,0,0); date.setDate(date.getDate()-(6-index))
-    const key=indiaDateKey(date)
-    return {key,label:new Intl.DateTimeFormat('en-IN',{weekday:'short'}).format(date),count:attendance.filter(row=>indiaDateKey(new Date(row.checked_in_at))===key).length}
-  })
-  const maximum=Math.max(1,...days.map(day=>day.count))
-  return <div className="attendance-trend" role="img" aria-label={'Attendance over the last seven days: '+days.map(day=>day.label+' '+day.count).join(', ')}>
-    {days.map(day=><div className="trend-day" key={day.key}><div className="trend-bar-track"><div className="trend-bar" style={{height:Math.max(day.count?8:3,(day.count/maximum)*100)+'%'}} title={day.count+' check-ins'}/></div><b>{day.count}</b><span>{day.label}</span></div>)}
-  </div>
+  const makeDay = (daysAgo: number) => {
+    const date = new Date(`${indiaDateKey(new Date())}T12:00:00+05:30`); date.setUTCDate(date.getUTCDate() - daysAgo)
+    const key = indiaDateKey(date)
+    return { key, label: new Intl.DateTimeFormat('en-IN', { weekday: 'short', timeZone: BUSINESS_TIME_ZONE }).format(date), count: attendance.filter(row => indiaDateKey(new Date(row.checked_in_at)) === key).length }
+  }
+  const current = Array.from({ length: 7 }, (_, index) => makeDay(6 - index))
+  const previous = Array.from({ length: 7 }, (_, index) => makeDay(13 - index))
+  const ceiling = Math.max(4, Math.ceil(Math.max(...current.map(day => day.count), ...previous.map(day => day.count)) / 4) * 4)
+  const y = (count: number) => 178 - (count / ceiling) * 160
+  const x = (index: number) => index * (560 / 6)
+  const linePoints = (days: typeof current) => days.map((day, index) => `${x(index)},${y(day.count)}`).join(' ')
+  const areaPath = `${current.map((day, index) => `${index ? 'L' : 'M'}${x(index)} ${y(day.count)}`).join(' ')} L560 190 L0 190 Z`
+  const labels = [...new Set([ceiling, Math.round(ceiling * .75), Math.round(ceiling * .5), Math.round(ceiling * .25), 0])]
+  const description = current.map(day => `${day.label} ${day.count}`).join(', ')
+  return <div className="chart-wrap live-attendance-chart" role="img" aria-label={`Check-ins for the last seven days: ${description}. Dashed line shows the previous week.`}><div className="chart-y-labels" aria-hidden="true">{labels.map((label, index) => <span key={`${label}-${index}`}>{label}</span>)}</div><div className="chart-plot"><div className="chart-gridlines" aria-hidden="true">{labels.map((_, index) => <i key={index}/>)}</div><svg viewBox="0 0 560 190" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="liveAttendanceFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--theme-accent, #b7a17a)" stopOpacity=".38"/><stop offset="100%" stopColor="var(--theme-accent, #b7a17a)" stopOpacity="0"/></linearGradient></defs><path d={areaPath} fill="url(#liveAttendanceFill)"/><polyline points={linePoints(previous)} fill="none" stroke="#d4d0c7" strokeWidth="2.5" strokeDasharray="5 6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/><polyline points={linePoints(current)} fill="none" stroke="#343b36" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>{current.map((day, index) => <circle key={day.key} cx={x(index)} cy={y(day.count)} r="4" fill="var(--theme-surface, #fff)" stroke="#343b36" strokeWidth="2.5" vectorEffect="non-scaling-stroke"/>)}</svg><div className="chart-x-labels" aria-hidden="true">{current.map(day => <span key={day.key}>{day.label}</span>)}</div></div></div>
 }
 
 function Status({status}: {status: GymMember['status']}) { const label = status === 'active' ? 'Active' : status === 'paused' ? 'Paused' : 'Inactive'; return <span className={'status status-' + (status === 'active' ? 'active' : status === 'paused' ? 'expiring' : 'inactive')}><i/>{label}</span> }
