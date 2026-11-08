@@ -30,6 +30,9 @@ export function userFacingError(value: unknown, fallback: string): string {
   if (/this account already belongs to a gym/.test(message)) {
     return 'This account is already linked to a gym and cannot accept another gym invitation.'
   }
+  if (code === 'PGRST202' && /update_gym_workspace_settings/.test(message)) {
+    return 'Gym settings cannot be saved yet. Ask the LiftDesk platform administrator to apply the latest workspace settings migration.'
+  }
   if (error?.name === 'AuthRetryableFetchError' || /network|fetch|failed to connect|load failed/.test(message)) {
     return 'A network error interrupted the request. Check your connection and try again.'
   }

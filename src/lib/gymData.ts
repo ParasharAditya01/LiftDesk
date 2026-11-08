@@ -164,6 +164,32 @@ export async function listMembers(gymId: string): Promise<GymMember[]> {
   return (data ?? []) as GymMember[]
 }
 
+export async function updateGymWorkspaceSettings(gymId: string, input: {
+  name: string
+  city: string
+  phone: string
+  theme: GymThemeId
+}): Promise<Gym> {
+  const { data, error } = await requireSupabase().rpc('update_gym_workspace_settings', {
+    target_gym: gymId,
+    requested_name: input.name.trim(),
+    requested_city: input.city.trim(),
+    requested_phone: input.phone.trim() || null,
+    requested_theme: input.theme,
+  })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row || typeof row !== 'object') throw new Error('Gym settings were not saved.')
+  const result = row as { gym_id: string; gym_name: string; gym_city: string | null; gym_phone: string | null; gym_theme: unknown }
+  return {
+    id: result.gym_id,
+    name: result.gym_name,
+    city: result.gym_city,
+    phone: result.gym_phone,
+    theme: normalizeGymTheme(result.gym_theme),
+  }
+}
+
 export async function createMember(gymId: string, input: {
   fullName: string
   phone: string

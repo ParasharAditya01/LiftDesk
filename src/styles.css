@@ -1049,6 +1049,33 @@ svg {
   .app-shell .surface,.app-shell .metric-card,.app-shell .welcome-card,.app-shell .member-modal{background:#fbfaf6}
 }
 
+.app-shell .sidebar-utility-nav{display:flex;flex-direction:column;gap:4px;padding-top:11px;border-top:1px solid var(--theme-line,#3b3c3e)}
+.app-shell .sidebar-utility-nav .nav-item{color:var(--theme-sidebar-muted,#b7a17a)}
+.app-shell .sidebar-utility-nav .nav-item:hover{background:color-mix(in srgb,var(--theme-sidebar-ink,#fff) 9%,transparent);color:var(--theme-sidebar-ink,#fff)}
+.app-shell .sidebar-utility-nav .nav-item.nav-active{background:var(--theme-accent,#b7a17a);color:var(--theme-accent-ink,#202124)}
+.app-shell .gym-settings-panel{display:grid;gap:22px;padding:24px}
+.app-shell .settings-panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.app-shell .settings-panel-heading h2,.app-shell .help-intro h2{margin:0;color:var(--theme-ink,#202124);font-size:18px}
+.app-shell .settings-panel-heading p,.app-shell .help-intro p{margin:6px 0 0;color:var(--theme-muted,#77736b);font-size:12px;line-height:1.6}
+.app-shell .settings-role-badge{flex:none;padding:6px 9px;border-radius:7px;background:var(--theme-canvas,#f2f0eb);color:var(--theme-muted,#625c51);font-size:10px;font-weight:700}
+.app-shell .gym-settings-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.app-shell .gym-settings-fields label{display:grid;gap:7px;color:var(--theme-ink,#292a2d);font-size:11px;font-weight:650}
+.app-shell .gym-settings-fields label:first-child{grid-column:1/-1}
+.app-shell .gym-settings-fields input{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--theme-line,#e2e3da);border-radius:8px;background:var(--theme-surface,#fff);color:var(--theme-ink,#202124);font:inherit;font-size:12px}
+.app-shell .gym-settings-fields input:focus-visible{outline:3px solid color-mix(in srgb,var(--theme-accent,#b7a17a) 25%,transparent);outline-offset:2px}
+.app-shell .settings-optional{margin-left:4px;color:var(--theme-muted,#77736b);font-size:9px;font-weight:500}
+.app-shell .settings-panel-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:16px;border-top:1px solid var(--theme-line,#e2e3da)}
+.app-shell .settings-panel-footer p{margin:0;color:var(--theme-muted,#77736b);font-size:10px;line-height:1.5}
+.app-shell .help-center{display:grid;gap:16px}
+.app-shell .help-intro{padding:23px 24px}
+.app-shell .help-kicker{display:block;margin-bottom:7px;color:var(--theme-muted,#77736b);font-size:9px;font-weight:750;letter-spacing:.1em}
+.app-shell .help-topic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.app-shell .help-topic{display:flex;flex-direction:column;justify-content:space-between;gap:18px;min-width:0;padding:18px}
+.app-shell .help-topic h3{margin:0;color:var(--theme-ink,#202124);font-size:13px}
+.app-shell .help-topic p{margin:7px 0 0;color:var(--theme-muted,#77736b);font-size:11px;line-height:1.6}
+.app-shell .help-topic .subtle-select{align-self:flex-start}
+@media(max-width:600px){.app-shell .gym-settings-panel{gap:18px;padding:17px 14px}.app-shell .gym-settings-fields{grid-template-columns:1fr;gap:12px}.app-shell .gym-settings-fields label:first-child{grid-column:auto}.app-shell .settings-panel-footer{align-items:stretch;flex-direction:column}.app-shell .settings-panel-footer .button-primary{width:100%}.app-shell .help-topic-grid{grid-template-columns:1fr}.app-shell .help-intro{padding:18px 15px}.app-shell .settings-role-badge{font-size:9px}}
+
 .app-shell .live-overview-grid{align-items:stretch;margin-bottom:18px}
 .app-shell .live-attendance-panel,.app-shell .live-away-panel{min-width:0;padding:22px 24px}
 .app-shell .live-attendance-panel .chart-legend{margin:18px 0 8px}
