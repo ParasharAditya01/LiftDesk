@@ -405,7 +405,7 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
   return <section className="gym-chat surface" aria-label={`Chat for ${gymName}`}>
     <header className="gym-chat-header">
       <span className="gym-chat-mark" aria-hidden="true"><MessageSquare size={18}/></span>
-      <div><h2>Gym chat</h2><p>Everyone in {gymName} can read and send messages.</p></div>
+      <div><h2>Gym chat</h2><p>Owners and Admins at {gymName} can read and send messages.</p></div>
       <span className={'gym-chat-connection ' + (connected ? 'is-connected' : '')} role="status">{connected ? 'Live' : connectionError ? 'Offline' : 'Connecting'}</span>
       {onClose && <button type="button" className="gym-chat-close" aria-label="Close gym chat" onClick={onClose}><X size={17}/></button>}
     </header>
@@ -439,7 +439,7 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
     {pinError && <p className="gym-chat-error" role="alert">{pinError}</p>}
 
     <div className="gym-chat-messages" aria-label="Gym chat messages" aria-live="polite" aria-relevant="additions text">
-      {loading ? <div className="gym-chat-empty" role="status">Loading messages…</div> : messages.length === 0 ? <div className="gym-chat-empty"><MessageSquare size={20}/><b>Start the conversation</b><span>Send a message to everyone at {gymName}.</span></div> : messages.map(message => {
+      {loading ? <div className="gym-chat-empty" role="status">Loading messages…</div> : messages.length === 0 ? <div className="gym-chat-empty"><MessageSquare size={20}/><b>Start the conversation</b><span>Send a message to Owners and Admins at {gymName}.</span></div> : messages.map(message => {
         const ownMessage = message.user_id === userId
         return <article key={message.id} className={'gym-chat-message ' + (ownMessage ? 'is-own-message' : '')}>
           {!ownMessage && <b className="gym-chat-sender">{message.sender_name}</b>}

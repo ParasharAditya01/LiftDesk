@@ -402,6 +402,31 @@ for (const name of ['rls_auto_enable', 'snapshot_coaching_plan_revision']) {
   requireText(rpcGrantHardening, `revoke execute on function public.${name}() from public, anon, authenticated`, `${name} must be trigger-only, not callable through client roles`)
 }
 
+// Chat is deliberately limited to Owners/Admins, including its key and push paths.
+const ownerAdminChat = compact(read('supabase/migrations/20261108103127_owner_admin_only_gym_chat.sql'))
+for (const [fragment, label] of [
+  ['create policy "gym owners and admins read chat"', 'chat reads'],
+  ['create policy "gym owners and admins send chat"', 'chat sends'],
+  ['create policy "gym managers pin chat announcements"', 'chat pins'],
+  ['create policy "active gym participants read active chat device keys"', 'chat encryption keys'],
+  ['create policy "users register their own active gym chat devices"', 'chat device registration'],
+  ['create policy "users manage their own gym chat push subscriptions"', 'chat subscription reads'],
+  ['create policy "active gym participants subscribe to push"', 'chat subscription creation'],
+  ['create policy "users update their own active gym chat push subscriptions"', 'chat subscription updates'],
+]) {
+  requireText(ownerAdminChat, fragment, `Owner/Admin-only RLS policy is required for ${label}`)
+}
+if (ownerAdminChat.includes("array['owner', 'admin', 'trainer']") || ownerAdminChat.includes("array['owner','admin','trainer']")) {
+  fail('Trainers must not be included in any Owner/Admin-only chat policy')
+}
+const liveChatApp = compact(read('src/LiveApp.tsx'))
+requireText(liveChatApp, "(role === 'owner' || role === 'admin') && <floatinggymchat", 'Only Owners/Admins should mount the gym chat UI')
+const memberPortal = compact(read('src/MemberPortal.tsx'))
+if (memberPortal.includes('floatinggymchat')) fail('The member portal must not mount gym chat')
+const chatPush = compact(read('supabase/functions/send-gym-chat-push/index.ts'))
+requireText(chatPush, ".in('role', ['owner', 'admin'])", 'Chat push recipients must be restricted to Owner/Admin memberships')
+requireText(chatPush, ".in('user_id', recipientids)", 'Push delivery must target only the eligible Owner/Admin recipient set')
+
 // Cloudflare Pages response headers provide defense in depth for browser data.
 const pagesHeaders = compact(read('public/_headers'))
 for (const [fragment, message] of [
@@ -420,5 +445,5 @@ if (failures.length) {
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, aggregate platform-admin directory, sensitive RPC grants, and browser headers are present.')
+console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, aggregate platform-admin directory, Owner/Admin-only chat, sensitive RPC grants, and browser headers are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')

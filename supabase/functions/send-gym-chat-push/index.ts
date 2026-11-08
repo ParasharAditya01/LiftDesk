@@ -64,6 +64,22 @@ const authenticatedHandler = withSupabase({ auth: 'user' }, async (request, cont
   }
   if (!message) return respond({ error: 'Message not found.' }, 404)
 
+  // Keep this endpoint role-restricted even if an older deployment or a
+  // direct invocation bypasses the current chat UI.
+  const { data: senderMembership, error: senderRoleError } = await context.supabase
+    .from('gym_memberships')
+    .select('gym_id')
+    .eq('gym_id', message.gym_id)
+    .eq('user_id', userId)
+    .eq('active', true)
+    .in('role', ['owner', 'admin'])
+    .maybeSingle()
+  if (senderRoleError) {
+    console.error('Could not authorize gym chat push role:', senderRoleError.code)
+    return respond({ error: 'Could not prepare chat notifications.' }, 500)
+  }
+  if (!senderMembership) return respond({ error: 'Only gym Owners and Admins can send chat messages.' }, 403)
+
   const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')
   const vapidSubject = Deno.env.get('VAPID_SUBJECT')
@@ -72,21 +88,34 @@ const authenticatedHandler = withSupabase({ auth: 'user' }, async (request, cont
     return respond({ error: 'Push notifications are not configured.' }, 503)
   }
 
+  const { data: recipientMemberships, error: recipientsError } = await context.supabaseAdmin
+    .from('gym_memberships')
+    .select('user_id')
+    .eq('gym_id', message.gym_id)
+    .eq('active', true)
+    .in('role', ['owner', 'admin'])
+  if (recipientsError) {
+    console.error('Could not load gym chat notification recipients:', recipientsError.code)
+    return respond({ error: 'Could not prepare chat notifications.' }, 500)
+  }
+  const recipientIds = [...new Set((recipientMemberships ?? []).map(row => row.user_id).filter(id => id !== userId))]
   const subscriptions: PushSubscriptionRow[] = []
-  for (let offset = 0; ; offset += 500) {
-    const { data, error: subscriptionsError } = await context.supabaseAdmin
-      .from('gym_chat_push_subscriptions')
-      .select('id, user_id, endpoint, p256dh, auth')
-      .eq('gym_id', message.gym_id)
-      .neq('user_id', userId)
-      .order('id')
-      .range(offset, offset + 499)
-    if (subscriptionsError) {
-      console.error('Could not load gym chat push subscriptions:', subscriptionsError.code)
-      return respond({ error: 'Could not prepare chat notifications.' }, 500)
+  if (recipientIds.length) {
+    for (let offset = 0; ; offset += 500) {
+      const { data, error: subscriptionsError } = await context.supabaseAdmin
+        .from('gym_chat_push_subscriptions')
+        .select('id, user_id, endpoint, p256dh, auth')
+        .eq('gym_id', message.gym_id)
+        .in('user_id', recipientIds)
+        .order('id')
+        .range(offset, offset + 499)
+      if (subscriptionsError) {
+        console.error('Could not load gym chat push subscriptions:', subscriptionsError.code)
+        return respond({ error: 'Could not prepare chat notifications.' }, 500)
+      }
+      subscriptions.push(...(data as PushSubscriptionRow[] ?? []))
+      if (!data || data.length < 500) break
     }
-    subscriptions.push(...(data as PushSubscriptionRow[] ?? []))
-    if (!data || data.length < 500) break
   }
 
   // Load the recipient set before claiming the message so a transient database

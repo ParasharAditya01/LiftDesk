@@ -5,7 +5,6 @@ import type { Gym } from './lib/gymData'
 import { getOwnCoachingRecords, getOwnMemberProfile, type CoachingPlan, type MemberProfile, type MemberProgress } from './lib/gymData'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
-import FloatingGymChat from './FloatingGymChat'
 
 type MemberCoaching = {
   diet: Omit<CoachingPlan, 'created_by' | 'created_at'>[]
@@ -140,7 +139,6 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
         <footer className="member-portal-footer"><span><ShieldCheck size={15}/> You can only view your own membership and coaching records.</span><span>LiftDesk · {gym.name}</span></footer>
       </>}
     </div>
-    {!loading && !error && profile && <FloatingGymChat gymId={gym.id} userId={user.id} gymName={gym.name} canManagePins={false}/>}
   </main>
 }
 

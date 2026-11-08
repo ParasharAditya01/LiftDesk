@@ -10,7 +10,7 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 - Basic attendance and membership reports.
 - Trainer coaching workspace for member-specific plans, progress and notes.
 - A restricted member portal for a member's own profile, published plans and permitted progress records.
-- Gym-scoped staff workspace and invitations, plus gym chat with optional web push notifications.
+- Gym-scoped staff workspace and invitations, plus Owner/Admin gym chat with optional web push notifications.
 - Multi-gym architecture with gym-level isolation enforced by PostgreSQL Row Level Security (RLS).
 
 ## Roles
@@ -30,7 +30,7 @@ Existing `staff` memberships are migrated in place to `trainer`; user accounts a
 
 ## Current rebuild status
 
-The current branch includes sign-in and owner access requests, gym workspaces, member and staff management, member invitations and the member portal, trainer coaching tools, manual check-in and attendance history, attendance-based follow-up tracking, basic live workspace reports, and gym chat. `/preview` is a separate sample-data walkthrough and is **not connected to a database**. The current production deployment must be checked separately; source code on this branch does not prove what is live.
+The current branch includes sign-in and owner access requests, gym workspaces, member and staff management, member invitations and the member portal, trainer coaching tools, manual check-in and attendance history, attendance-based follow-up tracking, basic live workspace reports, and gym chat for active Owners and Admins. Trainers and members do not have chat access. `/preview` is a separate sample-data walkthrough and is **not connected to a database**. The current production deployment must be checked separately; source code on this branch does not prove what is live.
 
 Member QR/WhatsApp OTP check-in has been removed from the interface. Trainers record attendance from the Members screen with the Manual check-in action. Migration `0006_disable_phone_otp_checkin.sql` revokes and removes the old phone-OTP RPC; its production application status must be verified separately. Local source changes are not automatically live.
 
