@@ -5,6 +5,7 @@ import type { Gym } from './lib/gymData'
 import { getOwnCoachingRecords, getOwnMemberProfile, type CoachingPlan, type MemberProfile, type MemberProgress } from './lib/gymData'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
+import FloatingGymChat from './FloatingGymChat'
 
 type MemberCoaching = {
   diet: Omit<CoachingPlan, 'created_by' | 'created_at'>[]
@@ -65,7 +66,8 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
   const latestProgress = coaching.progress[0]
   const readableStatus = profile?.status ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1) : '—'
 
-  return <main className="member-portal-shell">
+  return <>
+  <main className="member-portal-shell">
     <header className="member-portal-header">
       <div className="member-portal-brand"><LiftDeskMark size={38}/><div><b>Lift<span>Desk</span></b><small>MEMBER PORTAL</small></div></div>
     </header>
@@ -140,6 +142,8 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
       </>}
     </div>
   </main>
+  <FloatingGymChat gymId={gym.id} userId={user.id} gymName={gym.name} canSend={false} canManagePins={false} />
+  </>
 }
 
 function SummaryItem({ label, value, detail }: { label: string; value: string; detail: string }) {

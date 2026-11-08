@@ -93,7 +93,7 @@ const authenticatedHandler = withSupabase({ auth: 'user' }, async (request, cont
     .select('user_id')
     .eq('gym_id', message.gym_id)
     .eq('active', true)
-    .in('role', ['owner', 'admin'])
+    .in('role', ['owner', 'admin', 'trainer', 'member'])
   if (recipientsError) {
     console.error('Could not load gym chat notification recipients:', recipientsError.code)
     return respond({ error: 'Could not prepare chat notifications.' }, 500)

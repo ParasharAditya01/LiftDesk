@@ -402,30 +402,25 @@ for (const name of ['rls_auto_enable', 'snapshot_coaching_plan_revision']) {
   requireText(rpcGrantHardening, `revoke execute on function public.${name}() from public, anon, authenticated`, `${name} must be trigger-only, not callable through client roles`)
 }
 
-// Chat is deliberately limited to Owners/Admins, including its key and push paths.
-const ownerAdminChat = compact(read('supabase/migrations/20261108103127_owner_admin_only_gym_chat.sql'))
-for (const [fragment, label] of [
-  ['create policy "gym owners and admins read chat"', 'chat reads'],
-  ['create policy "gym owners and admins send chat"', 'chat sends'],
-  ['create policy "gym managers pin chat announcements"', 'chat pins'],
-  ['create policy "active gym participants read active chat device keys"', 'chat encryption keys'],
-  ['create policy "users register their own active gym chat devices"', 'chat device registration'],
-  ['create policy "users manage their own gym chat push subscriptions"', 'chat subscription reads'],
-  ['create policy "active gym participants subscribe to push"', 'chat subscription creation'],
-  ['create policy "users update their own active gym chat push subscriptions"', 'chat subscription updates'],
-]) {
-  requireText(ownerAdminChat, fragment, `Owner/Admin-only RLS policy is required for ${label}`)
-}
-if (ownerAdminChat.includes("array['owner', 'admin', 'trainer']") || ownerAdminChat.includes("array['owner','admin','trainer']")) {
-  fail('Trainers must not be included in any Owner/Admin-only chat policy')
-}
+// All active gym roles can read encrypted announcements; only Owners/Admins send.
+const chatAccess = compact(read('supabase/migrations/20261108120000_gym_chat_read_only_for_members_trainers.sql'))
+requireText(chatAccess, 'create policy "active gym participants read encrypted chat"', 'active gym participants must read chat')
+requireText(chatAccess, "body like 'ld-e2ee1:%'", 'read-only roles must only fetch encrypted messages')
+requireText(chatAccess, 'create policy "gym owners and admins read legacy chat"', 'legacy plaintext must stay Owner/Admin-only')
+requireText(chatAccess, "array['owner', 'admin', 'trainer', 'member']::public.gym_role[]", 'chat reads, key access, and push subscriptions must include every gym role')
+const restrictedChat = compact(read('supabase/migrations/20261108103127_owner_admin_only_gym_chat.sql'))
+requireText(restrictedChat, 'create policy "gym owners and admins send chat"', 'chat sends must remain Owner/Admin-only')
+requireText(restrictedChat, 'create policy "gym managers pin chat announcements"', 'chat pins must remain Owner/Admin-only')
 const liveChatApp = compact(read('src/LiveApp.tsx'))
-requireText(liveChatApp, "(role === 'owner' || role === 'admin') && <floatinggymchat", 'Only Owners/Admins should mount the gym chat UI')
+requireText(liveChatApp, '<floatinggymchat', 'gym staff roles must mount the chat UI')
+requireText(liveChatApp, "cansend={role === 'owner' || role === 'admin'}", 'only Owners/Admins should be able to send in the staff workspace')
 const memberPortal = compact(read('src/MemberPortal.tsx'))
-if (memberPortal.includes('floatinggymchat')) fail('The member portal must not mount gym chat')
+requireText(memberPortal, '<floatinggymchat', 'members must be able to read gym chat')
+requireText(memberPortal, 'cansend={false}', 'member chat must be read-only')
 const chatPush = compact(read('supabase/functions/send-gym-chat-push/index.ts'))
-requireText(chatPush, ".in('role', ['owner', 'admin'])", 'Chat push recipients must be restricted to Owner/Admin memberships')
-requireText(chatPush, ".in('user_id', recipientids)", 'Push delivery must target only the eligible Owner/Admin recipient set')
+if (!chatPush.includes(".in('role', ['owner', 'admin'])")) fail('Chat push sender must remain Owner/Admin-only')
+requireText(chatPush, ".in('role', ['owner', 'admin', 'trainer', 'member'])", 'Chat push recipients should include all active gym participants')
+requireText(chatPush, ".in('user_id', recipientids)", 'Push delivery must target only active gym participants')
 
 // Cloudflare Pages response headers provide defense in depth for browser data.
 const pagesHeaders = compact(read('public/_headers'))
@@ -445,5 +440,5 @@ if (failures.length) {
   for (const failure of failures) console.error(' - ' + failure)
   process.exit(1)
 }
-console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, aggregate platform-admin directory, Owner/Admin-only chat, sensitive RPC grants, and browser headers are present.')
+console.log('LiftDesk static security contract passed: tenant RLS, attendance authorization, theme persistence, member/staff invitations and rate limits, coaching/template scope, staff access synchronization, aggregate platform-admin directory, encrypted participant-read chat with Owner/Admin-only sending, sensitive RPC grants, and browser headers are present.')
 console.log('Limitation: this source check does not inspect deployed PostgreSQL grants/policies or test live RLS and cross-gym isolation.')

@@ -3,9 +3,9 @@ import { MessageSquare, X } from 'lucide-react'
 import GymChat from './GymChat'
 import { ensureRegisteredChatDevice } from './lib/gymChatEncryption'
 
-type Props = { gymId: string; userId: string; gymName: string; canManagePins: boolean }
+type Props = { gymId: string; userId: string; gymName: string; canSend: boolean; canManagePins: boolean }
 
-export default function FloatingGymChat({ gymId, userId, gymName, canManagePins }: Props) {
+export default function FloatingGymChat({ gymId, userId, gymName, canSend, canManagePins }: Props) {
   const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).get('open_chat') === '1')
   const launcherRef = useRef<HTMLButtonElement>(null)
 
@@ -42,7 +42,7 @@ export default function FloatingGymChat({ gymId, userId, gymName, canManagePins 
 
   return <>
     {open && <div id="gym-chat-floating-panel" className="gym-chat-floating-panel" role="dialog" aria-label={`Gym chat for ${gymName}`}>
-      <GymChat gymId={gymId} userId={userId} gymName={gymName} canManagePins={canManagePins} onClose={() => {
+      <GymChat gymId={gymId} userId={userId} gymName={gymName} canSend={canSend} canManagePins={canManagePins} onClose={() => {
         setOpen(false)
         requestAnimationFrame(() => launcherRef.current?.focus())
       }}/>

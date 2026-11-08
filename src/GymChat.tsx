@@ -74,7 +74,7 @@ function chatErrorMessage(error: { code?: string } | null, action: 'load' | 'sen
       : 'Your message could not be sent. Please try again.'
 }
 
-export default function GymChat({ gymId, userId, gymName, canManagePins, onClose }: { gymId: string; userId: string; gymName: string; canManagePins: boolean; onClose?: () => void }) {
+export default function GymChat({ gymId, userId, gymName, canSend, canManagePins, onClose }: { gymId: string; userId: string; gymName: string; canSend: boolean; canManagePins: boolean; onClose?: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [loading, setLoading] = useState(true)
@@ -405,7 +405,7 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
   return <section className="gym-chat surface" aria-label={`Chat for ${gymName}`}>
     <header className="gym-chat-header">
       <span className="gym-chat-mark" aria-hidden="true"><MessageSquare size={18}/></span>
-      <div><h2>Gym chat</h2><p>Owners and Admins at {gymName} can read and send messages.</p></div>
+      <div><h2>Gym chat</h2><p>{canSend ? `Share updates with everyone at ${gymName}.` : `Read-only announcements from Owners and Admins at ${gymName}.`}</p></div>
       <span className={'gym-chat-connection ' + (connected ? 'is-connected' : '')} role="status">{connected ? 'Live' : connectionError ? 'Offline' : 'Connecting'}</span>
       {onClose && <button type="button" className="gym-chat-close" aria-label="Close gym chat" onClick={onClose}><X size={17}/></button>}
     </header>
@@ -415,7 +415,7 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
       {(pushStatus === 'off' || pushStatus === 'on') && <button type="button" disabled={pushBusy} onClick={() => void togglePushNotifications()}>{pushBusy ? 'Saving…' : pushStatus === 'on' ? 'Turn off' : 'Enable'}</button>}
     </div>
     {pushNotice && <p className="gym-chat-push-notice" role="status">{pushNotice}</p>}
-    {deviceKeys && <p className="gym-chat-encryption-note"><LockKeyhole size={13}/> New messages are end-to-end encrypted. This device can read messages sent after it was registered. Older messages are marked if they predate encryption.</p>}
+    {deviceKeys && <p className="gym-chat-encryption-note"><LockKeyhole size={13}/> New messages are end-to-end encrypted. This device can read messages sent after it was registered. Unencrypted legacy messages are hidden from read-only accounts.</p>}
     {deviceKeys && <details className="gym-chat-devices">
       <summary>Your encrypted devices ({ownDevices.length})</summary>
       <ul>{ownDevices.map(device => <li key={device.id}>
@@ -463,12 +463,12 @@ export default function GymChat({ gymId, userId, gymName, canManagePins, onClose
       <div ref={endRef}/>
     </div>
 
-    <form className="gym-chat-composer" onSubmit={sendMessage}>
+    {canSend ? <form className="gym-chat-composer" onSubmit={sendMessage}>
       <label className="sr-only" htmlFor="gym-chat-message">Message for everyone in {gymName}</label>
       <textarea id="gym-chat-message" value={draft} maxLength={2000} rows={2} disabled={!deviceKeys} placeholder={deviceKeys ? 'Write an encrypted message…' : 'Setting up encrypted chat…'} onChange={event => setDraft(event.target.value)} onKeyDown={event => {
         if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit() }
       }}/>
       <div className="gym-chat-composer-actions"><span>{draft.length}/2000 · Enter to send</span><button type="submit" className="button-primary" disabled={!deviceKeys || !draft.trim() || sending} aria-label="Send message">{sending ? 'Sending…' : <><Send size={15}/> Send</>}</button></div>
-    </form>
+    </form> : <p className="gym-chat-read-only" role="status"><LockKeyhole size={14}/> Read-only chat. Only Owners and Admins can send messages.</p>}
   </section>
 }

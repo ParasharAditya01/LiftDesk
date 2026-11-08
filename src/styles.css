@@ -1800,6 +1800,8 @@ svg {
 .gym-chat-notification-control button:hover{background:var(--theme-canvas,#f4f1e9)}
 .gym-chat-notification-control button:focus-visible{outline:2px solid var(--theme-accent,#a7ce56);outline-offset:2px}
 .gym-chat-push-notice{margin:0;padding:8px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#73756f);font-size:10px;line-height:1.4}
+.gym-chat-read-only{display:flex;align-items:center;gap:7px;margin:0;padding:12px 14px;border-top:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#73756f);font-size:11px;line-height:1.4}
+.gym-chat-read-only svg{flex:0 0 auto;color:var(--theme-accent-ink,#52682c)}
 .gym-chat-encryption-note{display:flex;align-items:center;gap:7px;margin:0;padding:8px 14px;border-bottom:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#73756f);font-size:10px;line-height:1.45}
 .gym-chat-encryption-note svg{flex:0 0 auto;color:var(--theme-accent-ink,#52682c)}
 .gym-chat-encryption-status{display:inline-flex;align-self:flex-start;margin:2px 0;color:var(--theme-muted,#73756f);font-size:9px;font-weight:650}
