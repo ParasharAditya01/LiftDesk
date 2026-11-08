@@ -2049,3 +2049,37 @@ svg {
 .landing-page main section[id]{scroll-margin-top:102px}
 .topbar{position:sticky;top:0;z-index:20}
 .member-portal-header{position:sticky;top:0;z-index:20;background:var(--theme-canvas,#f4f1e9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.preview-role-switch{display:inline-flex;align-items:center;gap:7px;color:var(--theme-muted,#77766f);font-size:10px;font-weight:650;white-space:nowrap}
+.preview-role-switch select{min-height:32px;padding:5px 26px 5px 9px;border:1px solid var(--theme-line,#e4e3dc);border-radius:8px;background:var(--theme-surface,#fff);color:var(--theme-ink,#202124);font-size:11px}
+.metric-grid-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.preview-member-nav button{flex:0 0 auto;min-height:38px;padding:0 2px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--theme-muted,#68716b);font-size:12px;font-weight:650;white-space:nowrap}
+.preview-member-nav button.is-active{border-bottom-color:var(--theme-accent,#b7a17a);color:var(--theme-ink,#202124)}
+.preview-member-nav button:focus-visible{outline-offset:1px}
+.member-portal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.member-portal-grid .member-portal-section:last-child{grid-column:1/-1}
+.preview-member-plan-links{display:grid;gap:9px}
+.preview-member-plan-links button{display:grid;gap:5px;width:100%;padding:14px 16px;border:1px solid var(--theme-line,#e2e3da);border-radius:10px;background:var(--theme-surface,#fff);text-align:left;color:var(--theme-ink,#202124)}
+.preview-member-plan-links button:hover{border-color:var(--theme-accent,#b7a17a)}
+.preview-member-plan-links span,.preview-meal-card>span{color:var(--theme-muted,#68716b);font-size:11px}
+.preview-member-plan-links b,.preview-meal-card>b{font-size:13px}
+.preview-progress-summary{display:grid;gap:6px;padding:15px;border:1px solid var(--theme-line,#e2e3da);border-radius:10px;background:var(--theme-surface,#fff)}
+.preview-progress-summary b,.preview-progress-list time{font-size:11px;color:var(--theme-muted,#68716b)}
+.preview-progress-summary span,.preview-progress-list p{margin:0;font-size:13px;line-height:1.55}
+.preview-meal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.preview-meal-card{display:grid;gap:8px;padding:16px;border:1px solid var(--theme-line,#e2e3da);border-radius:10px;background:var(--theme-surface,#fff)}
+.preview-health-note{margin:14px 0 0;color:var(--theme-muted,#68716b);font-size:11px;line-height:1.5}
+.preview-workout-week{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.preview-workout-week article{display:grid;gap:8px;padding:13px;border:1px solid var(--theme-line,#e2e3da);border-radius:9px;background:var(--theme-surface,#fff)}
+.preview-workout-week b{font-size:11px;color:var(--theme-muted,#68716b)}
+.preview-workout-week span{font-size:12px;font-weight:650}
+.preview-progress-list{display:grid;gap:0;border-top:1px solid var(--theme-line,#e2e3da)}
+.preview-progress-list article{display:grid;grid-template-columns:130px minmax(0,1fr);gap:18px;padding:16px 2px;border-bottom:1px solid var(--theme-line,#e2e3da)}
+.preview-progress-list article>div{display:grid;gap:5px}
+.preview-progress-list article b{font-size:13px}
+.preview-chat-notice{display:flex;align-items:flex-start;gap:7px;margin:0;padding:9px 13px;border-bottom:1px solid var(--theme-line,#e4e3dc);color:var(--theme-muted,#77766f);font-size:10px;line-height:1.45}
+.preview-chat-notice svg{flex:0 0 auto}
+.gym-chat-message-author{color:var(--theme-muted,#77766f);font-size:10px;font-weight:650}
+.gym-chat-pin-action{display:inline-flex;align-items:center;gap:4px;padding:3px 5px;border:0;border-radius:5px;background:transparent;color:var(--theme-muted,#77766f);font-size:9px}
+.gym-chat-pin-action:hover{background:var(--theme-canvas,#f4f1e9)}
+@media(max-width:760px){.topbar-right .today-label,.topbar-right .topbar-divider{display:none}.topbar-right{gap:8px}.preview-role-switch span{display:none}.preview-role-switch select{min-height:30px}.member-portal-header .preview-role-switch span{display:inline}.metric-grid-three{grid-template-columns:1fr}.member-portal-grid{grid-template-columns:1fr;gap:8px}.member-portal-grid .member-portal-section:last-child{grid-column:auto}.preview-workout-week{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.preview-member-boundary .member-portal-shell{padding-inline:14px}.preview-member-boundary .member-portal-header{gap:10px}.preview-member-boundary .member-portal-gym{display:none}.preview-member-boundary .member-portal-brand{min-width:0;flex:1}.preview-member-boundary .member-portal-signout{font-size:10px}.preview-meal-grid{grid-template-columns:1fr}.preview-progress-list article{grid-template-columns:1fr;gap:7px}.preview-chat-panel .gym-chat-header p{max-width:150px}}
