@@ -2189,6 +2189,8 @@ svg {
 .page-footer-primary{display:flex;align-items:center;gap:clamp(20px,3vw,40px);min-width:0;flex:1}
 .gym-theme-boundary .page-footer-primary .footer-home{display:block;flex:0 0 132px;width:132px;text-align:left;text-decoration:none}
 .gym-theme-boundary .page-footer-primary .liftdesk-mark{width:124px!important;height:39px!important}
+.gym-theme-boundary .page-footer-primary .liftdesk-logo-dark{display:block!important}
+.gym-theme-boundary .page-footer-primary .liftdesk-logo-light{display:none!important}
 .page-footer-context{display:flex;align-items:center;gap:7px;min-width:0;white-space:nowrap;font-size:14px;line-height:1.3}
 .page-footer-context i{font-style:normal;opacity:.65}
 .page-footer-note{flex:0 0 auto;font-size:11px;white-space:nowrap}
