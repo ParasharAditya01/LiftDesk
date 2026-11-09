@@ -2181,3 +2181,12 @@ svg {
 .auth-showcase .showcase-copy h2 span{color:#737a51}
 .auth-showcase .showcase-copy>p:last-child{color:#716e67}
 .auth-showcase .showcase-footer{color:#716e67}
+
+
+/* Keep the brand lockup and gym context on one clear footer baseline. */
+.gym-theme-boundary .page-footer{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.page-footer-primary{display:flex;align-items:center;gap:14px;min-width:0}
+.page-footer-context{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:12px;line-height:1.2}
+.page-footer-context i{font-style:normal;opacity:.65}
+.page-footer-note{font-size:11px;white-space:nowrap}
+@media(max-width:560px){.gym-theme-boundary .page-footer{align-items:flex-start;flex-direction:column;gap:8px}.page-footer-primary{align-items:center}.page-footer-context{font-size:11px}.page-footer-note{padding-left:0}}
