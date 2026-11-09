@@ -1,3 +1,5 @@
-# LiftDesk is an authenticated application with no public indexable pages.
+# LiftDesk's public landing page can be indexed. Authenticated areas set noindex.
 User-agent: *
-Disallow: /
+Allow: /
+
+Sitemap: https://liftdesk.pages.dev/sitemap.xml
