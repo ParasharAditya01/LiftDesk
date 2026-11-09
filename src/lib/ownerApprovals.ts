@@ -4,7 +4,7 @@ import type { GymThemeId } from './gymThemes'
 export type OwnerAccessRequest = {
   id: string
   user_id: string
-  owner_email: string
+  owner_email: string | null
   owner_name: string
   gym_name: string
   city: string | null
@@ -22,6 +22,7 @@ export type PlatformGymSummary = {
   gym_name: string
   city: string | null
   owner_phone: string | null
+  owner_email: string
   created_at: string
   active_owner_count: number
   member_count: number
@@ -40,9 +41,37 @@ export async function isLiftDeskPlatformAdmin(): Promise<boolean> {
 }
 
 export async function listPlatformGymDirectory(): Promise<PlatformGymSummary[]> {
-  const { data, error } = await requireSupabase().rpc('list_liftdesk_platform_gym_directory_v2')
+  const { data, error } = await requireSupabase().rpc('list_liftdesk_platform_gym_directory_v3')
   if (error) throw error
   return (data ?? []) as PlatformGymSummary[]
+}
+
+export async function createPlatformGymWorkspace(input: {
+  gymName: string
+  ownerName: string
+  ownerEmail: string
+  city: string
+  phone: string
+  theme: GymThemeId
+}): Promise<{ gymId: string; ownerEmail: string; ownerAccountReady: boolean }> {
+  const { data, error } = await requireSupabase().rpc('create_liftdesk_gym_workspace', {
+    requested_gym_name: input.gymName.trim(),
+    requested_owner_name: input.ownerName.trim(),
+    requested_owner_email: input.ownerEmail.trim(),
+    requested_city: input.city.trim() || null,
+    requested_gym_phone: input.phone.trim() || null,
+    requested_theme: input.theme,
+  })
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row || typeof row !== 'object') throw new Error('LiftDesk did not create the gym workspace.')
+  const result = row as { gym_id: string; owner_email: string; owner_account_ready: boolean }
+  return { gymId: result.gym_id, ownerEmail: result.owner_email, ownerAccountReady: result.owner_account_ready }
+}
+
+export async function removePlatformGymWorkspace(gymId: string): Promise<void> {
+  const { error } = await requireSupabase().rpc('remove_liftdesk_gym_workspace', { target_gym: gymId })
+  if (error) throw error
 }
 
 export async function getMyOwnerAccessRequest(userId: string): Promise<OwnerAccessRequest | null> {

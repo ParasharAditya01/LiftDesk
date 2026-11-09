@@ -119,6 +119,8 @@ export async function addCoachingNote(gymId: string, memberId: string, userId: s
 
 export async function getCurrentGym(user: User): Promise<{ gym: Gym; role: GymRole } | null> {
   const client = requireSupabase()
+  const { error: claimError } = await client.rpc('claim_liftdesk_owner_workspace')
+  if (claimError) throw claimError
   const { data, error } = await client
     .from('gym_memberships')
     .select('gym_id, role, gyms!inner(id, name, city, phone, theme)')

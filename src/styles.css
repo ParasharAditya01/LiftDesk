@@ -180,6 +180,42 @@
 @media(max-width:620px){.platform-admin-header{align-items:flex-start;flex-direction:column;padding-block:14px}.platform-admin-actions{width:100%;justify-content:flex-start}.platform-admin-actions button{flex:1 1 auto}.owner-request-heading{flex-direction:column}.owner-request-status{align-self:flex-start}.owner-request-actions{display:grid;grid-template-columns:1fr 1fr}.owner-request-actions button{min-height:44px}.platform-admin-content{width:min(100% - 28px,920px)}.platform-directory-toolbar{align-items:stretch;flex-wrap:wrap}.platform-search{flex:1 1 100%}.platform-filter{flex:1}.platform-filter select{width:100%}.platform-result-count{align-self:center}.platform-gym-heading{align-items:flex-start}.platform-gym-identity p{line-height:1.45}.platform-admin-tabs button{flex:1;justify-content:center;padding-inline:8px}}
 @media(prefers-reduced-motion:reduce){.platform-admin-screen *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
+.platform-directory-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:24px 0 14px}
+.platform-directory-heading h2{margin:0;color:#202124;font-size:17px;letter-spacing:-.25px}
+.platform-directory-heading p{margin:5px 0 0;color:#77736B;font-size:11px;line-height:1.5}
+.platform-add-gym{min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:none;border:1px solid #202124;border-radius:8px;background:#202124;color:#fff;padding:8px 13px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.platform-add-gym:hover{background:#34363A}
+.platform-gym-card-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.platform-remove-gym{min-height:30px;display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;color:#8B463E;padding:5px 3px;font:inherit;font-size:10px;font-weight:650;cursor:pointer}
+.platform-remove-gym:hover{text-decoration:underline}
+.platform-remove-gym:disabled{opacity:.55;cursor:wait}
+.platform-modal-backdrop{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;overflow:auto;padding:20px;background:#17181575}
+.platform-create-gym-modal{width:min(660px,100%);max-height:min(920px,calc(100vh - 40px));overflow:auto;background:#F8F7F4;color:#202124;padding:24px}
+.platform-create-gym-heading{display:flex;justify-content:space-between;gap:20px;padding-bottom:18px;border-bottom:1px solid #E7E3DB}
+.platform-create-gym-heading p{margin:0 0 6px;color:#8B7350;font-size:9px;font-weight:750;letter-spacing:1.2px}
+.platform-create-gym-heading h2{margin:0;font-size:23px;letter-spacing:-.6px}
+.platform-create-gym-heading span{display:block;margin-top:7px;color:#6F6B63;font-size:12px;line-height:1.5}
+.platform-create-gym-heading>button{width:34px;height:34px;display:grid;place-items:center;flex:none;border:1px solid #E7E3DB;border-radius:7px;background:transparent;color:#514B40;cursor:pointer}
+.platform-create-gym-modal form{display:grid;gap:14px;padding-top:17px}
+.platform-create-gym-modal form>label,.platform-form-two label{display:grid;gap:6px;color:#514B40;font-size:11px;font-weight:600}
+.platform-create-gym-modal input:not([type=radio]){width:100%;min-height:40px;border:1px solid #DCD7CE;border-radius:6px;background:#fff;color:#202124;padding:9px 10px;font:inherit;font-size:12px}
+.platform-create-gym-modal input:focus{outline:2px solid #8B735055;border-color:#8B7350}
+.platform-form-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.platform-create-gym-modal .gym-theme-fieldset{margin:0;padding:12px;border:1px solid #E7E3DB;border-radius:7px;background:#fff}
+.platform-create-gym-modal .gym-theme-fieldset legend{padding:0 5px;color:#514B40;font-size:11px;font-weight:650}
+.platform-create-gym-modal .gym-theme-help{margin:0 0 9px;color:#77736B;font-size:10px}
+.platform-create-gym-modal .gym-theme-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.platform-create-gym-modal .gym-theme-option{min-width:0;padding:6px;border-radius:6px}
+.platform-create-gym-modal .gym-theme-preview{height:26px}
+.platform-create-gym-modal .gym-theme-option-copy b{font-size:9px}
+.platform-create-gym-modal .gym-theme-option-copy{margin-top:4px}
+.platform-create-gym-note{margin:0;color:#77736B;font-size:10px;line-height:1.55}
+.platform-create-gym-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:12px;border-top:1px solid #E7E3DB}
+.platform-create-gym-actions button{min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #DCD7CE;border-radius:7px;background:#fff;color:#292A2D;padding:8px 12px;font:inherit;font-size:11px;font-weight:650;cursor:pointer}
+.platform-create-gym-actions .button-primary{border-color:#202124;background:#202124;color:#fff}
+.platform-create-gym-actions button:disabled{opacity:.55;cursor:wait}
+@media(max-width:620px){.platform-directory-heading{align-items:flex-start}.platform-directory-heading p{max-width:260px}.platform-add-gym{min-height:42px}.platform-gym-card-actions{align-items:flex-end;flex-direction:column;gap:5px}.platform-form-two{grid-template-columns:1fr}.platform-create-gym-modal{padding:18px}.platform-create-gym-modal .gym-theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 /* First-run gym theme selector */
 .auth-card-theme{width:min(100%,760px)}
 .gym-theme-fieldset{min-width:0;margin:2px 0 0;padding:0;border:0}

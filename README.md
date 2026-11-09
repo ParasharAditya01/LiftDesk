@@ -11,6 +11,8 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 - Trainer coaching workspace for member-specific plans, progress and notes.
 - A restricted member portal for a member's own profile, published plans and permitted progress records.
 - Gym-scoped staff workspace and invitations, plus Owner/Admin gym chat with optional web push notifications.
+- LiftDesk platform-admin provisioning of gym workspaces for an assigned Google account, with Owner access claimed on first verified Google sign-in.
+- LiftDesk platform-admin removal of gym workspaces from the active directory, disabling workspace access while retaining records.
 - Multi-gym architecture with gym-level isolation enforced by PostgreSQL Row Level Security (RLS).
 
 ## Roles
@@ -30,7 +32,7 @@ Existing `staff` memberships are migrated in place to `trainer`; user accounts a
 
 ## Current rebuild status
 
-The current branch includes sign-in and owner access requests, gym workspaces, member and staff management, member invitations and the member portal, trainer coaching tools, manual check-in and attendance history, attendance-based follow-up tracking, basic live workspace reports, and gym chat for active Owners and Admins. Trainers and members do not have chat access. `/preview` is a separate sample-data walkthrough and is **not connected to a database**. The current production deployment must be checked separately; source code on this branch does not prove what is live.
+The current branch includes sign-in and owner access requests, direct LiftDesk platform-admin gym provisioning, Google-account Owner assignment, workspace removal, member and staff management, member invitations and the member portal, trainer coaching tools, manual check-in and attendance history, attendance-based follow-up tracking, basic live workspace reports, and gym chat for active Owners and Admins. Trainers and members do not have chat access. `/preview` is a separate sample-data walkthrough and is **not connected to a database**. Apply migration `20261109210000_liftdesk_admin_workspace_management.sql` before deploying this feature. The current production deployment must be checked separately; source code on this branch does not prove what is live.
 
 Member QR/WhatsApp OTP check-in has been removed from the interface. Trainers record attendance from the Members screen with the Manual check-in action. Migration `0006_disable_phone_otp_checkin.sql` revokes and removes the old phone-OTP RPC; its production application status must be verified separately. Local source changes are not automatically live.
 
@@ -78,7 +80,7 @@ These limitations describe the current `liftdesk-rebuild` source. They do not by
 
 ## Routes, indexing and static assets
 
-- `/` is the sign-in and workspace entry point. Gym owners submit an access request before receiving an owner workspace; approved members and staff enter their role-specific workspace after sign-in.
+- `/` is the sign-in and workspace entry point. Owners may request a workspace or receive one directly from a LiftDesk platform admin; assigned owners claim it by signing in with their verified Google account. Members and staff enter their role-specific workspace after sign-in.
 - `/preview` is a sample-data walkthrough, not a customer-facing marketing page and never writes to Supabase.
 - Both application routes are marked `noindex, nofollow`; `robots.txt` disallows crawling because this repository currently has no public, indexable product pages. No sitemap is published until such pages exist.
 - Cloudflare Pages serves the top-level `404.html` for unmatched file routes; the React router also renders a branded 404 view if an unknown path reaches the app shell.

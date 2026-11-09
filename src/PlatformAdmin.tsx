@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowLeft, Building2, Check, Clock3, Dumbbell, LoaderCircle, LogOut, RefreshCw, Search, ShieldCheck, Users, X } from 'lucide-react'
+import { ArrowLeft, Building2, Check, Clock3, Dumbbell, LoaderCircle, LogOut, Plus, RefreshCw, Search, ShieldCheck, Users, X } from 'lucide-react'
+import type { FormEvent } from 'react'
 import type { OwnerAccessRequest, PlatformGymSummary } from './lib/ownerApprovals'
-import { listPlatformGymDirectory } from './lib/ownerApprovals'
+import { createPlatformGymWorkspace, listPlatformGymDirectory, removePlatformGymWorkspace } from './lib/ownerApprovals'
 import { requireSupabase } from './lib/supabase'
+import GymThemeSelector from './GymThemeSelector'
+import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 
 type Props = { onOpenWorkspace?: () => void; onSignOut: () => void }
 type Section = 'gyms' | 'requests'
@@ -40,6 +43,9 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
   const [gymError, setGymError] = useState('')
   const [requestError, setRequestError] = useState('')
   const [notice, setNotice] = useState('')
+  const [showCreateGym, setShowCreateGym] = useState(false)
+  const [gymForm, setGymForm] = useState({ name: '', ownerName: '', ownerEmail: '', city: '', phone: '' })
+  const [gymTheme, setGymTheme] = useState<GymThemeId>(DEFAULT_GYM_THEME)
 
   const load = useCallback(async () => {
     setError(''); setGymError(''); setRequestError('')
@@ -94,6 +100,43 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
     finally { setBusyId('') }
   }
 
+  async function addGym(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setBusyId('create'); setError(''); setNotice('')
+    try {
+      const result = await createPlatformGymWorkspace({
+        gymName: gymForm.name,
+        ownerName: gymForm.ownerName,
+        ownerEmail: gymForm.ownerEmail,
+        city: gymForm.city,
+        phone: gymForm.phone,
+        theme: gymTheme,
+      })
+      setNotice(result.ownerAccountReady
+        ? `${gymForm.name.trim()} is ready. ${result.ownerEmail} can sign in with Google.`
+        : `${gymForm.name.trim()} is set up for ${result.ownerEmail}. The owner can claim it with that verified Google account.`)
+      setGymForm({ name: '', ownerName: '', ownerEmail: '', city: '', phone: '' })
+      setGymTheme(DEFAULT_GYM_THEME)
+      setShowCreateGym(false)
+      await load()
+    } catch (err) { setError(readableError(err)) }
+    finally { setBusyId('') }
+  }
+
+  async function removeGym(gym: PlatformGymSummary) {
+    const confirmed = window.confirm(
+      `Remove ${gym.gym_name} from LiftDesk? This will disable sign-in for its owner, staff, and members and revoke outstanding staff invitations. Existing gym records will be retained for history.`
+    )
+    if (!confirmed) return
+    setBusyId(gym.gym_id); setError(''); setNotice('')
+    try {
+      await removePlatformGymWorkspace(gym.gym_id)
+      setNotice(`${gym.gym_name} was removed from the active gym directory. Its records are retained.`)
+      await load()
+    } catch (err) { setError(readableError(err)) }
+    finally { setBusyId('') }
+  }
+
   return <main className="platform-admin-screen">
     <header className="platform-admin-header">
       <a className="platform-admin-brand" href="/" aria-label="LiftDesk home"><Building2 size={20}/><span>LiftDesk <small>PLATFORM</small></span></a>
@@ -106,7 +149,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
     <section className="platform-admin-content">
       <p className="platform-admin-eyebrow"><ShieldCheck size={15}/> PLATFORM ADMINISTRATION</p>
       <h1>LiftDesk overview</h1>
-      <p className="platform-admin-intro">See which gyms use LiftDesk, review high-level membership and staff counts, approve workspace requests, and view each owner’s current contact number for account support. Member and staff contact details are not shown.</p>
+      <p className="platform-admin-intro">Create gym workspaces for owners, manage active access, and review high-level membership and attendance. Owners sign in with the verified Google account assigned to their gym.</p>
       {(visibleError || error) && <p className="auth-error" role="alert">{visibleError || error}</p>}
       {notice && <p className="auth-message" role="status">{notice}</p>}
 
@@ -122,6 +165,10 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
           <Stat label="Admin records" value={totals.admins} detail="Across gym staff directories" icon={<ShieldCheck size={17}/>}/>
           <Stat label="Trainer records" value={totals.trainers} detail="Across gym staff directories" icon={<Dumbbell size={17}/>}/>
         </div>
+        <div className="platform-directory-heading">
+          <div><h2>Gym workspaces</h2><p>Add an owner and gym directly. They can enter with Google using the assigned email.</p></div>
+          <button className="platform-add-gym" type="button" onClick={() => { setError(''); setNotice(''); setShowCreateGym(true) }}><Plus size={16}/> Add gym</button>
+        </div>
         <div className="platform-directory-toolbar">
           <label className="platform-search"><Search size={16}/><span className="sr-only">Search gyms</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search by gym name or city"/></label>
           <label className="platform-filter"><span className="sr-only">Filter gyms</span><select value={filter} onChange={event => setFilter(event.target.value as typeof filter)}><option value="all">All gyms</option><option value="active">Active owner access</option><option value="needs-owner">No active owner</option></select></label>
@@ -130,7 +177,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
         {loading ? <div className="platform-admin-empty"><LoaderCircle className="spin" size={20}/> Loading gym overview…</div>
           : filteredGyms.length === 0 ? <div className="platform-admin-empty"><Building2 size={20}/><div><b>{gyms.length ? 'No gyms match this search' : 'No gym workspaces yet'}</b><span>{gyms.length ? 'Try a different name, city, or filter.' : 'Approved workspaces will appear here.'}</span></div></div>
             : <div className="platform-gym-list">{filteredGyms.map(gym => <article className="platform-gym-card" key={gym.gym_id}>
-              <div className="platform-gym-heading"><div className="platform-gym-identity"><i><Building2 size={18}/></i><div><h2>{gym.gym_name}</h2><p>{gym.city || 'City not provided'} <span>·</span> Added {dateLabel(gym.created_at)}</p><p>Owner contact: {gym.owner_phone ? <a href={`tel:${gym.owner_phone}`}>{gym.owner_phone}</a> : 'Not provided'}</p></div></div><span className={`platform-health ${gym.active_owner_count ? 'is-active' : 'needs-owner'}`}><i/>{gym.active_owner_count ? 'Owner active' : 'Needs owner'}</span></div>
+              <div className="platform-gym-heading"><div className="platform-gym-identity"><i><Building2 size={18}/></i><div><h2>{gym.gym_name}</h2><p>{gym.city || 'City not provided'} <span>·</span> Added {dateLabel(gym.created_at)}</p><p>Owner Google account: {gym.owner_email || 'Not provided'}</p><p>Owner contact: {gym.owner_phone ? <a href={`tel:${gym.owner_phone}`}>{gym.owner_phone}</a> : 'Not provided'}</p></div></div><div className="platform-gym-card-actions"><span className={`platform-health ${gym.active_owner_count ? 'is-active' : 'needs-owner'}`}><i/>{gym.active_owner_count ? 'Owner active' : 'Waiting for Google sign-in'}</span><button type="button" className="platform-remove-gym" disabled={Boolean(busyId)} onClick={() => void removeGym(gym)}>{busyId === gym.gym_id ? <LoaderCircle size={14} className="spin"/> : <X size={14}/>}Remove</button></div></div>
               <div className="platform-gym-metrics">
                 <div><span>Members</span><strong>{Number(gym.member_count).toLocaleString('en-IN')}</strong><small>{Number(gym.active_member_count).toLocaleString('en-IN')} active</small></div>
                 <div><span>Admins</span><strong>{Number(gym.admin_count).toLocaleString('en-IN')}</strong><small>{Number(gym.active_admin_count).toLocaleString('en-IN')} active</small></div>
@@ -150,6 +197,19 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
               <div className="owner-request-actions"><button type="button" className="button-secondary" disabled={busyId === request.id} onClick={() => void decide(request, 'reject')}><X size={15}/> Reject</button><button type="button" className="button-primary" disabled={busyId === request.id} onClick={() => void decide(request, 'approve')}><Check size={15}/>{busyId === request.id ? 'Processing…' : 'Approve owner'}</button></div>
             </article>)}</div>}
       </>}
+      {showCreateGym && <div className="platform-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && busyId !== 'create') setShowCreateGym(false) }}>
+        <section className="platform-create-gym-modal" role="dialog" aria-modal="true" aria-labelledby="platform-create-gym-title">
+          <div className="platform-create-gym-heading"><div><p>NEW WORKSPACE</p><h2 id="platform-create-gym-title">Add a gym</h2><span>The owner will sign in with Google using the email you assign here.</span></div><button type="button" aria-label="Close" disabled={busyId === 'create'} onClick={() => setShowCreateGym(false)}><X size={18}/></button></div>
+          <form onSubmit={event => void addGym(event)}>
+            <label>Gym name<input required minLength={2} maxLength={120} autoFocus value={gymForm.name} onChange={event => setGymForm({ ...gymForm, name: event.target.value })} placeholder="e.g. Northside Strength"/></label>
+            <div className="platform-form-two"><label>Owner’s full name<input required minLength={2} maxLength={120} value={gymForm.ownerName} onChange={event => setGymForm({ ...gymForm, ownerName: event.target.value })} autoComplete="name"/></label><label>Owner’s Google account email<input required type="email" maxLength={320} value={gymForm.ownerEmail} onChange={event => setGymForm({ ...gymForm, ownerEmail: event.target.value })} autoComplete="email" placeholder="owner@gmail.com"/></label></div>
+            <div className="platform-form-two"><label>City<input maxLength={120} value={gymForm.city} onChange={event => setGymForm({ ...gymForm, city: event.target.value })}/></label><label>Gym phone (optional)<input type="tel" maxLength={30} value={gymForm.phone} onChange={event => setGymForm({ ...gymForm, phone: event.target.value })}/></label></div>
+            <GymThemeSelector value={gymTheme} onChange={setGymTheme}/>
+            <p className="platform-create-gym-note">If the owner has not signed in before, LiftDesk will hold this assignment until they sign in with the same verified Google email.</p>
+            <div className="platform-create-gym-actions"><button type="button" className="button-secondary" disabled={busyId === 'create'} onClick={() => setShowCreateGym(false)}>Cancel</button><button type="submit" className="button-primary" disabled={busyId === 'create'}>{busyId === 'create' ? <><LoaderCircle size={15} className="spin"/> Adding…</> : <><Plus size={15}/> Add gym</>}</button></div>
+          </form>
+        </section>
+      </div>}
     </section>
   </main>
 }
