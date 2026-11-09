@@ -68,16 +68,16 @@ export default function LandingPage() {
     <main>
       <section className="landing-hero" aria-labelledby="landing-title">
         <div className="landing-hero-copy">
-          <div className="landing-kicker"><span /> A calmer way to run your gym</div>
-          <h1 id="landing-title">Good coaching starts with <em>good oversight.</em></h1>
-          <p>Keep member records, attendance, coaching and follow-ups in one workspace your team can use every day.</p>
-          <div className="landing-actions"><a className="landing-primary" href="/?mode=signup">Request owner access <ArrowRight size={17} /></a><a className="landing-secondary" href="#workspace">Take a look <ArrowDown size={15} /></a></div>
-          <div className="landing-hero-foot"><span><Check size={14} /> Built around real gym workflows</span><span><Check size={14} /> Separate owner, admin and trainer roles</span></div>
+          <div className="landing-kicker"><span /> Gym operations platform</div>
+          <h1 id="landing-title">Gym operations, <em>under control.</em></h1>
+          <p>Manage members, attendance, coaching and staff in one workspace.</p>
+          <div className="landing-actions"><a className="landing-primary" href="/?mode=signup">Request access <ArrowRight size={17} /></a><a className="landing-secondary" href="#workspace">View platform <ArrowDown size={15} /></a></div>
+          <div className="landing-hero-foot"><span><Check size={14} /> Designed for gym operations</span><span><Check size={14} /> Role-based access</span></div>
         </div>
 
         <section className="product-preview" aria-label="Interactive LiftDesk product preview">
           <div className="preview-topline"><div className="preview-brand"><LiftDeskMark size={28} /><span>LiftDesk <small>WORKSPACE</small></span></div><span className="preview-state"><i /> SAMPLE PREVIEW</span></div>
-          <div className="preview-welcome"><div><span className="preview-overline">YOUR GYM AT A GLANCE</span><h2>Today’s workspace</h2><p>A clear view of the work that needs your attention.</p></div><span className="preview-date">TODAY</span></div>
+          <div className="preview-welcome"><div><span className="preview-overline">YOUR GYM AT A GLANCE</span><h2>Today’s workspace</h2><p>Members, attendance and coaching in one view.</p></div><span className="preview-date">TODAY</span></div>
           <div className="preview-metrics"><div><span>Members</span><b><Users size={17} /> Directory</b></div><div><span>Attendance</span><b><CalendarCheck size={17} /> Check-ins</b></div><div><span>Coaching</span><b><Dumbbell size={17} /> Plans</b></div></div>
           <div className="preview-table-head"><span>WORKSPACE VIEW</span><span>SELECT A SECTION</span></div>
           <div className="preview-tabs" role="group" aria-label="Preview workspace sections">{(['Members', 'Attendance', 'Coaching', 'Follow-ups'] as PreviewTab[]).map(item => <button key={item} type="button" aria-pressed={tab === item} className={tab === item ? 'selected' : ''} onClick={() => setTab(item)}>{item}</button>)}</div>
@@ -91,46 +91,46 @@ export default function LandingPage() {
       <div className="landing-proofline" aria-label="Product principles"><span>ONE GYM WORKSPACE</span><i /><span>ROLE-BASED ACCESS</span><i /><span>REAL RECORDS, CLEARLY ORGANIZED</span><i /><span>MADE FOR DAILY OPERATIONS</span></div>
 
       <section className="landing-section landing-capabilities" id="workspace">
-        <div className="landing-section-intro"><span className="landing-index">01 / THE WORKSPACE</span><h2>Less time piecing things together.<br /><em>More time with your members.</em></h2><p>LiftDesk brings the everyday details into view, so your team can spend less time searching and more time supporting the people who train with you.</p></div>
+        <div className="landing-section-intro"><span className="landing-index">01 / THE WORKSPACE</span><h2>One platform for<br /><em>your gym operations.</em></h2><p>Manage member records, attendance, coaching and follow-ups from one workspace.</p></div>
         <div className="capability-list">
-          <article className="capability-row"><span className="capability-icon"><Users size={21} /></span><div><h3>A member record your team can find</h3><p>Keep contact details, membership information and attendance history together. Search by name or phone number when names are similar.</p></div><span className="capability-number">01</span></article>
-          <article className="capability-row"><span className="capability-icon"><ClipboardCheck size={21} /></span><div><h3>Attendance with a clear record</h3><p>Staff can check a member in from the member list. The visit is saved to attendance history for the gym team to review.</p></div><span className="capability-number">02</span></article>
-          <article className="capability-row"><span className="capability-icon"><Dumbbell size={21} /></span><div><h3>Coaching that stays connected</h3><p>Trainers can build member-specific workout and diet plans, add progress updates and keep dated coaching notes.</p></div><span className="capability-number">03</span></article>
-          <article className="capability-row"><span className="capability-icon"><Bell size={21} /></span><div><h3>See who may need a follow-up</h3><p>Use each member’s latest attendance to spot longer gaps and decide who your team should check in with.</p></div><span className="capability-number">04</span></article>
-          <article className="capability-row"><span className="capability-icon"><Activity size={21} /></span><div><h3>Keep gym conversations together</h3><p>Owners and admins send encrypted announcements; trainers and members can read them.</p></div><span className="capability-number">05</span></article>
+          <article className="capability-row"><span className="capability-icon"><Users size={21} /></span><div><h3>Member management</h3><p>Maintain member contact details, memberships and attendance records in a searchable directory.</p></div><span className="capability-number">01</span></article>
+          <article className="capability-row"><span className="capability-icon"><ClipboardCheck size={21} /></span><div><h3>Attendance tracking</h3><p>Record member check-ins and review visit history by date.</p></div><span className="capability-number">02</span></article>
+          <article className="capability-row"><span className="capability-icon"><Dumbbell size={21} /></span><div><h3>Coaching plans</h3><p>Create workout and nutrition plans, record progress and maintain coaching notes.</p></div><span className="capability-number">03</span></article>
+          <article className="capability-row"><span className="capability-icon"><Bell size={21} /></span><div><h3>Member follow-ups</h3><p>Review attendance gaps and identify members for follow-up.</p></div><span className="capability-number">04</span></article>
+          <article className="capability-row"><span className="capability-icon"><Activity size={21} /></span><div><h3>Team announcements</h3><p>Share encrypted announcements with trainers and members.</p></div><span className="capability-number">05</span></article>
         </div>
       </section>
 
       <section className="landing-process" id="how-it-works">
-        <div className="process-heading"><span className="landing-index">02 / A SIMPLE ROUTINE</span><h2>One place for the day-to-day.</h2><p>Designed around how a gym team already works.</p></div>
-        <div className="process-steps"><article><span>01</span><h3>Set up your gym</h3><p>An owner requests a workspace and shares the gym details for LiftDesk approval.</p></article><article><span>02</span><h3>Bring in your team</h3><p>Owners and admins manage staff access. Trainers work with members in their gym.</p></article><article><span>03</span><h3>Keep the record current</h3><p>Update memberships, record check-ins and keep coaching follow-ups moving.</p></article></div>
+        <div className="process-heading"><span className="landing-index">02 / A SIMPLE ROUTINE</span><h2>A unified operations workspace.</h2><p>Tools for owners, administrators and trainers.</p></div>
+        <div className="process-steps"><article><span>01</span><h3>Set up your gym</h3><p>Request a gym workspace for review.</p></article><article><span>02</span><h3>Bring in your team</h3><p>Manage staff access and assign roles.</p></article><article><span>03</span><h3>Keep the record current</h3><p>Maintain memberships, attendance and coaching records.</p></article></div>
       </section>
 
       <section className="landing-privacy" id="privacy" aria-labelledby="privacy-title">
-        <div className="landing-privacy-intro"><span className="landing-index">03 / PRIVACY BASICS</span><h2 id="privacy-title">Privacy, clearly explained.</h2><p>A plain-language summary of the records LiftDesk handles and who can access them.</p></div>
+        <div className="landing-privacy-intro"><span className="landing-index">03 / PRIVACY BASICS</span><h2 id="privacy-title">Privacy and access</h2><p>How gym and member information is handled.</p></div>
         <div className="landing-privacy-list">
-          <article className="privacy-row"><span>01</span><div><h3>What your gym may record</h3><p>Your name, email, phone or WhatsApp number, membership and attendance. If your gym uses coaching, trainers may add plans, notes and details you share, such as weight, measurements, or food allergies and preferences.</p></div></article>
-          <article className="privacy-row"><span>02</span><div><h3>Who can see gym records</h3><p>Your gym’s Owner, Admins and Trainers can access records for their gym. A linked member account can see its own membership, shared plans and progress. Owners and Admins can send and pin chat messages. Active Trainers and linked Members in that gym can read encrypted messages, but cannot send or pin. The LiftDesk admin screen shows gym names, cities, role counts and latest attendance time. LiftDesk platform admins can also see the gym Owner’s current contact number for account support; member and staff contact numbers are not shown there.</p></div></article>
-          <article className="privacy-row"><span>03</span><div><h3>How gym chat works</h3><p>New chat messages are end-to-end encrypted for registered devices. Unencrypted legacy messages are hidden from Trainers and Members. Regular messages are deleted after 48 hours. Pinned announcements stay until unpinned. Optional browser notifications show no message text. Chat keys stay in your browser, so clearing its data may make older messages unreadable on that device.</p></div></article>
-          <article className="privacy-row"><span>04</span><div><h3>Sign-in, storage and questions</h3><p>Supabase handles sign-in and stores LiftDesk records. If you choose Google sign-in, LiftDesk receives basic account details such as your name and email. LiftDesk does not publish a fixed deletion timeline for non-chat gym records; ask your gym Owner or Admin about its retention and record corrections.</p></div></article>
+          <article className="privacy-row"><span>01</span><div><h3>What your gym may record</h3><p>Member contact, membership and attendance details. Coaching records may include plans and progress notes.</p></div></article>
+          <article className="privacy-row"><span>02</span><div><h3>Who can see gym records</h3><p>Gym records are available to authorized staff in that gym. Members can access their own membership and shared coaching information. LiftDesk platform administrators can view gym directory details for account support.</p></div></article>
+          <article className="privacy-row"><span>03</span><div><h3>How gym chat works</h3><p>Gym chat messages are encrypted for registered devices. Standard messages expire after 48 hours; pinned announcements remain until removed.</p></div></article>
+          <article className="privacy-row"><span>04</span><div><h3>Sign-in, storage and questions</h3><p>LiftDesk uses Supabase for authentication and data storage. Contact your gym administrator about record corrections and retention.</p></div></article>
         </div>
       </section>
 
       <section className="landing-faq" id="questions">
-        <div className="faq-intro"><span className="landing-index">04 / GOOD TO KNOW</span><h2>Clear answers.<br /><em>No guesswork.</em></h2><p>What LiftDesk does today, in plain language.</p><a href="/?mode=signin">Already have access? Sign in <ArrowUpRight size={15} /></a></div>
+        <div className="faq-intro"><span className="landing-index">04 / GOOD TO KNOW</span><h2>Frequently asked<br /><em>questions.</em></h2><p>Platform features and access.</p><a href="/?mode=signin">Already have access? Sign in <ArrowUpRight size={15} /></a></div>
         <div className="faq-list">
           {[
-            { q: 'How is attendance recorded?', a: 'A staff member finds the person in Members and uses Manual check-in. LiftDesk records the visit after the membership and gym-access checks pass. Camera or member self-service QR check-in is not currently active.' },
-            { q: 'Can different gyms see each other’s member records?', a: 'LiftDesk uses gym-scoped workspaces and database access policies. Team members should use the account and gym they were invited to.' },
-            { q: 'How does a new gym owner get access?', a: 'The owner submits a workspace request from sign-up. LiftDesk reviews the request before the owner workspace is approved.' },
-            { q: 'Can members log in to see coaching plans?', a: 'Yes. A linked member account can view its own membership details, shared diet and workout plans, and progress updates in the member portal.' },
+            { q: 'How is attendance recorded?', a: 'Authorized staff record check-ins from the member directory.' },
+            { q: 'Can different gyms see each other’s member records?', a: 'No. Member records are restricted to their gym workspace.' },
+            { q: 'How does a new gym owner get access?', a: 'LiftDesk provisions owner access after workspace approval.' },
+            { q: 'Can members log in to see coaching plans?', a: 'Yes. Linked members can view their membership, shared plans and progress updates.' },
           ].map((item, index) => <article className={'faq-item' + (faqOpen === index ? ' expanded' : '')} key={item.q}><button type="button" aria-expanded={faqOpen === index} onClick={() => setFaqOpen(open => open === index ? null : index)}><span>{item.q}</span><ChevronDown size={18} /></button>{faqOpen === index && <p>{item.a}</p>}</article>)}
         </div>
       </section>
 
-      <section className="landing-final-cta"><div><span className="landing-index">A CLEARER GYM WORKSPACE</span><h2>Bring the daily details together.</h2><p>Request LiftDesk owner access to get started.</p></div><a className="landing-primary" href="/?mode=signup">Request owner access <ArrowRight size={17} /></a></section>
+      <section className="landing-final-cta"><div><span className="landing-index">A CLEARER GYM WORKSPACE</span><h2>Manage your gym in one place.</h2><p>Request access to LiftDesk.</p></div><a className="landing-primary" href="/?mode=signup">Request access <ArrowRight size={17} /></a></section>
     </main>
 
-    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={32} /><span>LiftDesk</span></a><span>Gym operations, simplified.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
+    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={32} /><span>LiftDesk</span></a><span>Gym management platform.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
   </div>
 }

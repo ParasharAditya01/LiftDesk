@@ -221,15 +221,25 @@ export async function createMember(gymId: string, input: {
   return data as GymMember
 }
 
-export async function listAttendance(gymId: string, sinceIso: string): Promise<AttendanceRecord[]> {
-  const { data, error } = await requireSupabase()
-    .from('attendance')
-    .select('id, gym_id, member_id, checked_in_at, method')
-    .eq('gym_id', gymId)
-    .gte('checked_in_at', sinceIso)
-    .order('checked_in_at', { ascending: false })
-  if (error) throw error
-  return (data ?? []) as AttendanceRecord[]
+export async function listAttendance(gymId: string, sinceIso: string, beforeIso: string): Promise<AttendanceRecord[]> {
+  const supabase = requireSupabase()
+  const pageSize = 1000
+  const rows: AttendanceRecord[] = []
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('attendance')
+      .select('id, gym_id, member_id, checked_in_at, method')
+      .eq('gym_id', gymId)
+      .gte('checked_in_at', sinceIso)
+      .lt('checked_in_at', beforeIso)
+      .order('checked_in_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(offset, offset + pageSize - 1)
+    if (error) throw error
+    const page = (data ?? []) as AttendanceRecord[]
+    rows.push(...page)
+    if (page.length < pageSize) return rows
+  }
 }
 
 export async function recordManualCheckIn(gymId: string, memberId: string): Promise<{
