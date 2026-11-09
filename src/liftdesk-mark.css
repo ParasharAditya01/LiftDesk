@@ -1,6 +1,6 @@
 /* Official blue LiftDesk wordmark with compact product descriptor. */
 .liftdesk-mark{background:transparent;display:inline-flex;flex:0 0 auto;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1;overflow:visible}
-.liftdesk-mark img{display:block;width:100%;height:calc(100% - 11px);object-fit:contain}.liftdesk-mark .liftdesk-logo-light{display:none}.sidebar-top .liftdesk-mark .liftdesk-logo-dark{display:none}.sidebar-top .liftdesk-mark .liftdesk-logo-light{display:block}
+.liftdesk-mark img{display:block;width:100%;height:calc(100% - 11px);object-fit:contain}.liftdesk-mark .liftdesk-logo-dark{display:block}.liftdesk-mark .liftdesk-logo-light{display:none}.gym-theme-boundary:not([data-theme="brown-beige"]) .sidebar-top .liftdesk-mark .liftdesk-logo-dark{display:none}.gym-theme-boundary:not([data-theme="brown-beige"]) .sidebar-top .liftdesk-mark .liftdesk-logo-light{display:block}
 .liftdesk-mark small{display:block;margin-top:0;color:#1677ff;font:700 7px/1 'DM Sans',sans-serif;letter-spacing:1.1px;white-space:nowrap}
 .liftdesk-logo{display:inline-flex;align-items:center;flex:0 0 auto}
 .liftdesk-logo-compact .liftdesk-mark small{font-size:6px;letter-spacing:.75px}
