@@ -2027,6 +2027,27 @@ svg {
 .terms-section p a{color:#202124;font-weight:650;text-underline-offset:3px}
 .terms-footer{max-width:1160px;margin:0 auto;padding:24px 32px 36px;display:flex;justify-content:space-between;gap:20px}
 @media(max-width:700px){.terms-header{height:72px;padding:0 20px}.terms-main{padding:58px 22px 78px}.terms-document h1{font-size:40px}.terms-lede{font-size:16px}.terms-section-list{margin-top:44px}.terms-section{margin-bottom:35px}.terms-section h2{font-size:20px}.terms-section p{font-size:16px}.terms-footer{padding:20px 22px 28px}}
+.privacy-main{padding-top:72px}
+.privacy-document{width:min(100%,1100px)}
+.privacy-document .terms-lede{max-width:780px}
+.privacy-document .terms-section{margin-bottom:50px}
+.privacy-document .terms-section h2{margin-bottom:14px}
+.privacy-document .terms-section p,.privacy-document .terms-section li{color:#373634;font-size:15px;line-height:1.75}
+.privacy-document .terms-section a{color:#202124;font-weight:650;text-underline-offset:3px}
+.privacy-intro-section{max-width:780px;margin-top:48px}
+.privacy-data-section{margin-top:58px}
+.privacy-table-wrap{max-width:100%;margin:24px 0 20px;overflow:auto;border:1px solid #e5e1d8;border-radius:12px;background:#fff;overscroll-behavior-inline:contain}
+.privacy-data-table{width:100%;min-width:1040px;border-collapse:collapse;text-align:left}
+.privacy-data-table th,.privacy-data-table td{vertical-align:top;padding:15px 14px;border-bottom:1px solid #ece9e2;color:#4b4944;font-size:12px;line-height:1.6}
+.privacy-data-table thead th{position:sticky;top:0;background:#f2f0eb;color:#716e67;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.privacy-data-table tbody th{width:145px;color:#202124;font-size:12px;font-weight:700}
+.privacy-data-table tbody tr:last-child th,.privacy-data-table tbody tr:last-child td{border-bottom:0}
+.privacy-retention-note{padding:16px 18px;border-left:3px solid #b49b6a;border-radius:0 8px 8px 0;background:#f1efe9}
+.privacy-provider-list{display:grid;gap:12px;padding-left:22px}
+.privacy-provider-list li{padding-left:3px}
+.privacy-document .terms-section ul{margin-top:18px}
+.privacy-footer-link{white-space:nowrap}
+@media(max-width:700px){.privacy-main{padding-top:46px}.privacy-intro-section{margin-top:37px}.privacy-data-section{margin-top:44px}.privacy-document .terms-section{margin-bottom:39px}.privacy-document .terms-section p,.privacy-document .terms-section li{font-size:15px}.privacy-table-wrap{margin-inline:-2px}.privacy-data-table th,.privacy-data-table td{padding:12px}.privacy-retention-note{padding:14px}}
 
 /* Member portal: a calm, readable home for membership and coaching details. */
 .member-workspace-boundary .workspace-session-strip{min-height:38px;justify-content:flex-end;padding:0 clamp(16px,4vw,34px);border-bottom:1px solid var(--theme-line,#e2e3da);background:var(--theme-surface,#fff);color:var(--theme-ink,#202124);font-size:11px}

@@ -29,7 +29,7 @@ const sections = [
       'Gym records are available to authorized staff in that gym. Members can access their own membership information and coaching information shared with them. LiftDesk platform administrators can view gym directory details for account support.',
       'Gym chat messages are encrypted for registered devices. Standard messages expire after 48 hours; pinned announcements remain until removed. LiftDesk uses Supabase for authentication and data storage.',
       'Pausing or archiving a workspace does not delete its records. Archived gym records are retained unless they are separately deleted. To request access or deletion, email liftdesk11@gmail.com. Requests will be handled under applicable law; these Terms do not promise a fixed deletion period.',
-      'The site’s current [privacy and access summary](/#privacy) describes the product’s visible data practices. It does not replace any separate privacy notice that may apply to your use of LiftDesk.',
+      'The [LiftDesk Privacy Notice](/privacy) describes current data categories, purposes, access, service providers, and retention practices.',
     ],
   },
   {
@@ -86,10 +86,10 @@ export default function TermsPage() {
         <div className="terms-section-list">
           {sections.map(section => <section className="terms-section" key={section.title}>
             <h2>{section.title}</h2>
-            {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph.split(/(liftdesk11@gmail\.com|\[privacy and access summary\]\(\/#privacy\))/g).map((part, index) => part === 'liftdesk11@gmail.com'
+            {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph.split(/(liftdesk11@gmail\.com|\[LiftDesk Privacy Notice\]\(\/privacy\))/g).map((part, index) => part === 'liftdesk11@gmail.com'
               ? <a key={index} href="mailto:liftdesk11@gmail.com">{part}</a>
-              : part === '[privacy and access summary](/#privacy)'
-                ? <a key={index} href="/#privacy">privacy and access summary</a>
+              : part === '[LiftDesk Privacy Notice](/privacy)'
+                ? <a key={index} href="/privacy">LiftDesk Privacy Notice</a>
                 : part)}</p>)}
           </section>)}
         </div>
@@ -97,6 +97,7 @@ export default function TermsPage() {
     </main>
     <footer className="terms-footer">
       <a href="/">LiftDesk</a>
+      <a href="/privacy">Privacy Notice</a>
       <a href="/?mode=signin">Sign in</a>
     </footer>
   </div>

@@ -109,10 +109,10 @@ export default function LandingPage() {
       <section className="landing-privacy" id="privacy" aria-labelledby="privacy-title">
         <div className="landing-privacy-intro"><span className="landing-index">03 / PRIVACY BASICS</span><h2 id="privacy-title">Privacy and access</h2><p>How gym and member information is handled.</p></div>
         <div className="landing-privacy-list">
-          <article className="privacy-row"><span>01</span><div><h3>What your gym may record</h3><p>Member contact, membership and attendance details. Coaching records may include plans and progress notes.</p></div></article>
-          <article className="privacy-row"><span>02</span><div><h3>Who can see gym records</h3><p>Gym records are available to authorized staff in that gym. Members can access their own membership and shared coaching information. LiftDesk platform administrators can view gym directory details for account support.</p></div></article>
-          <article className="privacy-row"><span>03</span><div><h3>How gym chat works</h3><p>Gym chat messages are encrypted for registered devices. Standard messages expire after 48 hours; pinned announcements remain until removed.</p></div></article>
-          <article className="privacy-row"><span>04</span><div><h3>Sign-in, storage and questions</h3><p>LiftDesk uses Supabase for authentication and data storage. Contact your gym administrator about record corrections and retention.</p></div></article>
+          <article className="privacy-row"><span>01</span><div><h3>What we store and why</h3><p>Account and contact details, gym/member/staff records, memberships, attendance, follow-ups and coaching plans or progress. We use them to sign users in and run gym workspaces. Phone numbers are format-checked, not verified as real or owned.</p></div></article>
+          <article className="privacy-row"><span>02</span><div><h3>Who can access it</h3><p>Gym owners, admins and trainers can access records for their gym according to their role. Members can see their own membership and shared coaching information. LiftDesk platform admins access the gym directory and owner support details for provisioning and support.</p></div></article>
+          <article className="privacy-row"><span>03</span><div><h3>Who helps us provide LiftDesk</h3><p>Supabase provides sign-in and data storage; Google handles sign-in when you choose it; Cloudflare hosts the website. If you enable chat notifications, your browser’s push provider receives a generic alert and delivery endpoint. We do not sell personal information or use it for targeted ads.</p></div></article>
+          <article className="privacy-row"><span>04</span><div><h3>How long we keep it</h3><p>Unpinned chat messages are deleted after 48 hours; pinned announcements remain while pinned. Most accounts and gym records have no automatic deletion timer and stay until separately deleted. Pausing or archiving a gym does not erase its records. <a href="/privacy">Read the full Privacy Notice</a> or email <a href="mailto:liftdesk11@gmail.com">liftdesk11@gmail.com</a>.</p></div></article>
         </div>
       </section>
 
@@ -131,6 +131,6 @@ export default function LandingPage() {
       <section className="landing-final-cta"><div><span className="landing-index">A CLEARER GYM WORKSPACE</span><h2>Manage your gym in one place.</h2><p>Request access to LiftDesk.</p></div><a className="landing-primary" href="/?mode=signup">Request access <ArrowRight size={17} /></a></section>
     </main>
 
-    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={40} /></a><span>Gym management platform.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/terms">Terms of Service</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
+    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={40} /></a><span>Gym management platform.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/privacy">Privacy Notice</a><a href="/terms">Terms of Service</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
   </div>
 }

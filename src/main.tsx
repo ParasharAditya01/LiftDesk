@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import LiftDeskMark from './LiftDeskMark'
 import LandingPage from './LandingPage'
 import TermsPage from './TermsPage'
+import PrivacyPage from './PrivacyPage'
 import './styles.css'
 
 const AuthGate = lazy(() => import('./AuthGate'))
@@ -19,6 +20,7 @@ const App = lazy(() => import('./App'))
 const isPreview = window.location.pathname.replace(/\/$/, '') === '/preview'
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const isTerms = pathname === '/terms'
+const isPrivacy = pathname === '/privacy'
 const search = new URLSearchParams(window.location.search)
 const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
 const authIntentKeys = ['invite', 'staff_invite', 'code', 'error', 'error_description', 'access_token', 'refresh_token', 'type']
@@ -39,7 +41,7 @@ function NotFound() {
 
 function RoutedApp() {
   useEffect(() => {
-    if (isLanding || isTerms) return
+    if (isLanding || isTerms || isPrivacy) return
     const title = isPreview ? 'Preview workspace | LiftDesk' : 'Sign in | LiftDesk'
     document.title = title
     document.querySelector('meta[name="description"]')?.setAttribute('content', isPreview
@@ -49,12 +51,13 @@ function RoutedApp() {
   }, [])
   if (isLanding) return <LandingPage />
   if (isTerms) return <TermsPage />
+  if (isPrivacy) return <PrivacyPage />
   if (isPreview) return <Suspense fallback={<div className="auth-screen"><p>Opening preview…</p></div>}><App /></Suspense>
   return <Suspense fallback={<div className="auth-screen"><p>Opening sign-in…</p></div>}><AuthGate /></Suspense>
 }
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {isLanding || isPreview || isSignIn || isTerms ? <RoutedApp /> : <NotFound />}
+    {isLanding || isPreview || isSignIn || isTerms || isPrivacy ? <RoutedApp /> : <NotFound />}
   </React.StrictMode>,
 )

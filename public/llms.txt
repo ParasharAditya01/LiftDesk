@@ -12,4 +12,5 @@ LiftDesk provides role-based workspaces for gym owners, administrators, trainers
 - [Privacy and access](https://liftdesk.pages.dev/#privacy): Public summary of gym records, access, chat, and data storage.
 - [Frequently asked questions](https://liftdesk.pages.dev/#questions): Answers about attendance, workspace access, and member accounts.
 - [Terms of Service](https://liftdesk.pages.dev/terms): Terms for using LiftDesk gym workspaces.
+- [Privacy Notice](https://liftdesk.pages.dev/privacy): Data stored by LiftDesk, purposes, access, providers and retention.
 - [Sitemap](https://liftdesk.pages.dev/sitemap.xml): Index of public pages.
