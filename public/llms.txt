@@ -1,0 +1,14 @@
+# LiftDesk
+
+> LiftDesk is a gym operations platform for managing members, attendance, coaching, staff, and follow-ups in one workspace.
+
+LiftDesk provides role-based workspaces for gym owners, administrators, trainers, and members. Its public website describes product features, setup, privacy, and common questions. The interactive product preview uses illustrative sample records; it does not show live member data.
+
+## Public pages
+
+- [LiftDesk homepage](https://liftdesk.pages.dev/): Product overview and interactive sample preview.
+- [Workspace features](https://liftdesk.pages.dev/#workspace): Member management, attendance, coaching plans, follow-ups, and team announcements.
+- [How it works](https://liftdesk.pages.dev/#how-it-works): Workspace setup and day-to-day operations.
+- [Privacy and access](https://liftdesk.pages.dev/#privacy): Public summary of gym records, access, chat, and data storage.
+- [Frequently asked questions](https://liftdesk.pages.dev/#questions): Answers about attendance, workspace access, and member accounts.
+- [Sitemap](https://liftdesk.pages.dev/sitemap.xml): Index of public pages.
