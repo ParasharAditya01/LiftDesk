@@ -2182,3 +2182,6 @@ svg {
 .auth-showcase .showcase-copy>p:last-child{color:#716e67}
 .auth-showcase .showcase-footer{color:#716e67}
 .auth-showcase .liftdesk-mark{background:transparent;padding:0}
+
+/* Preserve the original transparent logo artwork on the sign-in showcase. */
+.auth-showcase .auth-brand>.liftdesk-mark{box-sizing:border-box!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important}
