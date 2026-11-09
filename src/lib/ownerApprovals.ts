@@ -50,6 +50,7 @@ export async function createPlatformGymWorkspace(input: {
   gymName: string
   ownerName: string
   ownerEmail: string
+  ownerPhone: string
   city: string
   phone: string
   theme: GymThemeId
@@ -58,6 +59,7 @@ export async function createPlatformGymWorkspace(input: {
     requested_gym_name: input.gymName.trim(),
     requested_owner_name: input.ownerName.trim(),
     requested_owner_email: input.ownerEmail.trim(),
+    requested_owner_phone: input.ownerPhone.trim(),
     requested_city: input.city.trim() || null,
     requested_gym_phone: input.phone.trim() || null,
     requested_theme: input.theme,

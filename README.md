@@ -11,7 +11,7 @@ LiftDesk is an India-first gym operations SaaS for independent gyms. The MVP is 
 - Trainer coaching workspace for member-specific plans, progress and notes.
 - A restricted member portal for a member's own profile, published plans and permitted progress records.
 - Gym-scoped staff workspace and invitations, plus Owner/Admin gym chat with optional web push notifications.
-- LiftDesk platform-admin provisioning of gym workspaces for an assigned Google account, with Owner access claimed on first verified Google sign-in.
+- LiftDesk platform-admin provisioning of gym workspaces for an assigned Google account and required owner mobile number, with Owner access claimed on first verified Google sign-in.
 - LiftDesk platform-admin removal of gym workspaces from the active directory, disabling workspace access while retaining records.
 - Multi-gym architecture with gym-level isolation enforced by PostgreSQL Row Level Security (RLS).
 
