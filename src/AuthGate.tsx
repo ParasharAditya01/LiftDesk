@@ -4,8 +4,6 @@ import { Activity, ArrowRight, Building2, CalendarDays, Check, ClipboardCheck, C
 import { acceptMemberInvitation, getCurrentGym, type Gym, type GymRole } from './lib/gymData'
 import { acceptGymStaffInvitation } from './lib/staffData'
 import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
-import GymThemeSelector from './GymThemeSelector'
-import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 import LiftDeskMark from './LiftDeskMark'
 import { userFacingError } from './lib/userFacingError'
 import { authOAuthRedirectUrl, authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation, SIGNUP_NEXT_STEP_MESSAGE } from './lib/authRegistration'
@@ -55,7 +53,6 @@ export default function AuthGate() {
   const [city, setCity] = useState('')
   const [phone, setPhone] = useState('')
   const [ownerMobilePhone, setOwnerMobilePhone] = useState('')
-  const [gymTheme, setGymTheme] = useState<GymThemeId>(DEFAULT_GYM_THEME)
   const authRequestLock = useRef(createRequestLock())
 
   useEffect(() => {
@@ -391,7 +388,7 @@ export default function AuthGate() {
     }
     setError(''); setSaving(true)
     try {
-      await requestOwnerWorkspace({ gymName, ownerName, city: normalizedCity, ownerMobilePhone, gymPhone: phone, theme: gymTheme })
+      await requestOwnerWorkspace({ gymName, ownerName, city: normalizedCity, ownerMobilePhone, gymPhone: phone })
       const request = await getMyOwnerAccessRequest(session.user.id)
       if (!request) throw new Error('LiftDesk saved the request, but its status could not be loaded. Refresh this page.')
       setOwnerRequest(request); setNeedsWorkspace(false)
@@ -403,7 +400,7 @@ export default function AuthGate() {
 
   if (!isSupabaseConfigured) return <div className="auth-screen"><section className="auth-card"><BrandMark /><p className="auth-eyebrow">SETUP REQUIRED</p><h1>Connect your Supabase project</h1><p className="auth-intro">Authentication is disabled until the project URL and browser publishable key are configured.</p><div className="auth-instructions"><b>1.</b><span>Copy <code>.env.example</code> to a local file named <code>.env</code>.</span><b>2.</b><span>Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>.</span><b>3.</b><span>Run the SQL migrations in your Supabase SQL Editor, then restart Vite.</span></div><p className="auth-security"><ShieldCheck size={16} /> Never use a service-role key in browser settings.</p></section></div>
 
-  if (!session && staffInviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">LIFTDESK STAFF INVITATION</p><h1>{mode === 'signin' ? 'Sign in to accept your invite.' : 'Create your staff account.'}</h1><p className="auth-intro">Use the email address this invitation was sent to. Your access will be linked to the gym and role assigned by its Owner or Admin.</p>
+  if (!session && staffInviteToken) return <div className="auth-screen"><section className="auth-card auth-card-workspace"><BrandMark /><p className="auth-eyebrow">LIFTDESK STAFF INVITATION</p><h1>{mode === 'signin' ? 'Sign in to accept your invite.' : 'Create your staff account.'}</h1><p className="auth-intro">Use the email address this invitation was sent to. Your access will be linked to the gym and role assigned by its Owner or Admin.</p>
     <button className="auth-google" type="button" onClick={() => void signInWithGoogle('staff')} disabled={saving || resendingConfirmation}>
       <GoogleMark /> {saving ? 'Connecting to Google…' : 'Continue with Google'}
     </button>
@@ -420,7 +417,7 @@ export default function AuthGate() {
     <p className="auth-security"><ShieldCheck size={16} /> This invitation is single-use, expires after 48 hours, and only works for its invited email.</p>
   </section></div>
 
-  if (!session && inviteToken) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Create your member account.</h1><p className="auth-intro">Continue with Google to avoid email confirmation. After sign-in, you’ll enter your member details. Or create an account using email and password below.</p>
+  if (!session && inviteToken) return <div className="auth-screen"><section className="auth-card auth-card-workspace"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Create your member account.</h1><p className="auth-intro">Continue with Google to avoid email confirmation. After sign-in, you’ll enter your member details. Or create an account using email and password below.</p>
     <button className="auth-google" type="button" onClick={() => void signInWithGoogle('member')} disabled={saving || resendingConfirmation}>
       <GoogleMark /> {saving ? 'Connecting to Google…' : 'Continue with Google'}
     </button>
@@ -493,7 +490,7 @@ export default function AuthGate() {
 
   if (pausedWorkspace && session) return <div className="auth-screen"><section className="auth-card owner-pending-card"><BrandMark /><p className="auth-eyebrow">WORKSPACE PAUSED</p><div className="owner-pending-icon"><Clock3 size={22}/></div><h1>{pausedWorkspace.gym_name} is temporarily unavailable.</h1><p className="auth-intro">LiftDesk has paused access to this workspace. Your account, membership and gym records are preserved. Contact LiftDesk if you need more information; access will return when the workspace is resumed.</p><button type="button" className="auth-submit" onClick={() => void signOutWithPushCleanup()}>Sign out</button></section></div>
 
-  if (session && inviteToken && memberProfileRequired && !workspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Complete your member profile.</h1><p className="auth-intro">Your Google account is signed in. Add these details to join the gym that invited you.</p>
+  if (session && inviteToken && memberProfileRequired && !workspace) return <div className="auth-screen"><section className="auth-card auth-card-workspace"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Complete your member profile.</h1><p className="auth-intro">Your Google account is signed in. Add these details to join the gym that invited you.</p>
     <form className="auth-form" onSubmit={submitGoogleMemberProfile}>
       <label>Google account<input type="email" value={session.user.email ?? ''} readOnly /></label>
       <label>Full name<input autoComplete="name" required minLength={2} maxLength={120} value={memberFullName} onChange={e => setMemberFullName(e.target.value)} placeholder="Your full name" /></label>
@@ -509,7 +506,7 @@ export default function AuthGate() {
 
   if (ownerRequest?.status === 'pending' && !workspace) return <div className="auth-screen"><section className="auth-card owner-pending-card"><BrandMark /><p className="auth-eyebrow">OWNER REQUEST RECEIVED</p><div className="owner-pending-icon"><Clock3 size={22}/></div><h1>Waiting for LiftDesk approval.</h1><p className="auth-intro">Your request for <b>{ownerRequest.gym_name}</b> is under review. You can sign in again later to check its status. A gym workspace will be created only after approval.</p><div className="owner-pending-summary"><span>Owner</span><b>{ownerRequest.owner_name}</b><span>Account</span><b>{ownerRequest.owner_email}</b><span>Submitted</span><b>{new Date(ownerRequest.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</b></div><button type="button" className="auth-submit" onClick={() => void signOutWithPushCleanup()}>Sign out</button></section></div>
 
-  if (needsWorkspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">FIRST-TIME SETUP</p><h1>Request owner access.</h1><p className="auth-intro">Submit your gym details. Your private workspace and Owner access will be created only after LiftDesk approves the request.</p>
+  if (needsWorkspace) return <div className="auth-screen"><section className="auth-card auth-card-workspace"><BrandMark /><p className="auth-eyebrow">FIRST-TIME SETUP</p><h1>Request owner access.</h1><p className="auth-intro">Submit your gym details. Your private workspace and Owner access will be created only after LiftDesk approves the request.</p>
     {ownerRequest?.status === 'rejected' && <p className="auth-error" role="status">The previous request was declined.{ownerRequest.review_note ? ` ${ownerRequest.review_note}` : ' You can update the details and submit another request.'}</p>}
     <form className="auth-form" onSubmit={submitWorkspace}>
       <label>Gym name<input required minLength={2} maxLength={120} value={gymName} onChange={e => setGymName(e.target.value)} placeholder="e.g. Power Fitness Club" /></label>
@@ -517,15 +514,14 @@ export default function AuthGate() {
       <label>Your mobile number <span className="required-label">Required</span><input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[6-9][0-9]{9}" title="Enter a valid 10-digit Indian mobile number." value={ownerMobilePhone} onChange={e => setOwnerMobilePhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit mobile number" /></label>
       <label>City <span className="required-label">Required</span><input required minLength={2} maxLength={100} value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Pune" /></label>
       <label>Gym phone <span className="optional-label">Optional</span><input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91…" /></label>
-      <GymThemeSelector value={gymTheme} onChange={setGymTheme} />
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Submitting request…' : 'Request LiftDesk approval'} <ArrowRight size={16} /></button>
     </form><button type="button" className="auth-signout" onClick={() => void signOutWithPushCleanup()}>Sign out</button>
   </section></div>
 
-  if (workspace?.role === 'member') return <div className="gym-theme-boundary member-workspace-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">Member</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void signOutWithPushCleanup()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your member portal…</p></div></div>}><MemberPortal gym={workspace.gym} user={session!.user} /></Suspense></div>
+  if (workspace?.role === 'member') return <div className="gym-theme-boundary member-workspace-boundary"><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">Member</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void signOutWithPushCleanup()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your member portal…</p></div></div>}><MemberPortal gym={workspace.gym} user={session!.user} /></Suspense></div>
 
-  if (workspace) return <div className="gym-theme-boundary" data-theme={workspace.gym.theme}><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void signOutWithPushCleanup()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
+  if (workspace) return <div className="gym-theme-boundary"><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">{workspace.role.charAt(0).toUpperCase() + workspace.role.slice(1)}</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void signOutWithPushCleanup()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your workspace…</p></div></div>}><LiveApp gym={workspace.gym} role={workspace.role} user={session.user} /></Suspense></div>
   return <div className="auth-screen"><section className="auth-card"><h1>Workspace unavailable</h1><p className="auth-intro">{error || 'We could not load a gym for this account.'}</p><button type="button" className="auth-submit" onClick={() => void signOutWithPushCleanup()}>Sign out</button></section></div>
 }
 

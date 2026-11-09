@@ -1,9 +1,9 @@
 import type { User } from '@supabase/supabase-js'
 import { requireSupabase } from './supabase'
-import { DEFAULT_GYM_THEME, normalizeGymTheme, type GymThemeId } from './gymThemes'
+import { DEFAULT_GYM_THEME } from './gymThemes'
 
 export type GymRole = 'owner' | 'admin' | 'trainer' | 'member'
-export type Gym = { id: string; name: string; city: string | null; phone: string | null; theme: GymThemeId }
+export type Gym = { id: string; name: string; city: string | null; phone: string | null }
 export type GymMember = {
   id: string
   gym_id: string
@@ -123,7 +123,7 @@ export async function getCurrentGym(user: User): Promise<{ gym: Gym; role: GymRo
   if (claimError) throw claimError
   const { data, error } = await client
     .from('gym_memberships')
-    .select('gym_id, role, gyms!inner(id, name, city, phone, theme)')
+    .select('gym_id, role, gyms!inner(id, name, city, phone)')
     .eq('user_id', user.id)
     .eq('active', true)
     .limit(1)
@@ -131,8 +131,7 @@ export async function getCurrentGym(user: User): Promise<{ gym: Gym; role: GymRo
 
   if (error) throw error
   if (!data) return null
-  const joined = data.gyms as unknown as Omit<Gym, 'theme'> & { theme?: unknown }
-  const gym: Gym = { ...joined, theme: normalizeGymTheme(joined.theme) }
+  const gym = data.gyms as unknown as Gym
   return { gym, role: data.role as GymRole }
 }
 
@@ -141,7 +140,6 @@ export async function createGymForCurrentUser(input: {
   ownerName: string
   city?: string
   phone?: string
-  theme?: GymThemeId
 }): Promise<string> {
   const client = requireSupabase()
   const { data, error } = await client.rpc('create_gym_for_current_user', {
@@ -149,7 +147,7 @@ export async function createGymForCurrentUser(input: {
     owner_name: input.ownerName.trim(),
     gym_city: input.city?.trim() || null,
     gym_phone: input.phone?.trim() || null,
-    gym_theme: input.theme ?? DEFAULT_GYM_THEME,
+    gym_theme: DEFAULT_GYM_THEME,
   })
   if (error) throw error
   if (typeof data !== 'string') throw new Error('Gym creation did not return a workspace ID.')
@@ -170,25 +168,23 @@ export async function updateGymWorkspaceSettings(gymId: string, input: {
   name: string
   city: string
   phone: string
-  theme: GymThemeId
 }): Promise<Gym> {
   const { data, error } = await requireSupabase().rpc('update_gym_workspace_settings', {
     target_gym: gymId,
     requested_name: input.name.trim(),
     requested_city: input.city.trim(),
     requested_phone: input.phone.trim() || null,
-    requested_theme: input.theme,
+    requested_theme: DEFAULT_GYM_THEME,
   })
   if (error) throw error
   const row = Array.isArray(data) ? data[0] : data
   if (!row || typeof row !== 'object') throw new Error('Gym settings were not saved.')
-  const result = row as { gym_id: string; gym_name: string; gym_city: string | null; gym_phone: string | null; gym_theme: unknown }
+  const result = row as { gym_id: string; gym_name: string; gym_city: string | null; gym_phone: string | null }
   return {
     id: result.gym_id,
     name: result.gym_name,
     city: result.gym_city,
     phone: result.gym_phone,
-    theme: normalizeGymTheme(result.gym_theme),
   }
 }
 

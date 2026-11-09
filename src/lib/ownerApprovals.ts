@@ -1,5 +1,5 @@
 import { requireSupabase } from './supabase'
-import type { GymThemeId } from './gymThemes'
+import { DEFAULT_GYM_THEME } from './gymThemes'
 
 export type OwnerAccessRequest = {
   id: string
@@ -10,7 +10,6 @@ export type OwnerAccessRequest = {
   city: string | null
   phone: string | null
   owner_mobile_phone?: string | null
-  gym_theme: GymThemeId
   status: 'pending' | 'approved' | 'rejected'
   review_note: string | null
   created_at: string
@@ -70,7 +69,6 @@ export async function createPlatformGymWorkspace(input: {
   ownerPhone: string
   city: string
   phone: string
-  theme: GymThemeId
 }): Promise<{ gymId: string; ownerEmail: string; ownerAccountReady: boolean }> {
   const { data, error } = await requireSupabase().rpc('create_liftdesk_gym_workspace', {
     requested_gym_name: input.gymName.trim(),
@@ -79,7 +77,7 @@ export async function createPlatformGymWorkspace(input: {
     requested_owner_phone: input.ownerPhone.trim(),
     requested_city: input.city.trim() || null,
     requested_gym_phone: input.phone.trim() || null,
-    requested_theme: input.theme,
+    requested_theme: DEFAULT_GYM_THEME,
   })
   if (error) throw error
   const row = Array.isArray(data) ? data[0] : data
@@ -96,7 +94,7 @@ export async function removePlatformGymWorkspace(gymId: string): Promise<void> {
 export async function getMyOwnerAccessRequest(userId: string): Promise<OwnerAccessRequest | null> {
   const { data, error } = await requireSupabase()
     .from('owner_access_requests')
-    .select('id, user_id, owner_email, owner_name, gym_name, city, phone, gym_theme, status, review_note, created_at')
+    .select('id, user_id, owner_email, owner_name, gym_name, city, phone, status, review_note, created_at')
     .eq('user_id', userId)
     .maybeSingle()
   if (error) throw error
@@ -109,7 +107,6 @@ export async function requestOwnerWorkspace(input: {
   city: string
   ownerMobilePhone: string
   gymPhone?: string
-  theme: GymThemeId
 }): Promise<string> {
   const { data, error } = await requireSupabase().rpc('request_owner_workspace_with_contact', {
     gym_name: input.gymName.trim(),
@@ -117,7 +114,7 @@ export async function requestOwnerWorkspace(input: {
     owner_mobile_phone: input.ownerMobilePhone.trim(),
     gym_city: input.city.trim(),
     gym_phone: input.gymPhone?.trim() || null,
-    gym_theme: input.theme,
+    gym_theme: DEFAULT_GYM_THEME,
   })
   if (error) throw error
   if (typeof data !== 'string') throw new Error('LiftDesk did not save the workspace request.')

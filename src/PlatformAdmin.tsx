@@ -5,8 +5,6 @@ import type { FormEvent } from 'react'
 import type { OwnerAccessRequest, PlatformGymSummary } from './lib/ownerApprovals'
 import { createPlatformGymWorkspace, listPlatformGymDirectory, removePlatformGymWorkspace, setPlatformGymWorkspacePaused } from './lib/ownerApprovals'
 import { requireSupabase } from './lib/supabase'
-import GymThemeSelector from './GymThemeSelector'
-import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 
 type Props = { onOpenWorkspace?: () => void; onSignOut: () => void }
 type Section = 'gyms' | 'requests'
@@ -45,14 +43,13 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
   const [notice, setNotice] = useState('')
   const [showCreateGym, setShowCreateGym] = useState(false)
   const [gymForm, setGymForm] = useState({ name: '', ownerName: '', ownerEmail: '', ownerPhone: '', city: '', phone: '' })
-  const [gymTheme, setGymTheme] = useState<GymThemeId>(DEFAULT_GYM_THEME)
 
   const load = useCallback(async () => {
     setError(''); setGymError(''); setRequestError('')
     setLoading(true)
     const [requestResult, gymResult] = await Promise.allSettled([
         (async () => requireSupabase().from('owner_access_requests')
-          .select('id, user_id, owner_email, owner_name, gym_name, city, phone, owner_mobile_phone, gym_theme, status, review_note, created_at')
+          .select('id, user_id, owner_email, owner_name, gym_name, city, phone, owner_mobile_phone, status, review_note, created_at')
           .eq('status', 'pending').order('created_at', { ascending: true }))(),
         listPlatformGymDirectory(),
       ])
@@ -111,13 +108,11 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
         ownerPhone: gymForm.ownerPhone,
         city: gymForm.city,
         phone: gymForm.phone,
-        theme: gymTheme,
       })
       setNotice(result.ownerAccountReady
         ? `${gymForm.name.trim()} is ready. ${result.ownerEmail} can sign in with Google.`
         : `${gymForm.name.trim()} is set up for ${result.ownerEmail}. The owner can claim it with that verified Google account.`)
       setGymForm({ name: '', ownerName: '', ownerEmail: '', ownerPhone: '', city: '', phone: '' })
-      setGymTheme(DEFAULT_GYM_THEME)
       setShowCreateGym(false)
       await load()
     } catch (err) { setError(readableError(err)) }
@@ -219,7 +214,6 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
             <div className="platform-form-two"><label>Owner’s full name<input required minLength={2} maxLength={120} value={gymForm.ownerName} onChange={event => setGymForm({ ...gymForm, ownerName: event.target.value })} autoComplete="name"/></label><label>Owner’s Google account email<input required type="email" maxLength={320} value={gymForm.ownerEmail} onChange={event => setGymForm({ ...gymForm, ownerEmail: event.target.value })} autoComplete="email" placeholder="owner@gmail.com"/></label></div>
             <div className="platform-form-two"><label>Owner’s mobile number<input required type="tel" inputMode="numeric" autoComplete="tel" pattern="[6-9][0-9]{9}" maxLength={10} value={gymForm.ownerPhone} onChange={event => setGymForm({ ...gymForm, ownerPhone: event.target.value.replace(/\D/g, '').slice(0, 10) })} placeholder="10-digit Indian mobile" aria-describedby="owner-phone-help"/><small id="owner-phone-help">Used for LiftDesk account support.</small></label><label>City<input maxLength={120} value={gymForm.city} onChange={event => setGymForm({ ...gymForm, city: event.target.value })}/></label></div>
             <label>Gym phone (optional)<input type="tel" maxLength={30} value={gymForm.phone} onChange={event => setGymForm({ ...gymForm, phone: event.target.value })}/></label>
-            <GymThemeSelector value={gymTheme} onChange={setGymTheme}/>
             <p className="platform-create-gym-note">If the owner has not signed in before, LiftDesk will hold this assignment until they sign in with the same verified Google email.</p>
             <div className="platform-create-gym-actions"><button type="button" className="button-secondary" disabled={busyId === 'create'} onClick={() => setShowCreateGym(false)}>Cancel</button><button type="submit" className="button-primary" disabled={busyId === 'create'}>{busyId === 'create' ? <><LoaderCircle size={15} className="spin"/> Adding…</> : <><Plus size={15}/> Add gym</>}</button></div>
           </form>
