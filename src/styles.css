@@ -2198,3 +2198,20 @@ svg {
 .page-footer-context i{font-style:normal;opacity:.65}
 .page-footer-note{flex:0 0 auto;font-size:10px;white-space:nowrap}
 @media(max-width:720px){.gym-theme-boundary .page-footer{align-items:flex-start;flex-direction:column;gap:8px}.page-footer-primary{align-items:flex-start;flex-direction:column;gap:8px}.page-footer-context{font-size:13px}.page-footer-note{padding-left:0}}
+/* Keep Android/iOS text-selection toolbars off the app UI, but preserve editing
+   and copy/paste inside fields and editable content. */
+#root {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#root input,
+#root textarea,
+#root [contenteditable="true"],
+#root [contenteditable=""],
+#root [contenteditable="plaintext-only"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
