@@ -131,6 +131,6 @@ export default function LandingPage() {
       <section className="landing-final-cta"><div><span className="landing-index">A CLEARER GYM WORKSPACE</span><h2>Manage your gym in one place.</h2><p>Request access to LiftDesk.</p></div><a className="landing-primary" href="/?mode=signup">Request access <ArrowRight size={17} /></a></section>
     </main>
 
-    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={40} /></a><span>Gym management platform.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
+    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={40} /></a><span>Gym management platform.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/terms">Terms of Service</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
   </div>
 }

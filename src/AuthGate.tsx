@@ -414,6 +414,7 @@ export default function AuthGate() {
       <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || (mode === 'signup' && emailWaitSeconds > 0)}>{saving ? 'Please wait…' : mode === 'signup' ? 'Create staff account' : 'Sign in and accept invitation'} <ArrowRight size={16} /></button>
     </form>
     <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button type="button" disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create account' : 'Sign in'}</button></p>
+    <p className="auth-terms-note">By using LiftDesk, you agree to the <a href="/terms">Terms of Service</a>.</p>
     <p className="auth-security"><ShieldCheck size={16} /> This invitation is single-use, expires after 48 hours, and only works for its invited email.</p>
   </section></div>
 
@@ -434,6 +435,7 @@ export default function AuthGate() {
       {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
       <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{saving ? 'Creating account…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s…` : 'Create member account'} <ArrowRight size={16} /></button>
     </form>
+    <p className="auth-terms-note">By creating an account, you agree to the <a href="/terms">Terms of Service</a>.</p>
     <p className="auth-security"><ShieldCheck size={16} /> This invitation is gym-specific, expires after 48 hours, and can be used once.</p>
   </section></div>
 
@@ -479,6 +481,7 @@ export default function AuthGate() {
         </button>
       </>}
       <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button type="button" disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
+      <p className="auth-terms-note">By continuing, you agree to the <a href="/terms">Terms of Service</a>.</p>
       <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
     </section><p className="auth-main-foot">LiftDesk <span>·</span> Gym operations, made clearer</p></main>
   </div>

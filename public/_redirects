@@ -1,3 +1,4 @@
 /signin / 200
 /signup / 200
 /auth/callback / 200
+/terms / 200

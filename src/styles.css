@@ -93,6 +93,8 @@
 .auth-error{background:#F2F0EB;color:#292A2D}
 .auth-message{background:#F2F0EB;color:#292A2D}
 .auth-switch{font-size:12px;color:#77736B;text-align:center;margin:22px 0}
+.auth-terms-note{font-size:11px;color:#77736B;line-height:1.5;text-align:center;margin:12px 0 0}
+.auth-terms-note a{color:#202124;font-weight:700;text-underline-offset:3px}
 .auth-switch button,.auth-signout{border:0;background:none;color:#202124;font:inherit;font-weight:800;cursor:pointer;padding:3px}
 .auth-resend{justify-self:start;border:0;background:none;color:#202124;font:inherit;font-size:12px;font-weight:800;text-decoration:underline;cursor:pointer;padding:2px 0}
 .auth-resend:disabled{opacity:.6;cursor:wait}
@@ -2006,6 +2008,25 @@ svg {
 @media(max-width:760px){.landing-header{height:72px;padding-inline:20px}.landing-brand{font-size:20px}.landing-menu-toggle{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--land-line);border-radius:7px;background:#fff;color:var(--land-ink)}.landing-nav{position:absolute;top:calc(100% + 1px);right:0;left:0;display:none;align-items:stretch;gap:0;padding:10px 20px 18px;border-bottom:1px solid var(--land-line);background:var(--land-paper);box-shadow:0 14px 22px rgb(30 29 25 / .07)}.landing-nav.is-open{display:flex;flex-direction:column}.landing-nav>a:not(.landing-nav-cta){padding:13px 2px;border-bottom:1px solid var(--land-line)}.landing-signin{margin-left:0}.landing-nav-cta{margin-top:12px}.landing-hero{grid-template-columns:1fr;gap:42px;padding:62px 22px 64px}.landing-hero-copy{max-width:620px}.landing-hero h1{max-width:560px;font-size:clamp(48px,11vw,72px)}.landing-hero-copy>p{font-size:15px}.product-preview{width:min(100%,600px);margin-inline:auto;padding:17px 15px 14px}.preview-tabs{overflow-x:auto}.preview-tabs button{padding-inline:8px}.landing-proofline{justify-content:flex-start;gap:12px 19px;padding:16px 22px;font-size:8px}.landing-proofline i{width:3px;height:3px}.landing-section{padding:78px 22px}.landing-capabilities{grid-template-columns:1fr;gap:34px}.landing-section-intro h2,.process-heading h2,.faq-intro h2,.landing-privacy-intro h2{font-size:clamp(35px,9vw,49px)}.landing-process{padding:72px 22px}.process-steps{grid-template-columns:1fr;margin-top:33px}.process-steps article,.process-steps article+article{padding:19px 0;border-left:0;border-bottom:1px solid #d9d4c9}.process-steps h3{margin-top:14px}.landing-privacy{grid-template-columns:1fr;gap:30px;padding:78px 22px}.landing-faq{grid-template-columns:1fr;gap:35px;padding:78px 22px}.landing-final-cta{align-items:flex-start;flex-direction:column;padding:42px 22px}.landing-final-cta .landing-primary{min-height:48px}.landing-footer{grid-template-columns:1fr auto;gap:19px;padding:22px}.landing-footer nav{grid-column:1/-1;grid-row:2;flex-wrap:wrap;gap:13px 19px}.landing-footer>small{justify-self:end}}
 @media(max-width:440px){.landing-hero{padding-top:50px}.landing-hero h1{font-size:47px}.landing-actions{align-items:flex-start;flex-direction:column;gap:17px}.landing-hero-foot{margin-top:25px}.preview-metrics{gap:5px}.preview-metrics>div{padding:9px 7px}.preview-metrics b{font-size:9px;gap:4px}.preview-metrics svg{width:14px}.preview-table-head{font-size:7px}.preview-tabs button{font-size:8px;padding-inline:6px}.preview-tag{font-size:7px;padding:4px 5px}.preview-record-copy small{font-size:8px}.landing-brand{gap:8px}.landing-proofline{font-size:7px;letter-spacing:.8px}}
 @media(prefers-reduced-motion:reduce){.landing-page *, .landing-page *::before,.landing-page *::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Terms of Service: a quiet, readable document page in LiftDesk's public palette. */
+.terms-page{min-height:100vh;background:#f8f7f4;color:#202124}
+.terms-header{max-width:1160px;height:88px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between}
+.terms-header>a:first-child{display:flex;align-items:center}
+.terms-home-link,.terms-footer a{color:#202124;font-size:14px;font-weight:600;text-decoration:none}
+.terms-home-link:hover,.terms-footer a:hover{text-decoration:underline;text-underline-offset:4px}
+.terms-main{padding:84px 28px 120px}
+.terms-document{width:min(100%,720px);margin:0 auto}
+.terms-updated{margin:0 0 24px;color:#716e67;font-size:14px}
+.terms-document h1{margin:0 0 18px;font-size:clamp(38px,5vw,56px);line-height:1.05;letter-spacing:-.045em}
+.terms-lede{max-width:680px;margin:0;color:#5e5a53;font-size:18px;line-height:1.65}
+.terms-section-list{margin-top:62px}
+.terms-section{margin:0 0 43px}
+.terms-section h2{margin:0 0 13px;font-size:23px;line-height:1.25;letter-spacing:-.025em}
+.terms-section p{margin:0 0 14px;color:#373634;font-size:16px;line-height:1.75}
+.terms-section p a{color:#202124;font-weight:650;text-underline-offset:3px}
+.terms-footer{max-width:1160px;margin:0 auto;padding:24px 32px 36px;display:flex;justify-content:space-between;gap:20px}
+@media(max-width:700px){.terms-header{height:72px;padding:0 20px}.terms-main{padding:58px 22px 78px}.terms-document h1{font-size:40px}.terms-lede{font-size:16px}.terms-section-list{margin-top:44px}.terms-section{margin-bottom:35px}.terms-section h2{font-size:20px}.terms-section p{font-size:16px}.terms-footer{padding:20px 22px 28px}}
 
 /* Member portal: a calm, readable home for membership and coaching details. */
 .member-workspace-boundary .workspace-session-strip{min-height:38px;justify-content:flex-end;padding:0 clamp(16px,4vw,34px);border-bottom:1px solid var(--theme-line,#e2e3da);background:var(--theme-surface,#fff);color:var(--theme-ink,#202124);font-size:11px}
