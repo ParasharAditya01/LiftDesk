@@ -7,7 +7,8 @@ type LiftDeskMarkProps = { className?: string; size?: number; style?: CSSPropert
 export default function LiftDeskMark({ className = '', size = 35, style }: LiftDeskMarkProps) {
   return (
     <div className={`liftdesk-mark ${className}`.trim()} aria-hidden="true" style={{ width: size * 3, height: size, ...style }}>
-      <img src="/liftdesk-logo.png" alt="" />
+      <img className="liftdesk-logo-dark" src="/liftdesk-logo.png" alt="" />
+      <img className="liftdesk-logo-light" src="/liftdesk-logo-white.png" alt="" />
       <small>GYM MANAGEMENT PLATFORM</small>
     </div>
   )
