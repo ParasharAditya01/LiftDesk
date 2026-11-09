@@ -69,7 +69,7 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
   return <>
   <main className="member-portal-shell">
     <header className="member-portal-header">
-      <div className="member-portal-brand"><LiftDeskMark size={38}/><div><b>Lift<span>Desk</span></b><small>MEMBER PORTAL</small></div></div>
+      <div className="member-portal-brand"><LiftDeskMark size={46}/><small>MEMBER PORTAL</small></div>
     </header>
 
     <div className="member-portal-content">

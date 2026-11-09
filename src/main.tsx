@@ -32,7 +32,7 @@ function NotFound() {
     document.querySelector('meta[name="description"]')?.setAttribute('content', 'This LiftDesk page could not be found. Return to sign in or open the preview workspace.')
     document.querySelector('meta[name="robots"]')?.setAttribute('content', 'noindex, nofollow')
   }, [])
-  return <main className="auth-screen"><section className="auth-card"><div className="auth-brand"><LiftDeskMark size={38} /><b>Lift<span>Desk</span></b></div><p className="auth-eyebrow">404 · PAGE NOT FOUND</p><h1>We couldn’t find that page.</h1><p className="auth-intro">The address may have changed or the page may no longer exist.</p><div className="not-found-actions"><a className="auth-submit" href="/">Go to homepage</a><a className="button-secondary" href="/?mode=signin">Sign in</a><a className="button-secondary" href="/preview">Open the preview</a></div></section></main>
+  return <main className="auth-screen"><section className="auth-card"><div className="auth-brand"><LiftDeskMark size={46} /></div><p className="auth-eyebrow">404 · PAGE NOT FOUND</p><h1>We couldn’t find that page.</h1><p className="auth-intro">The address may have changed or the page may no longer exist.</p><div className="not-found-actions"><a className="auth-submit" href="/">Go to homepage</a><a className="button-secondary" href="/?mode=signin">Sign in</a><a className="button-secondary" href="/preview">Open the preview</a></div></section></main>
 }
 
 function RoutedApp() {

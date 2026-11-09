@@ -49,7 +49,7 @@ const sampleMessages: PreviewMessage[] = [
 const money = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
 
 function Brand() {
-  return <div className="brand-lockup"><LiftDeskMark size={35} className="brand-mark" /><span className="brand-name">Lift<span>Desk</span><small>GYM OPERATIONS</small></span></div>
+  return <div className="brand-lockup"><LiftDeskMark size={52} /></div>
 }
 
 function Status({ status }: { status: MemberStatus }) {
@@ -294,7 +294,7 @@ function MemberPortalPreview({ section, onSection, onRoleChange, children }: { s
   return <div className="member-workspace-boundary preview-member-boundary">
     <main className="member-portal-shell">
       <header className="member-portal-header">
-        <div className="member-portal-brand"><LiftDeskMark size={38}/><div><b>Lift<span>Desk</span></b><small>MEMBER PORTAL · PREVIEW</small></div></div>
+        <div className="member-portal-brand"><LiftDeskMark size={46}/><small>MEMBER PORTAL · PREVIEW</small></div>
         <div className="member-portal-gym"><span className="member-portal-gym-label">GYM WORKSPACE</span><b>LiftDesk Demo Gym</b></div>
         <label className="preview-role-switch"><span>View as</span><select aria-label="Choose preview role" value="Member" onChange={event => onRoleChange(event.target.value as DemoRole)}><option>Owner</option><option>Admin</option><option>Trainer</option><option>Member</option></select></label>
         <a className="member-portal-signout" href="/?mode=signin">Sign in</a>

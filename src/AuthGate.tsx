@@ -522,7 +522,7 @@ export default function AuthGate() {
 
 function BrandMark() {
   const homeUrl = `/${window.location.search}${window.location.hash}`
-  return <a className="auth-brand" href={homeUrl} aria-label="LiftDesk home"><LiftDeskMark size={38} /><b>Lift<span>Desk</span></b></a>
+  return <a className="auth-brand" href={homeUrl} aria-label="LiftDesk home"><LiftDeskMark size={46} /></a>
 }
 
 function GoogleMark() {

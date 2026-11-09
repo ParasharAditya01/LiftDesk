@@ -56,7 +56,7 @@ export default function LandingPage() {
 
   return <div className="landing-page">
     <header className="landing-header">
-      <a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={38} /><span>LiftDesk</span></a>
+      <a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={46} /></a>
       <button className="landing-menu-toggle" type="button" aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={menuOpen} aria-controls="landing-navigation" onClick={() => setMenuOpen(open => !open)}>{menuOpen ? <X size={21} /> : <Menu size={21} />}</button>
       <nav className={'landing-nav' + (menuOpen ? ' is-open' : '')} id="landing-navigation" aria-label="Main navigation">
         {sections.map(section => <a key={section.id} href={`#${section.id}`} onClick={closeMenu}>{section.label}</a>)}
@@ -76,7 +76,7 @@ export default function LandingPage() {
         </div>
 
         <section className="product-preview" aria-label="Interactive LiftDesk product preview">
-          <div className="preview-topline"><div className="preview-brand"><LiftDeskMark size={28} /><span>LiftDesk <small>WORKSPACE</small></span></div><span className="preview-state"><i /> SAMPLE PREVIEW</span></div>
+          <div className="preview-topline"><div className="preview-brand"><LiftDeskMark size={38} /></div><span className="preview-state"><i /> SAMPLE PREVIEW</span></div>
           <div className="preview-welcome"><div><span className="preview-overline">YOUR GYM AT A GLANCE</span><h2>Today’s workspace</h2><p>Members, attendance and coaching in one view.</p></div><span className="preview-date">TODAY</span></div>
           <div className="preview-metrics"><div><span>Members</span><b><Users size={17} /> Directory</b></div><div><span>Attendance</span><b><CalendarCheck size={17} /> Check-ins</b></div><div><span>Coaching</span><b><Dumbbell size={17} /> Plans</b></div></div>
           <div className="preview-table-head"><span>WORKSPACE VIEW</span><span>SELECT A SECTION</span></div>
@@ -131,6 +131,6 @@ export default function LandingPage() {
       <section className="landing-final-cta"><div><span className="landing-index">A CLEARER GYM WORKSPACE</span><h2>Manage your gym in one place.</h2><p>Request access to LiftDesk.</p></div><a className="landing-primary" href="/?mode=signup">Request access <ArrowRight size={17} /></a></section>
     </main>
 
-    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={32} /><span>LiftDesk</span></a><span>Gym management platform.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
+    <footer className="landing-footer"><a className="landing-brand" href="/" aria-label="LiftDesk home"><LiftDeskMark size={40} /></a><span>Gym management platform.</span><nav aria-label="Footer navigation"><a href="#workspace">Workspace</a><a href="#how-it-works">How it works</a><a href="#privacy">Privacy</a><a href="#questions">Questions</a><a href="/?mode=signin">Sign in</a></nav><small>© {new Date().getFullYear()} LiftDesk</small></footer>
   </div>
 }

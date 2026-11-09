@@ -15,8 +15,8 @@ self.addEventListener('push', event => {
   const tag = typeof payload.tag === 'string' ? payload.tag : undefined
   event.waitUntil(self.registration.showNotification(title, {
     body,
-    icon: '/liftdesk-mark.svg',
-    badge: '/liftdesk-mark.svg',
+    icon: '/liftdesk-logo.png',
+    badge: '/liftdesk-logo.png',
     tag,
     data: { url: '/?open_chat=1' },
   }))

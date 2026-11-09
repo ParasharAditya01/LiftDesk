@@ -8,7 +8,7 @@
   "theme_color": "#202124",
   "icons": [
     {
-      "src": "/liftdesk-mark.svg",
+      "src": "/liftdesk-logo.png",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
