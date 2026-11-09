@@ -4,3 +4,9 @@
 .liftdesk-mark small{display:block;margin-top:3px;color:#99d900;font:700 7px/1 'DM Sans',sans-serif;letter-spacing:1.1px;white-space:nowrap}
 .liftdesk-logo{display:inline-flex;align-items:center;flex:0 0 auto}
 .liftdesk-logo-compact .liftdesk-mark small{font-size:6px;letter-spacing:.75px}
+
+/* The original wordmark uses dark lettering, so give it a light plate on dark surfaces. */
+.auth-showcase .liftdesk-mark,
+.sidebar-top .liftdesk-mark,
+.product-preview .liftdesk-mark{box-sizing:content-box;padding:7px 10px;border-radius:9px;background:#f4f3ee}
+.auth-showcase .liftdesk-mark{padding:9px 13px;border-radius:11px}
