@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowLeft, Building2, Check, Clock3, Dumbbell, LoaderCircle, LogOut, Plus, RefreshCw, Search, ShieldCheck, Users, X } from 'lucide-react'
+import { ArrowLeft, Building2, Check, Clock3, Dumbbell, LoaderCircle, LogOut, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Users, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import type { OwnerAccessRequest, PlatformGymSummary } from './lib/ownerApprovals'
-import { createPlatformGymWorkspace, listPlatformGymDirectory, removePlatformGymWorkspace } from './lib/ownerApprovals'
+import { createPlatformGymWorkspace, listPlatformGymDirectory, removePlatformGymWorkspace, setPlatformGymWorkspacePaused } from './lib/ownerApprovals'
 import { requireSupabase } from './lib/supabase'
 import GymThemeSelector from './GymThemeSelector'
 import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
@@ -138,6 +138,19 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
     finally { setBusyId('') }
   }
 
+  async function toggleWorkspacePause(gym: PlatformGymSummary) {
+    const shouldPause = !gym.workspace_paused_at
+    setBusyId(gym.gym_id); setError(''); setNotice('')
+    try {
+      await setPlatformGymWorkspacePaused(gym.gym_id, shouldPause)
+      setNotice(shouldPause
+        ? `${gym.gym_name} is paused. Its workspace access is blocked and its records are preserved.`
+        : `${gym.gym_name} is resumed. Its existing owner and team access is restored.`)
+      await load()
+    } catch (err) { setError(readableError(err)) }
+    finally { setBusyId('') }
+  }
+
   return <main className="platform-admin-screen">
     <header className="platform-admin-header">
       <a className="platform-admin-brand" href="/" aria-label="LiftDesk home"><Building2 size={20}/><span>LiftDesk <small>PLATFORM</small></span></a>
@@ -178,7 +191,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
         {loading ? <div className="platform-admin-empty"><LoaderCircle className="spin" size={20}/> Loading gym overview…</div>
           : filteredGyms.length === 0 ? <div className="platform-admin-empty"><Building2 size={20}/><div><b>{gyms.length ? 'No gyms match this search' : 'No gym workspaces yet'}</b><span>{gyms.length ? 'Try a different name, city, or filter.' : 'Approved workspaces will appear here.'}</span></div></div>
             : <div className="platform-gym-list">{filteredGyms.map(gym => <article className="platform-gym-card" key={gym.gym_id}>
-              <div className="platform-gym-heading"><div className="platform-gym-identity"><i><Building2 size={18}/></i><div><h2>{gym.gym_name}</h2><p>{gym.city || 'City not provided'} <span>·</span> Added {dateLabel(gym.created_at)}</p><p>Owner Google account: {gym.owner_email || 'Not provided'}</p><p>Owner contact: {gym.owner_phone ? <a href={`tel:${gym.owner_phone}`}>{gym.owner_phone}</a> : 'Not provided'}</p></div></div><div className="platform-gym-card-actions"><span className={`platform-health ${gym.active_owner_count ? 'is-active' : 'needs-owner'}`}><i/>{gym.active_owner_count ? 'Owner active' : 'Waiting for Google sign-in'}</span><button type="button" className="platform-remove-gym" disabled={Boolean(busyId)} onClick={() => void removeGym(gym)}>{busyId === gym.gym_id ? <LoaderCircle size={14} className="spin"/> : <X size={14}/>}Remove</button></div></div>
+              <div className="platform-gym-heading"><div className="platform-gym-identity"><i><Building2 size={18}/></i><div><h2>{gym.gym_name}</h2><p>{gym.city || 'City not provided'} <span>·</span> Added {dateLabel(gym.created_at)}</p><p>Owner Google account: {gym.owner_email || 'Not provided'}</p><p>Owner contact: {gym.owner_phone ? <a href={`tel:${gym.owner_phone}`}>{gym.owner_phone}</a> : 'Not provided'}</p></div></div><div className="platform-gym-card-actions"><span className={`platform-health ${gym.workspace_paused_at ? 'is-paused' : gym.active_owner_count ? 'is-active' : 'needs-owner'}`}><i/>{gym.workspace_paused_at ? 'Workspace paused' : gym.active_owner_count ? 'Owner active' : 'Waiting for Google sign-in'}</span><button type="button" className="platform-pause-gym" disabled={Boolean(busyId)} onClick={() => void toggleWorkspacePause(gym)}>{busyId === gym.gym_id ? <LoaderCircle size={14} className="spin"/> : gym.workspace_paused_at ? <Play size={14}/> : <Pause size={14}/>} {gym.workspace_paused_at ? 'Resume' : 'Pause'}</button><button type="button" className="platform-remove-gym" disabled={Boolean(busyId)} onClick={() => void removeGym(gym)}>{busyId === gym.gym_id ? <LoaderCircle size={14} className="spin"/> : <X size={14}/>}Remove</button></div></div>
               <div className="platform-gym-metrics">
                 <div><span>Members</span><strong>{Number(gym.member_count).toLocaleString('en-IN')}</strong><small>{Number(gym.active_member_count).toLocaleString('en-IN')} active</small></div>
                 <div><span>Admins</span><strong>{Number(gym.admin_count).toLocaleString('en-IN')}</strong><small>{Number(gym.active_admin_count).toLocaleString('en-IN')} active</small></div>

@@ -32,6 +32,7 @@ export type PlatformGymSummary = {
   trainer_count: number
   active_trainer_count: number
   last_attendance_at: string | null
+  workspace_paused_at: string | null
 }
 
 export async function isLiftDeskPlatformAdmin(): Promise<boolean> {
@@ -41,9 +42,25 @@ export async function isLiftDeskPlatformAdmin(): Promise<boolean> {
 }
 
 export async function listPlatformGymDirectory(): Promise<PlatformGymSummary[]> {
-  const { data, error } = await requireSupabase().rpc('list_liftdesk_platform_gym_directory_v3')
+  const { data, error } = await requireSupabase().rpc('list_liftdesk_platform_gym_directory_v4')
   if (error) throw error
   return (data ?? []) as PlatformGymSummary[]
+}
+
+export async function setPlatformGymWorkspacePaused(gymId: string, paused: boolean): Promise<void> {
+  const { error } = await requireSupabase().rpc('set_liftdesk_gym_workspace_paused', {
+    target_gym: gymId, requested_paused: paused,
+  })
+  if (error) throw error
+}
+
+export async function getMyPausedWorkspaceAccess(): Promise<{ gym_name: string; paused_at: string } | null> {
+  const { data, error } = await requireSupabase().rpc('get_my_paused_workspace_access')
+  if (error) throw error
+  if (!data || typeof data !== 'object') return null
+  const access = data as { gym_name?: unknown; paused_at?: unknown }
+  if (typeof access.gym_name !== 'string' || typeof access.paused_at !== 'string') return null
+  return { gym_name: access.gym_name, paused_at: access.paused_at }
 }
 
 export async function createPlatformGymWorkspace(input: {

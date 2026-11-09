@@ -9,7 +9,7 @@ import { DEFAULT_GYM_THEME, type GymThemeId } from './lib/gymThemes'
 import LiftDeskMark from './LiftDeskMark'
 import { userFacingError } from './lib/userFacingError'
 import { authOAuthRedirectUrl, authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation, SIGNUP_NEXT_STEP_MESSAGE } from './lib/authRegistration'
-import { getMyOwnerAccessRequest, isLiftDeskPlatformAdmin, requestOwnerWorkspace, type OwnerAccessRequest } from './lib/ownerApprovals'
+import { getMyOwnerAccessRequest, getMyPausedWorkspaceAccess, isLiftDeskPlatformAdmin, requestOwnerWorkspace, type OwnerAccessRequest } from './lib/ownerApprovals'
 import { signOutWithPushCleanup } from './lib/pushNotifications'
 
 const LiveApp = lazy(() => import('./LiveApp'))
@@ -35,6 +35,7 @@ export default function AuthGate() {
   const [ownerRequest, setOwnerRequest] = useState<OwnerAccessRequest | null>(null)
   const [platformAdmin, setPlatformAdmin] = useState(false)
   const [platformAdminView, setPlatformAdminView] = useState(true)
+  const [pausedWorkspace, setPausedWorkspace] = useState<{ gym_name: string; paused_at: string } | null>(null)
   const [memberProfileRequired, setMemberProfileRequired] = useState(false)
   const [mode, setMode] = useState<Mode>(() => {
     const requestedMode = new URLSearchParams(window.location.search).get('mode')
@@ -113,20 +114,26 @@ export default function AuthGate() {
   }, [])
 
   useEffect(() => {
-    if (!session?.user) { setWorkspace(null); setNeedsWorkspace(false); setMemberProfileRequired(false); setOwnerRequest(null); setPlatformAdmin(false); setPlatformAdminView(true); return }
+    if (!session?.user) { setWorkspace(null); setNeedsWorkspace(false); setMemberProfileRequired(false); setOwnerRequest(null); setPausedWorkspace(null); setPlatformAdmin(false); setPlatformAdminView(true); return }
     let alive = true
     setBusy(true)
     async function loadWorkspace() {
       try {
-        const [isPlatformAdmin, myRequest] = await Promise.all([
+        const [isPlatformAdmin, myRequest, pausedAccess] = await Promise.all([
           isLiftDeskPlatformAdmin(),
           getMyOwnerAccessRequest(session!.user.id),
+          getMyPausedWorkspaceAccess(),
         ])
         if (alive) {
           setPlatformAdmin(isPlatformAdmin)
           setPlatformAdminView(isPlatformAdmin)
           setOwnerRequest(myRequest)
+          setPausedWorkspace(pausedAccess)
           setOwnerName(current => current || String(session!.user.user_metadata?.full_name || ''))
+        }
+        if (pausedAccess) {
+          if (alive) { setWorkspace(null); setNeedsWorkspace(false) }
+          return
         }
         // A member can sign in from an old invitation URL after already joining.
         // Resolve their existing membership first so ordinary sign-in never
@@ -483,6 +490,8 @@ export default function AuthGate() {
     onOpenWorkspace={workspace ? () => setPlatformAdminView(false) : undefined}
     onSignOut={() => void signOutWithPushCleanup()}
   /></Suspense>
+
+  if (pausedWorkspace && session) return <div className="auth-screen"><section className="auth-card owner-pending-card"><BrandMark /><p className="auth-eyebrow">WORKSPACE PAUSED</p><div className="owner-pending-icon"><Clock3 size={22}/></div><h1>{pausedWorkspace.gym_name} is temporarily unavailable.</h1><p className="auth-intro">LiftDesk has paused access to this workspace. Your account, membership and gym records are preserved. Contact LiftDesk if you need more information; access will return when the workspace is resumed.</p><button type="button" className="auth-submit" onClick={() => void signOutWithPushCleanup()}>Sign out</button></section></div>
 
   if (session && inviteToken && memberProfileRequired && !workspace) return <div className="auth-screen"><section className="auth-card auth-card-theme"><BrandMark /><p className="auth-eyebrow">GYM MEMBER INVITATION</p><h1>Complete your member profile.</h1><p className="auth-intro">Your Google account is signed in. Add these details to join the gym that invited you.</p>
     <form className="auth-form" onSubmit={submitGoogleMemberProfile}>
