@@ -10,3 +10,4 @@
 .sidebar-top .liftdesk-mark,
 .product-preview .liftdesk-mark{box-sizing:content-box;padding:7px 10px;border-radius:9px;background:#f4f3ee}
 .auth-showcase .liftdesk-mark{padding:9px 13px;border-radius:11px}
+.auth-showcase .liftdesk-mark{background:transparent;padding:0}

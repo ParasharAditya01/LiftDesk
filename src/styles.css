@@ -2170,3 +2170,15 @@ svg {
 .gym-chat-pin-action:hover{background:var(--theme-canvas,#f4f1e9)}
 @media(max-width:760px){.topbar-right .today-label,.topbar-right .topbar-divider{display:none}.topbar-right{gap:8px}.preview-role-switch span{display:none}.preview-role-switch select{min-height:30px}.member-portal-header .preview-role-switch span{display:inline}.metric-grid-three{grid-template-columns:1fr}.member-portal-grid{grid-template-columns:1fr;gap:8px}.member-portal-grid .member-portal-section:last-child{grid-column:auto}.preview-workout-week{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.preview-member-boundary .member-portal-shell{padding-inline:14px}.preview-member-boundary .member-portal-header{gap:10px}.preview-member-boundary .member-portal-gym{display:none}.preview-member-boundary .member-portal-brand{min-width:0;flex:1}.preview-member-boundary .member-portal-signout{font-size:10px}.preview-meal-grid{grid-template-columns:1fr}.preview-progress-list article{grid-template-columns:1fr;gap:7px}.preview-chat-panel .gym-chat-header p{max-width:150px}}
+
+/* Sign-in showcase now uses the public site's warm paper palette. */
+.auth-screen-premium{background:#f8f7f4}
+.auth-showcase{background:#f8f7f4;color:#202124;border-right:1px solid #e6e1d8}
+.auth-showcase .auth-brand{color:#202124}
+.auth-showcase .showcase-status{color:#716e67}
+.auth-showcase .showcase-kicker{color:#737a51}
+.auth-showcase .showcase-copy h2{color:#202124}
+.auth-showcase .showcase-copy h2 span{color:#737a51}
+.auth-showcase .showcase-copy>p:last-child{color:#716e67}
+.auth-showcase .showcase-footer{color:#716e67}
+.auth-showcase .liftdesk-mark{background:transparent;padding:0}
