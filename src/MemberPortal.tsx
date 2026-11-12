@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { Activity, CalendarDays, CheckCircle2, Clock3, Dumbbell, LoaderCircle, ShieldCheck, Utensils, Weight } from 'lucide-react'
 import type { Gym } from './lib/gymData'
-import { getOwnCoachingRecords, getOwnMemberProfile, type CoachingPlan, type MemberProfile, type MemberProgress } from './lib/gymData'
+import { getOwnCoachingRecords, getOwnMemberProfile, recordMemberQrCheckIn, type CoachingPlan, type MemberProfile, type MemberProgress } from './lib/gymData'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
 import FloatingGymChat from './FloatingGymChat'
@@ -29,6 +29,8 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
   const [coachingError, setCoachingError] = useState('')
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
+  const [qrCheckIn, setQrCheckIn] = useState<{ kind: 'checking' | 'success' | 'already' | 'error'; message: string } | null>(null)
+  const handledQr = useRef('')
 
   useEffect(() => {
     let active = true
@@ -50,6 +52,25 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [user.id, reloadKey])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const targetGym = params.get('checkin')
+    const challenge = params.get('challenge')
+    if (!targetGym || !challenge || !profile) return
+    const key = `${targetGym}:${challenge}`
+    if (handledQr.current === key) return
+    handledQr.current = key
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.hash}`)
+    if (targetGym !== gym.id || profile.gym_id !== gym.id) {
+      setQrCheckIn({ kind: 'error', message: 'This QR code belongs to a different gym.' })
+      return
+    }
+    setQrCheckIn({ kind: 'checking', message: 'Checking your membership and recording attendance…' })
+    void recordMemberQrCheckIn(targetGym, challenge)
+      .then(result => setQrCheckIn({ kind: result.already_checked_in ? 'already' : 'success', message: result.already_checked_in ? `You were already checked in today at ${gym.name}.` : `You’re checked in at ${gym.name}.` }))
+      .catch(reason => setQrCheckIn({ kind: 'error', message: userFacingError(reason, 'Could not check you in. Scan the current gym code and try again.') }))
+  }, [gym.id, gym.name, profile])
 
   const date = (value: string | null) => value
     ? new Date(value + (value.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
@@ -74,6 +95,7 @@ export default function MemberPortal({ gym, user }: { gym: Gym; user: User }) {
 
     <div className="member-portal-content">
       {loading ? <section className="member-portal-loading" role="status"><LoaderCircle className="spin" size={23}/><p>Loading your membership…</p></section> : error ? <section className="member-portal-error" role="alert"><h1>We couldn’t load your member profile</h1><p>{error}</p><button type="button" className="member-portal-retry" onClick={reload}>Try again</button></section> : profile && <>
+        {qrCheckIn && <section className={`member-qr-checkin-status member-qr-${qrCheckIn.kind}`} role={qrCheckIn.kind === 'error' ? 'alert' : 'status'}><div>{qrCheckIn.kind === 'checking' ? <LoaderCircle className="spin" size={19}/> : <CheckCircle2 size={19}/>}</div><p>{qrCheckIn.message}</p>{qrCheckIn.kind === 'error' && <small>Return to the displayed gym QR and scan the latest code.</small>}</section>}
         <section className="member-portal-hero" aria-labelledby="member-portal-title">
           <div className="member-portal-hero-copy">
             <h1 id="member-portal-title">Your membership, at a glance.</h1>

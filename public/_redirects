@@ -3,3 +3,5 @@
 /auth/callback / 200
 /terms / 200
 /privacy / 200
+/data-processing / 200
+/acceptable-use / 200

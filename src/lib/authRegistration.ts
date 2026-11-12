@@ -27,10 +27,15 @@ export function authOAuthRedirectUrl(
   origin: string,
   isDevelopment = false,
   invitation?: { inviteToken?: string; staffInviteToken?: string },
+  checkIn?: { gymId?: string; challenge?: string },
 ): string {
   const redirect = new URL('/', origin)
   if (invitation?.inviteToken) redirect.searchParams.set('invite', invitation.inviteToken)
   if (invitation?.staffInviteToken) redirect.searchParams.set('staff_invite', invitation.staffInviteToken)
+  if (checkIn?.gymId && checkIn.challenge) {
+    redirect.searchParams.set('checkin', checkIn.gymId)
+    redirect.searchParams.set('challenge', checkIn.challenge)
+  }
   return authRedirectUrl(origin, isDevelopment, redirect.toString())
 }
 

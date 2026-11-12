@@ -4,6 +4,7 @@ import LiftDeskMark from './LiftDeskMark'
 import LandingPage from './LandingPage'
 import TermsPage from './TermsPage'
 import PrivacyPage from './PrivacyPage'
+import AdditionalLegalPage from './AdditionalLegalPage'
 import './styles.css'
 
 const AuthGate = lazy(() => import('./AuthGate'))
@@ -21,9 +22,10 @@ const isPreview = window.location.pathname.replace(/\/$/, '') === '/preview'
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const isTerms = pathname === '/terms'
 const isPrivacy = pathname === '/privacy'
+const legalRoute = pathname === '/data-processing' ? 'dpa' : pathname === '/acceptable-use' ? 'acceptable-use' : null
 const search = new URLSearchParams(window.location.search)
 const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
-const authIntentKeys = ['invite', 'staff_invite', 'code', 'error', 'error_description', 'access_token', 'refresh_token', 'type']
+const authIntentKeys = ['invite', 'staff_invite', 'checkin', 'challenge', 'code', 'error', 'error_description', 'access_token', 'refresh_token', 'type']
 const hasAuthIntent = authIntentKeys.some(key => search.has(key) || hash.has(key))
   || ['signin', 'signup'].includes(search.get('mode') || '')
 const isHome = pathname === '/'
@@ -41,7 +43,7 @@ function NotFound() {
 
 function RoutedApp() {
   useEffect(() => {
-    if (isLanding || isTerms || isPrivacy) return
+    if (isLanding || isTerms || isPrivacy || legalRoute) return
     const title = isPreview ? 'Preview workspace | LiftDesk' : 'Sign in | LiftDesk'
     document.title = title
     document.querySelector('meta[name="description"]')?.setAttribute('content', isPreview
@@ -52,12 +54,13 @@ function RoutedApp() {
   if (isLanding) return <LandingPage />
   if (isTerms) return <TermsPage />
   if (isPrivacy) return <PrivacyPage />
+  if (legalRoute) return <AdditionalLegalPage kind={legalRoute === 'dpa' ? 'dpa' : 'acceptable-use'} />
   if (isPreview) return <Suspense fallback={<div className="auth-screen"><p>Opening preview…</p></div>}><App /></Suspense>
   return <Suspense fallback={<div className="auth-screen"><p>Opening sign-in…</p></div>}><AuthGate /></Suspense>
 }
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {isLanding || isPreview || isSignIn || isTerms || isPrivacy ? <RoutedApp /> : <NotFound />}
+  {isLanding || isPreview || isSignIn || isTerms || isPrivacy || legalRoute ? <RoutedApp /> : <NotFound />}
   </React.StrictMode>,
 )

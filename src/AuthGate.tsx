@@ -22,6 +22,7 @@ export default function AuthGate() {
   const [session, setSession] = useState<Session | null>(null)
   const [inviteToken, setInviteToken] = useState(() => new URLSearchParams(window.location.search).get('invite') || '')
   const [staffInviteToken, setStaffInviteToken] = useState(() => new URLSearchParams(window.location.search).get('staff_invite') || '')
+  const checkInIntent = useRef({ gymId: new URLSearchParams(window.location.search).get('checkin') || '', challenge: new URLSearchParams(window.location.search).get('challenge') || '' })
   const [memberFullName, setMemberFullName] = useState('')
   const [memberPhone, setMemberPhone] = useState('')
   const [memberWhatsApp, setMemberWhatsApp] = useState('')
@@ -299,7 +300,7 @@ export default function AuthGate() {
       const redirect = authOAuthRedirectUrl(window.location.origin, import.meta.env.DEV, {
         inviteToken: invitation === 'member' ? inviteToken : undefined,
         staffInviteToken: invitation === 'staff' ? staffInviteToken : undefined,
-      })
+      }, checkInIntent.current)
       const { error: oauthError } = await requireSupabase().auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: redirect, queryParams: { prompt: 'select_account' } },
@@ -520,7 +521,7 @@ export default function AuthGate() {
       </section>
       <div className="showcase-footer"><span>Members</span><span>Attendance</span><span>Follow-ups</span></div>
     </aside>
-    <main className="auth-main"><section className="auth-card auth-card-premium"><div className="auth-mobile-brand"><BrandMark /></div><p className="auth-eyebrow">{mode === 'signin' ? 'Gym workspace' : 'Owner account'}</p><h1>{mode === 'signin' ? 'Sign in to LiftDesk' : 'Create your owner account'}</h1><p className="auth-intro">{mode === 'signin' ? 'Open your gym workspace.' : 'Set up an account for the person responsible for the gym.'}</p>
+    <main className="auth-main"><section className="auth-card auth-card-premium"><div className="auth-mobile-brand"><BrandMark /></div><p className="auth-eyebrow">{checkInIntent.current.challenge ? 'Gym attendance' : mode === 'signin' ? 'Gym workspace' : 'Owner account'}</p><h1>{mode === 'signin' ? 'Sign in to LiftDesk' : 'Create your owner account'}</h1><p className="auth-intro">{checkInIntent.current.challenge ? 'Sign in with the member account linked to this gym. LiftDesk will verify your membership before recording attendance.' : mode === 'signin' ? 'Open your gym workspace.' : 'Set up an account for the person responsible for the gym.'}</p>
       <form className="auth-form" onSubmit={submitAuth}>
         {mode === 'signup' && <label>Owner name<input autoComplete="name" required minLength={2} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>}
         <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
@@ -578,6 +579,8 @@ export default function AuthGate() {
       <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Submitting request…' : 'Request LiftDesk approval'} <ArrowRight size={16} /></button>
     </form><button type="button" className="auth-signout" onClick={() => void signOutWithPushCleanup()}>Sign out</button>
   </section></div>
+
+  if (workspace && checkInIntent.current.challenge && workspace.role !== 'member') return <div className="auth-screen"><section className="auth-card owner-pending-card"><BrandMark /><p className="auth-eyebrow">MEMBER CHECK-IN</p><h1>Use your member account.</h1><p className="auth-intro">This QR check-in is available to the member account linked to the membership. Sign out and scan again with the correct account.</p><button type="button" className="auth-submit" onClick={() => void signOutWithPushCleanup()}>Sign out</button></section></div>
 
   if (workspace?.role === 'member') return <div className="gym-theme-boundary member-workspace-boundary"><div className="workspace-session-strip"><Building2 size={15} /><span>{workspace.gym.name}</span><span className="workspace-role">Member</span>{platformAdmin && <button type="button" onClick={() => setPlatformAdminView(true)}>LiftDesk admin</button>}<button type="button" onClick={() => void signOutWithPushCleanup()}>Sign out</button></div><Suspense fallback={<div className="auth-screen"><div className="auth-loading"><LoaderCircle className="spin" size={24}/><p>Opening your member portal…</p></div></div>}><MemberPortal gym={workspace.gym} user={session!.user} /></Suspense></div>
 

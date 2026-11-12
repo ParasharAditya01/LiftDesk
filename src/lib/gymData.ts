@@ -24,6 +24,8 @@ export type AttendanceRecord = {
   checked_in_at: string
   method: 'manual' | 'qr'
 }
+export type GymCheckInChallenge = { challenge: string; expires_at: string }
+export type MemberQrCheckIn = { attendance_id: string; member_name: string; checked_in_at: string; already_checked_in: boolean }
 export type MemberFollowUpSummary = Pick<GymMember, 'id' | 'full_name' | 'phone' | 'email' | 'status' | 'joined_on' | 'membership_expires_on' | 'plan_name'> & {
   last_visit_at: string | null
 }
@@ -251,6 +253,29 @@ export async function recordManualCheckIn(gymId: string, memberId: string): Prom
   const result = Array.isArray(data) ? data[0] : data
   if (!result) throw new Error('The check-in was not recorded.')
   return result as { attendance_id: string; member_name: string; checked_in_at: string }
+}
+
+export async function issueGymCheckInChallenge(gymId: string): Promise<GymCheckInChallenge> {
+  const { data, error } = await requireSupabase().rpc('issue_gym_checkin_challenge', { target_gym: gymId })
+  if (error) throw error
+  const result = Array.isArray(data) ? data[0] : data
+  if (!result || typeof result.challenge !== 'string' || typeof result.expires_at !== 'string') {
+    throw new Error('LiftDesk could not prepare a gym check-in code.')
+  }
+  return result as GymCheckInChallenge
+}
+
+export async function recordMemberQrCheckIn(gymId: string, challenge: string): Promise<MemberQrCheckIn> {
+  const { data, error } = await requireSupabase().rpc('record_member_qr_check_in', {
+    target_gym: gymId,
+    presented_challenge: challenge,
+  })
+  if (error) throw error
+  const result = Array.isArray(data) ? data[0] : data
+  if (!result || typeof result.attendance_id !== 'string' || typeof result.checked_in_at !== 'string') {
+    throw new Error('LiftDesk could not confirm your check-in.')
+  }
+  return result as MemberQrCheckIn
 }
 
 export async function listFollowUps(gymId: string): Promise<FollowUp[]> {
