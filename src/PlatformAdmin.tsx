@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowLeft, Building2, Check, Clock3, Dumbbell, LoaderCircle, LogOut, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Users, X } from 'lucide-react'
+import { ArrowLeft, Bell, BookOpen, Building2, Check, Clock3, Dumbbell, FileText, LoaderCircle, LogOut, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Users, X, ChartNoAxesCombined } from 'lucide-react'
 import type { FormEvent } from 'react'
 import type { OwnerAccessRequest, PlatformGymSummary } from './lib/ownerApprovals'
 import { createPlatformGymWorkspace, listPlatformGymDirectory, removePlatformGymWorkspace, setPlatformGymWorkspacePaused } from './lib/ownerApprovals'
 import { requireSupabase } from './lib/supabase'
 
 type Props = { onOpenWorkspace?: () => void; onSignOut: () => void }
-type Section = 'gyms' | 'requests'
+type Section = 'users' | 'content' | 'notifications' | 'reports'
 
 function readableError(error: unknown) {
   const code = (error as { code?: string } | null)?.code
@@ -32,7 +32,11 @@ function Stat({ label, value, detail, icon }: { label: string; value: number; de
 export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
   const [requests, setRequests] = useState<OwnerAccessRequest[]>([])
   const [gyms, setGyms] = useState<PlatformGymSummary[]>([])
-  const [section, setSection] = useState<Section>('gyms')
+  const [section, setSection] = useState<Section>('users')
+  const [userView, setUserView] = useState<'gyms' | 'requests'>('gyms')
+  const [selectedGymIds, setSelectedGymIds] = useState<string[]>([])
+  const [notificationTitle, setNotificationTitle] = useState('')
+  const [notificationBody, setNotificationBody] = useState('')
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'all' | 'active' | 'needs-owner'>('all')
   const [loading, setLoading] = useState(true)
@@ -76,7 +80,24 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
     admins: result.admins + Number(gym.admin_count),
     trainers: result.trainers + Number(gym.trainer_count),
   }), { members: 0, activeMembers: 0, admins: 0, trainers: 0 }), [gyms])
-  const visibleError = section === 'gyms' ? gymError : requestError
+  const visibleError = section === 'users' ? (userView === 'gyms' ? gymError : requestError) : ''
+
+  async function sendNotification(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selectedGymIds.length) { setError('Select at least one gym owner.'); return }
+    setBusyId('notification'); setError(''); setNotice('')
+    try {
+      const { error: sendError } = await requireSupabase().rpc('send_platform_owner_notification', {
+        target_gym_ids: selectedGymIds,
+        notification_title: notificationTitle.trim(),
+        notification_body: notificationBody.trim(),
+      })
+      if (sendError) throw sendError
+      setNotice(`Notification sent to ${selectedGymIds.length} selected gym owner${selectedGymIds.length === 1 ? '' : 's'}.`)
+      setNotificationTitle(''); setNotificationBody(''); setSelectedGymIds([])
+    } catch (err) { setError(readableError(err)) }
+    finally { setBusyId('') }
+  }
 
   async function decide(request: OwnerAccessRequest, action: 'approve' | 'reject') {
     const confirmed = action === 'approve'
@@ -157,17 +178,25 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
     </header>
     <section className="platform-admin-content">
       <p className="platform-admin-eyebrow"><ShieldCheck size={15}/> PLATFORM ADMINISTRATION</p>
-      <h1>LiftDesk overview</h1>
-      <p className="platform-admin-intro">Create gym workspaces for owners, manage active access, and review high-level membership and attendance. Owners sign in with the verified Google account assigned to their gym.</p>
+      <h1>{section === 'users' ? 'User Management' : section === 'content' ? 'Content Management' : section === 'notifications' ? 'Notifications' : 'Reports'}</h1>
+      <p className="platform-admin-intro">{section === 'users' ? 'Manage gym workspaces and owner access requests across LiftDesk.' : section === 'content' ? 'Review the public content currently published by LiftDesk.' : section === 'notifications' ? 'Send in-app messages to the gym owners you select.' : 'Review platform-wide workspace, membership, and attendance activity.'}</p>
       {(visibleError || error) && <p className="auth-error" role="alert">{visibleError || error}</p>}
       {notice && <p className="auth-message" role="status">{notice}</p>}
 
       <nav className="platform-admin-tabs" aria-label="Platform administration sections">
-        <button type="button" className={section === 'gyms' ? 'is-active' : ''} aria-current={section === 'gyms' ? 'page' : undefined} onClick={() => setSection('gyms')}><Building2 size={16}/> Gyms <span>{gyms.length}</span></button>
-        <button type="button" className={section === 'requests' ? 'is-active' : ''} aria-current={section === 'requests' ? 'page' : undefined} onClick={() => setSection('requests')}><Clock3 size={16}/> Owner requests <span>{requests.length}</span></button>
+        <button type="button" className={section === 'users' ? 'is-active' : ''} aria-current={section === 'users' ? 'page' : undefined} onClick={() => setSection('users')}><Users size={16}/> User Management</button>
+        <button type="button" className={section === 'content' ? 'is-active' : ''} aria-current={section === 'content' ? 'page' : undefined} onClick={() => setSection('content')}><FileText size={16}/> Content Management</button>
+        <button type="button" className={section === 'notifications' ? 'is-active' : ''} aria-current={section === 'notifications' ? 'page' : undefined} onClick={() => setSection('notifications')}><Bell size={16}/> Notifications</button>
+        <button type="button" className={section === 'reports' ? 'is-active' : ''} aria-current={section === 'reports' ? 'page' : undefined} onClick={() => setSection('reports')}><ChartNoAxesCombined size={16}/> Reports</button>
       </nav>
 
-      {section === 'gyms' ? <>
+      {section === 'users' && <>
+        <div className="platform-admin-tabs platform-admin-subtabs" aria-label="User management tools">
+          <button type="button" className={userView === 'gyms' ? 'is-active' : ''} onClick={() => setUserView('gyms')}><Building2 size={15}/> Gym workspaces <span>{gyms.length}</span></button>
+          <button type="button" className={userView === 'requests' ? 'is-active' : ''} onClick={() => setUserView('requests')}><Clock3 size={15}/> Owner requests <span>{requests.length}</span></button>
+        </div>
+      </>}
+      {section === 'users' && userView === 'gyms' ? <>
         <div className="platform-stats">
           <Stat label="Gyms on LiftDesk" value={gyms.length} detail="Registered workspaces" icon={<Building2 size={17}/>}/>
           <Stat label="Members" value={totals.members} detail={`${totals.activeMembers.toLocaleString('en-IN')} active`} icon={<Users size={17}/>}/>
@@ -195,7 +224,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
               </div>
             </article>)}</div>}
         <p className="platform-admin-footnote"><ShieldCheck size={15}/> Member and staff contact information is not shown. The owner contact number is private account-support data and is visible only in this LiftDesk platform-admin view; it updates when the Owner saves a new number.</p>
-      </> : <>
+      </> : section === 'users' ? <>
         <h2 className="platform-section-title">Owner access requests</h2>
         <p className="platform-section-intro">New gym workspaces stay private until you approve them here. Gym Owner and Admin roles cannot approve LiftDesk accounts.</p>
         {loading ? <div className="platform-admin-empty"><LoaderCircle className="spin" size={20}/> Loading requests…</div>
@@ -205,7 +234,23 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
               <dl><div><dt>Submitted</dt><dd>{dateLabel(request.created_at, true)}</dd></div>{request.city && <div><dt>City</dt><dd>{request.city}</dd></div>}<div><dt>Owner mobile</dt><dd>{request.owner_mobile_phone || 'Not provided'}</dd></div>{request.phone && <div><dt>Gym phone</dt><dd>{request.phone}</dd></div>}</dl>
               <div className="owner-request-actions"><button type="button" className="button-secondary" disabled={busyId === request.id} onClick={() => void decide(request, 'reject')}><X size={15}/> Reject</button><button type="button" className="button-primary" disabled={busyId === request.id} onClick={() => void decide(request, 'approve')}><Check size={15}/>{busyId === request.id ? 'Processing…' : 'Approve owner'}</button></div>
             </article>)}</div>}
-      </>}
+      </> : section === 'content' ? <section className="platform-admin-feature">
+        <div><p className="platform-admin-eyebrow"><BookOpen size={15}/> CURRENT PLATFORM CONTENT</p><h2>Published LiftDesk content</h2><p>Existing public-facing content remains as it is today. Open the live pages to review what customers see.</p></div>
+        <div className="platform-content-links"><a href="/" target="_blank" rel="noreferrer"><Building2 size={18}/><span><b>LiftDesk sign-in</b><small>Workspace entry and account registration</small></span><ArrowLeft size={16}/></a><a href="/terms" target="_blank" rel="noreferrer"><FileText size={18}/><span><b>Terms of Service</b><small>Current published service terms</small></span><ArrowLeft size={16}/></a><a href="/privacy" target="_blank" rel="noreferrer"><ShieldCheck size={18}/><span><b>Privacy Notice</b><small>Current published privacy information</small></span><ArrowLeft size={16}/></a></div>
+      </section> : section === 'notifications' ? <section className="platform-admin-feature">
+        <div><p className="platform-admin-eyebrow"><Bell size={15}/> OWNER COMMUNICATION</p><h2>Notify selected gym owners</h2><p>Messages appear in the selected owners’ LiftDesk workspace. Only gyms with a claimed owner account can receive a notification.</p></div>
+        <form className="platform-notification-form" onSubmit={event => void sendNotification(event)}>
+          <label>Notification title<input required maxLength={120} value={notificationTitle} onChange={event => setNotificationTitle(event.target.value)} placeholder="A short, clear subject"/></label>
+          <label>Message<textarea required maxLength={2000} rows={4} value={notificationBody} onChange={event => setNotificationBody(event.target.value)} placeholder="Write the message for selected gym owners"/></label>
+          <div className="platform-recipient-heading"><b>Recipients</b><button type="button" onClick={() => setSelectedGymIds(selectedGymIds.length === gyms.filter(g => g.active_owner_count > 0).length ? [] : gyms.filter(g => g.active_owner_count > 0).map(g => g.gym_id))}>Select all / clear</button></div>
+          <div className="platform-recipient-list">{gyms.filter(g => g.active_owner_count > 0).map(gym => <label key={gym.gym_id}><input type="checkbox" checked={selectedGymIds.includes(gym.gym_id)} onChange={event => setSelectedGymIds(current => event.target.checked ? [...current, gym.gym_id] : current.filter(id => id !== gym.gym_id))}/><span><b>{gym.gym_name}</b><small>{gym.owner_email || 'Owner account active'}</small></span></label>)}{!gyms.some(g => g.active_owner_count > 0) && <p>No gym owners have claimed a workspace yet.</p>}</div>
+          <button className="platform-add-gym" type="submit" disabled={busyId === 'notification' || selectedGymIds.length === 0}>{busyId === 'notification' ? 'Sending…' : `Send to ${selectedGymIds.length} owner${selectedGymIds.length === 1 ? '' : 's'}`}</button>
+        </form>
+      </section> : <section className="platform-admin-feature">
+        <div><p className="platform-admin-eyebrow"><ChartNoAxesCombined size={15}/> PLATFORM PERFORMANCE</p><h2>LiftDesk reports</h2><p>Current platform-wide workspace and attendance snapshot.</p></div>
+        <div className="platform-stats"><Stat label="Gym workspaces" value={gyms.length} detail="Active directory" icon={<Building2 size={17}/>}/><Stat label="Members" value={totals.members} detail={`${totals.activeMembers.toLocaleString('en-IN')} active`} icon={<Users size={17}/>}/><Stat label="Admins" value={totals.admins} detail="Across gym teams" icon={<ShieldCheck size={17}/>}/><Stat label="Trainers" value={totals.trainers} detail="Across gym teams" icon={<Dumbbell size={17}/>}/></div>
+        <div className="platform-report-list"><h3>Workspace activity</h3>{gyms.map(gym => <div key={gym.gym_id}><b>{gym.gym_name}</b><span>{Number(gym.member_count).toLocaleString('en-IN')} members</span><span>Last attendance: {dateLabel(gym.last_attendance_at, true)}</span></div>)}{gyms.length === 0 && <p>No workspace report data yet.</p>}</div>
+      </section>}
       {showCreateGym && <div className="platform-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && busyId !== 'create') setShowCreateGym(false) }}>
         <section className="platform-create-gym-modal" role="dialog" aria-modal="true" aria-labelledby="platform-create-gym-title">
           <div className="platform-create-gym-heading"><div><p>NEW WORKSPACE</p><h2 id="platform-create-gym-title">Add a gym</h2><span>The owner will sign in with Google using the email you assign here.</span></div><button type="button" aria-label="Close" disabled={busyId === 'create'} onClick={() => setShowCreateGym(false)}><X size={18}/></button></div>

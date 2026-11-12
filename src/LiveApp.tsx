@@ -10,10 +10,12 @@ import StaffWorkspace from './StaffWorkspace'
 import { useScrollMotion } from './lib/useScrollMotion'
 import CoachingWorkspace from './CoachingWorkspace'
 import FloatingGymChat from './FloatingGymChat'
+import { requireSupabase } from './lib/supabase'
 
 type Props = { gym: Gym; role: GymRole; user: User }
 type Section = 'Overview' | 'Members' | 'Coaching' | 'Attendance' | 'Follow-ups' | 'Reports' | 'Staff' | 'Settings' | 'Help'
 type MemberFilter = 'all' | 'active' | 'paused' | 'inactive' | 'expired'
+type PlatformOwnerNotification = { id: string; title: string; body: string; created_at: string }
 const sections: { name: Section; icon: typeof LayoutDashboard }[] = [
   { name: 'Overview', icon: LayoutDashboard }, { name: 'Members', icon: Users },
   { name: 'Coaching', icon: Dumbbell }, { name: 'Attendance', icon: ClipboardCheck }, { name: 'Follow-ups', icon: Bell }, { name: 'Reports', icon: CalendarDays }, { name: 'Staff', icon: Users },
@@ -93,6 +95,7 @@ export default function LiveApp({ gym, role, user }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [platformNotifications, setPlatformNotifications] = useState<PlatformOwnerNotification[]>([])
   const [query, setQuery] = useState('')
   const [memberFilter, setMemberFilter] = useState<MemberFilter>('all')
   const [showAdd, setShowAdd] = useState(false)
@@ -115,6 +118,24 @@ export default function LiveApp({ gym, role, user }: Props) {
   }, [workspaceGym.id])
 
   useEffect(() => { void refresh() }, [refresh])
+
+  useEffect(() => {
+    if (role !== 'owner') { setPlatformNotifications([]); return }
+    let active = true
+    void requireSupabase().from('platform_owner_notifications')
+      .select('id,title,body,created_at').eq('gym_id', workspaceGym.id).is('read_at', null)
+      .order('created_at', { ascending: false }).limit(5)
+      .then(({ data, error: notificationError }) => {
+        if (active && !notificationError) setPlatformNotifications((data ?? []) as PlatformOwnerNotification[])
+      })
+    return () => { active = false }
+  }, [role, workspaceGym.id])
+
+  async function dismissPlatformNotification(notification: PlatformOwnerNotification) {
+    const { error: updateError } = await requireSupabase().from('platform_owner_notifications')
+      .update({ read_at: new Date().toISOString() }).eq('id', notification.id).eq('gym_id', workspaceGym.id)
+    if (!updateError) setPlatformNotifications(current => current.filter(item => item.id !== notification.id))
+  }
 
   useEffect(() => {
     if (!showAdd) return
@@ -242,6 +263,7 @@ export default function LiveApp({ gym, role, user }: Props) {
         <div className="page-heading"><div><div className="eyebrow">{workspaceGym.city ? workspaceGym.city.toUpperCase() + ' / ' : ''}{workspaceGym.name.toUpperCase()}</div><h1 ref={headingRef} tabIndex={-1}>{section === 'Overview' ? 'Your gym, at a glance.' : section}</h1><p>{section === 'Overview' ? 'A live view of your members, attendance and follow-ups.' : section === 'Members' ? 'Manage the member records stored for this gym.' : section === 'Attendance' ? 'Check-in history recorded for your gym.' : section === 'Follow-ups' ? 'Review open reminders and membership attention items.' : section === 'Staff' ? 'Manage employee records and daily staff attendance.' : section === 'Settings' ? 'Manage the people, attendance rules and alerts that keep your workspace running.' : section === 'Help' ? 'Guides to the tools and workflows available in your gym workspace.' : 'A summary of activity recorded in your workspace.'}</p></div>{section === 'Members' && <div className="heading-actions"><button type="button" className="button-secondary" disabled={creatingInvite || saving} onClick={() => void inviteMember()}>{creatingInvite ? 'Creating link…' : 'Invite member'}</button><button ref={addMemberButtonRef} className="button-primary" onClick={() => setShowAdd(true)}><Plus size={17}/> Add member</button></div>}</div>
          {error && <div className="notice-banner error-banner" role="alert"><span>{error}</span><button onClick={() => void refresh()}>Retry</button></div>}
         {notice && <div className="notice-banner" role="status"><ClipboardCheck size={17}/><span>{notice}</span><button onClick={() => setNotice('')}>Dismiss</button></div>}
+        {platformNotifications.map(notification => <div className="notice-banner platform-owner-notification" key={notification.id} role="status"><Bell size={17}/><span><b>{notification.title}</b><br/>{notification.body}</span><button type="button" onClick={() => void dismissPlatformNotification(notification)}>Dismiss</button></div>)}
         {loading ? <div className="surface live-loading"><LoaderCircle className="spin" size={22}/><p>Loading your gym records…</p></div> : <>
           {section === 'Overview' && <>
             <div className="welcome-card" data-motion-reveal><div className="welcome-copy"><div className="welcome-label"><Activity size={14}/> LIVE WORKSPACE</div><h2>Welcome to {workspaceGym.name}.</h2><p>These figures come from your gym's database, not sample records.</p><button className="text-action" onClick={() => setSection('Members')}>Manage members <Users size={15}/></button></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-orb"><Dumbbell size={35} strokeWidth={1.4} /></div><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✳</span></div></div>
