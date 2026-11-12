@@ -1,7 +1,6 @@
 import { requireSupabase } from './supabase'
-
-export const TERMS_VERSION = '2026-11-10'
-export const PRIVACY_NOTICE_VERSION = '2026-11-10'
+import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from './legalVersions'
+export { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from './legalVersions'
 
 export async function hasCurrentLegalAcceptance(): Promise<boolean> {
   const { data, error } = await requireSupabase().rpc('has_current_legal_acceptance', {

@@ -1,5 +1,5 @@
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js'
-import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from './legalConsent'
+import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from './legalVersions.ts'
 
 type AuthApi = SupabaseClient['auth']
 

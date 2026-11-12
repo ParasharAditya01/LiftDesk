@@ -220,6 +220,17 @@
 .platform-report-list>div span{color:#77736b}
 .platform-owner-notification{align-items:flex-start}
 @media(max-width:620px){.platform-admin-feature{padding:16px}.platform-report-list>div{grid-template-columns:1fr 1fr}.platform-report-list>div span:last-child{grid-column:1/-1}}
+
+/* Put the sign-in controls before the product showcase on phones. */
+@media(max-width:760px){
+  .auth-screen-premium{display:flex;flex-direction:column;min-height:100svh}
+  .auth-main{order:1;flex:1;padding:22px 20px 12px}
+  .auth-showcase{order:2;min-height:auto;padding:12px 20px;border-right:0;border-top:1px solid #e6e1d8}
+  .showcase-copy,.showcase-preview,.showcase-footer{display:none}
+  .auth-mobile-brand{display:block;margin:0 0 20px}
+  .auth-card-premium{width:100%;max-width:430px}
+  .auth-main-foot{margin-top:14px}
+}
 .platform-remove-gym:hover{text-decoration:underline}
 .platform-remove-gym:disabled{opacity:.55;cursor:wait}
 .platform-pause-gym{min-height:30px;display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;color:#635B4D;padding:5px 3px;font:inherit;font-size:10px;font-weight:650;cursor:pointer}
