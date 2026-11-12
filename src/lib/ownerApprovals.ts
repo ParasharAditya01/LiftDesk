@@ -76,7 +76,7 @@ export async function createPlatformGymWorkspace(input: {
     requested_owner_email: input.ownerEmail.trim(),
     requested_owner_phone: input.ownerPhone.trim(),
     requested_city: input.city.trim() || null,
-    requested_gym_phone: input.phone.trim() || null,
+    requested_gym_phone: input.phone.trim(),
     requested_theme: DEFAULT_GYM_THEME,
   })
   if (error) throw error

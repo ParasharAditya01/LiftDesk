@@ -296,10 +296,11 @@ export async function acceptMemberInvitation(input: {
   token: string
   fullName: string
   phone: string
-  whatsappNumber: string
+  whatsappNumber: string | null
   age: number
-  weightKg: number
-  heightCm: number
+  adultAttested: true
+  weightKg: number | null
+  heightCm: number | null
 }): Promise<string> {
   const { data, error } = await requireSupabase().rpc('accept_member_invitation', {
     invitation_token: input.token,
@@ -307,6 +308,7 @@ export async function acceptMemberInvitation(input: {
     phone_number: input.phone,
     whatsapp_number: input.whatsappNumber,
     member_age: input.age,
+    adult_attested: input.adultAttested,
     weight_kg: input.weightKg,
     height_cm: input.heightCm,
   })

@@ -1,4 +1,5 @@
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js'
+import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from './legalConsent'
 
 type AuthApi = SupabaseClient['auth']
 
@@ -68,7 +69,11 @@ export async function requestOwnerSignup(
     password: input.password,
     options: {
       emailRedirectTo: authRedirectUrl(input.origin, input.isDevelopment),
-      data: { full_name: input.ownerName },
+      data: {
+        full_name: input.ownerName,
+        liftdesk_terms_version: TERMS_VERSION,
+        liftdesk_privacy_version: PRIVACY_NOTICE_VERSION,
+      },
     },
   })
 }

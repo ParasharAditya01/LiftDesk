@@ -18,6 +18,7 @@ create policy "Active gym participants read encrypted chat"
 -- Keep pre-encryption legacy messages visible only to Owners/Admins. They are
 -- never retroactively described as encrypted, and read-only roles cannot fetch
 -- their plaintext bodies through the table API or realtime feed.
+drop policy if exists "Gym owners and admins read legacy chat" on public.gym_chat_messages;
 create policy "Gym owners and admins read legacy chat"
   on public.gym_chat_messages for select to authenticated
   using (

@@ -9,6 +9,7 @@ import { userFacingError } from './lib/userFacingError'
 import { authOAuthRedirectUrl, authRedirectUrl, classifySignupResult, CONFIRMATION_REQUEST_ACCEPTED_MESSAGE, createRequestLock, requestOwnerSignup, requestSignupConfirmation, SIGNUP_NEXT_STEP_MESSAGE } from './lib/authRegistration'
 import { getMyOwnerAccessRequest, getMyPausedWorkspaceAccess, isLiftDeskPlatformAdmin, requestOwnerWorkspace, type OwnerAccessRequest } from './lib/ownerApprovals'
 import { signOutWithPushCleanup } from './lib/pushNotifications'
+import { hasCurrentLegalAcceptance, hasCurrentLegalAcceptanceMetadata, PRIVACY_NOTICE_VERSION, recordCurrentLegalAcceptance, TERMS_VERSION } from './lib/legalConsent'
 
 const LiveApp = lazy(() => import('./LiveApp'))
 const MemberPortal = lazy(() => import('./MemberPortal'))
@@ -35,6 +36,7 @@ export default function AuthGate() {
   const [platformAdminView, setPlatformAdminView] = useState(true)
   const [pausedWorkspace, setPausedWorkspace] = useState<{ gym_name: string; paused_at: string } | null>(null)
   const [memberProfileRequired, setMemberProfileRequired] = useState(false)
+  const [legalConsentRequired, setLegalConsentRequired] = useState(false)
   const [mode, setMode] = useState<Mode>(() => {
     const requestedMode = new URLSearchParams(window.location.search).get('mode')
     return requestedMode === 'signup' || window.location.pathname === '/signup' ? 'signup' : 'signin'
@@ -111,11 +113,22 @@ export default function AuthGate() {
   }, [])
 
   useEffect(() => {
-    if (!session?.user) { setWorkspace(null); setNeedsWorkspace(false); setMemberProfileRequired(false); setOwnerRequest(null); setPausedWorkspace(null); setPlatformAdmin(false); setPlatformAdminView(true); return }
+    if (!session?.user) { setWorkspace(null); setNeedsWorkspace(false); setMemberProfileRequired(false); setLegalConsentRequired(false); setOwnerRequest(null); setPausedWorkspace(null); setPlatformAdmin(false); setPlatformAdminView(true); return }
+    if (legalConsentRequired) { setBusy(false); return }
     let alive = true
     setBusy(true)
     async function loadWorkspace() {
       try {
+        const metadata = session!.user.user_metadata ?? {}
+        let accepted = await hasCurrentLegalAcceptance()
+        if (!accepted && hasCurrentLegalAcceptanceMetadata(metadata)) {
+          await recordCurrentLegalAcceptance()
+          accepted = await hasCurrentLegalAcceptance()
+        }
+        if (!accepted) {
+          if (alive) setLegalConsentRequired(true)
+          return
+        }
         const [isPlatformAdmin, myRequest, pausedAccess] = await Promise.all([
           isLiftDeskPlatformAdmin(),
           getMyOwnerAccessRequest(session!.user.id),
@@ -164,7 +177,7 @@ export default function AuthGate() {
           if (invitationAttempt.current !== key) {
             invitationAttempt.current = key
             const meta = session!.user.user_metadata ?? {}
-            if (!meta.member_full_name || !meta.member_phone || !meta.member_whatsapp || !meta.member_age || !meta.member_weight || !meta.member_height) {
+            if (!meta.member_full_name || !meta.member_phone || Number(meta.member_age) < 18 || meta.member_age_gate_confirmed !== true) {
               if (alive) setMemberProfileRequired(true)
               return
             }
@@ -172,10 +185,11 @@ export default function AuthGate() {
               token: inviteToken,
               fullName: String(meta.member_full_name),
               phone: String(meta.member_phone),
-              whatsappNumber: String(meta.member_whatsapp),
+              whatsappNumber: meta.member_whatsapp ? String(meta.member_whatsapp) : null,
               age: Number(meta.member_age),
-              weightKg: Number(meta.member_weight),
-              heightCm: Number(meta.member_height),
+              adultAttested: true,
+              weightKg: meta.member_weight ? Number(meta.member_weight) : null,
+              heightCm: meta.member_height ? Number(meta.member_height) : null,
             })
           }
           window.history.replaceState({}, '', window.location.pathname)
@@ -194,7 +208,27 @@ export default function AuthGate() {
     }
     void loadWorkspace()
     return () => { alive = false }
-  }, [session?.user.id])
+  }, [session?.user.id, legalConsentRequired])
+
+  async function submitLegalConsent(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!session?.user || !authRequestLock.current.tryAcquire()) return
+    const formData = new FormData(event.currentTarget)
+    if (formData.get('termsConsent') !== 'on' || formData.get('privacyConsent') !== 'on') {
+      setError('Accept both the Terms of Service and Privacy Notice to continue.')
+      authRequestLock.current.release()
+      return
+    }
+    setError(''); setSaving(true)
+    try {
+      await recordCurrentLegalAcceptance()
+      setLegalConsentRequired(false)
+    } catch (err) {
+      setError(userFacingError(err, 'Could not save your acceptance. Please try again.'))
+    } finally {
+      authRequestLock.current.release(); setSaving(false)
+    }
+  }
 
   async function submitAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -204,12 +238,20 @@ export default function AuthGate() {
     try {
       const client = requireSupabase()
       if (mode === 'signup') {
+        const formData = new FormData(event.currentTarget)
+        if (formData.get('termsConsent') !== 'on' || formData.get('privacyConsent') !== 'on') {
+          throw new Error('Accept both the Terms of Service and Privacy Notice to create an account.')
+        }
         const { data, error: authError } = staffInviteToken
           ? await client.auth.signUp({
               email: email.trim(), password,
               options: {
                 emailRedirectTo: authRedirectUrl(window.location.origin, import.meta.env.DEV, `${window.location.origin}/?staff_invite=${encodeURIComponent(staffInviteToken)}`),
-                data: { full_name: ownerName.trim() },
+                data: {
+                  full_name: ownerName.trim(),
+                  liftdesk_terms_version: TERMS_VERSION,
+                  liftdesk_privacy_version: PRIVACY_NOTICE_VERSION,
+                },
               },
             })
           : await requestOwnerSignup(client.auth, {
@@ -276,9 +318,13 @@ export default function AuthGate() {
     if (!inviteToken || emailWaitSeconds > 0 || !authRequestLock.current.tryAcquire()) return
     setError(''); setMessage(''); setSaving(true)
     try {
-      if (!/^\d{10}$/.test(memberPhone) || !/^\d{10}$/.test(memberWhatsApp)) {
-        throw new Error('Phone and WhatsApp numbers must each contain exactly 10 digits.')
+      const formData = new FormData(event.currentTarget)
+      if (formData.get('termsConsent') !== 'on' || formData.get('privacyConsent') !== 'on') {
+        throw new Error('Accept both the Terms of Service and Privacy Notice to create an account.')
       }
+      if (!/^\d{10}$/.test(memberPhone)) throw new Error('Phone number must contain exactly 10 digits.')
+      if (memberWhatsApp && !/^\d{10}$/.test(memberWhatsApp)) throw new Error('WhatsApp number must contain exactly 10 digits.')
+      if (!Number.isInteger(Number(memberAge)) || Number(memberAge) < 18 || Number(memberAge) > 120) throw new Error('Member accounts are available to people aged 18 or older.')
       const redirect = new URL('/', window.location.origin)
       redirect.searchParams.set('invite', inviteToken)
       const { data, error: authError } = await requireSupabase().auth.signUp({
@@ -290,10 +336,13 @@ export default function AuthGate() {
             full_name: memberFullName.trim(),
             member_full_name: memberFullName.trim(),
             member_phone: memberPhone.trim(),
-            member_whatsapp: memberWhatsApp.trim(),
+            member_whatsapp: memberWhatsApp.trim() || null,
             member_age: Number(memberAge),
-            member_weight: Number(memberWeight),
-            member_height: Number(memberHeight),
+            member_weight: memberWeight ? Number(memberWeight) : null,
+            member_height: memberHeight ? Number(memberHeight) : null,
+            member_age_gate_confirmed: true,
+            liftdesk_terms_version: TERMS_VERSION,
+            liftdesk_privacy_version: PRIVACY_NOTICE_VERSION,
           },
         },
       })
@@ -318,17 +367,18 @@ export default function AuthGate() {
     if (!session?.user || !inviteToken || !authRequestLock.current.tryAcquire()) return
     setError(''); setSaving(true)
     try {
-      if (!/^\d{10}$/.test(memberPhone) || !/^\d{10}$/.test(memberWhatsApp)) {
-        throw new Error('Phone and WhatsApp numbers must each contain exactly 10 digits.')
-      }
+      if (!/^\d{10}$/.test(memberPhone)) throw new Error('Phone number must contain exactly 10 digits.')
+      if (memberWhatsApp && !/^\d{10}$/.test(memberWhatsApp)) throw new Error('WhatsApp number must contain exactly 10 digits.')
+      if (!Number.isInteger(Number(memberAge)) || Number(memberAge) < 18 || Number(memberAge) > 120) throw new Error('Member accounts are available to people aged 18 or older.')
       await acceptMemberInvitation({
         token: inviteToken,
         fullName: memberFullName.trim(),
         phone: memberPhone.trim(),
-        whatsappNumber: memberWhatsApp.trim(),
+        whatsappNumber: memberWhatsApp.trim() || null,
         age: Number(memberAge),
-        weightKg: Number(memberWeight),
-        heightCm: Number(memberHeight),
+        adultAttested: true,
+        weightKg: memberWeight ? Number(memberWeight) : null,
+        heightCm: memberHeight ? Number(memberHeight) : null,
       })
       window.history.replaceState({}, '', window.location.pathname)
       setInviteToken('')
@@ -400,6 +450,8 @@ export default function AuthGate() {
 
   if (!isSupabaseConfigured) return <div className="auth-screen"><section className="auth-card"><BrandMark /><p className="auth-eyebrow">SETUP REQUIRED</p><h1>Connect your Supabase project</h1><p className="auth-intro">Authentication is disabled until the project URL and browser publishable key are configured.</p><div className="auth-instructions"><b>1.</b><span>Copy <code>.env.example</code> to a local file named <code>.env</code>.</span><b>2.</b><span>Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>.</span><b>3.</b><span>Run the SQL migrations in your Supabase SQL Editor, then restart Vite.</span></div><p className="auth-security"><ShieldCheck size={16} /> Never use a service-role key in browser settings.</p></section></div>
 
+  if (session && legalConsentRequired) return <div className="auth-screen"><section className="auth-card auth-card-workspace"><BrandMark /><p className="auth-eyebrow">ONE-TIME ACCOUNT STEP</p><h1>Review and accept our policies.</h1><p className="auth-intro">To continue to LiftDesk, accept both documents. You can open each one to read it before deciding.</p><form className="auth-form" onSubmit={submitLegalConsent}><LegalConsentFields />{error && <p className="auth-error" role="alert">{error}</p>}<button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Accept and continue'} <ArrowRight size={16} /></button></form><button className="auth-signout" type="button" onClick={() => void signOutWithPushCleanup()}>Sign out instead</button></section></div>
+
   if (!session && staffInviteToken) return <div className="auth-screen"><section className="auth-card auth-card-workspace"><BrandMark /><p className="auth-eyebrow">LIFTDESK STAFF INVITATION</p><h1>{mode === 'signin' ? 'Sign in to accept your invite.' : 'Create your staff account.'}</h1><p className="auth-intro">Use the email address this invitation was sent to. Your access will be linked to the gym and role assigned by its Owner or Admin.</p>
     <button className="auth-google" type="button" onClick={() => void signInWithGoogle('staff')} disabled={saving || resendingConfirmation}>
       <GoogleMark /> {saving ? 'Connecting to Google…' : 'Continue with Google'}
@@ -409,12 +461,13 @@ export default function AuthGate() {
       {mode === 'signup' && <label>Your name<input autoComplete="name" required minLength={2} maxLength={120} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>}
       <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Work email address" /></label>
       <label>Password<input type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
+      {mode === 'signup' && <LegalConsentFields />}
       {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
       {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
       <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || (mode === 'signup' && emailWaitSeconds > 0)}>{saving ? 'Please wait…' : mode === 'signup' ? 'Create staff account' : 'Sign in and accept invitation'} <ArrowRight size={16} /></button>
     </form>
     <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button type="button" disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create account' : 'Sign in'}</button></p>
-    <p className="auth-terms-note">By using LiftDesk, you agree to the <a href="/terms">Terms of Service</a>. <a href="/privacy">Privacy Notice</a>.</p>
+    <p className="auth-terms-note">New accounts require two separate choices. Both boxes start unchecked and must be selected to create an account.</p>
     <p className="auth-security"><ShieldCheck size={16} /> This invitation is single-use, expires after 48 hours, and only works for its invited email.</p>
   </section></div>
 
@@ -426,16 +479,18 @@ export default function AuthGate() {
     <form className="auth-form" onSubmit={submitMemberSignup}>
       <label>Full name<input autoComplete="name" required minLength={2} maxLength={120} value={memberFullName} onChange={e => setMemberFullName(e.target.value)} placeholder="Your full name" /></label>
       <label>Phone number<input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberPhone} onChange={e => setMemberPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit mobile number" /></label>
-      <label>WhatsApp number<input type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberWhatsApp} onChange={e => setMemberWhatsApp(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit WhatsApp number" /></label>
-      <div className="form-two"><label>Age<input type="number" required min="13" max="120" value={memberAge} onChange={e => setMemberAge(e.target.value)} /></label><label>Weight (kg)<input type="number" required min="20" max="500" step="0.1" value={memberWeight} onChange={e => setMemberWeight(e.target.value)} /></label></div>
-      <label>Height (cm)<input type="number" required min="80" max="260" step="0.1" value={memberHeight} onChange={e => setMemberHeight(e.target.value)} /></label>
+      <label>WhatsApp number <span className="optional-label">Optional</span><input type="tel" inputMode="numeric" minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberWhatsApp} onChange={e => setMemberWhatsApp(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="Only if different from your phone" /></label>
+      <div className="form-two"><label>Age <span className="required-label">18+ required</span><input type="number" required min="18" max="120" value={memberAge} onChange={e => setMemberAge(e.target.value)} /></label><label>Weight (kg) <span className="optional-label">Optional</span><input type="number" min="20" max="500" step="0.1" value={memberWeight} onChange={e => setMemberWeight(e.target.value)} /></label></div>
+      <label>Height (cm) <span className="optional-label">Optional</span><input type="number" min="80" max="260" step="0.1" value={memberHeight} onChange={e => setMemberHeight(e.target.value)} /></label>
+      <label className="auth-consent-check"><input type="checkbox" required /> <span>I confirm that I am 18 or older. LiftDesk does not independently verify age.</span></label>
       <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
       <label>Password<input type="password" autoComplete="new-password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
+      <LegalConsentFields />
       {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
       {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
       <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{saving ? 'Creating account…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s…` : 'Create member account'} <ArrowRight size={16} /></button>
     </form>
-    <p className="auth-terms-note">By creating an account, you agree to the <a href="/terms">Terms of Service</a>. <a href="/privacy">Privacy Notice</a>.</p>
+    <p className="auth-terms-note">Both boxes above start unchecked. Select each one to create your account.</p>
     <p className="auth-security"><ShieldCheck size={16} /> This invitation is gym-specific, expires after 48 hours, and can be used once.</p>
   </section></div>
 
@@ -470,6 +525,7 @@ export default function AuthGate() {
         {mode === 'signup' && <label>Owner name<input autoComplete="name" required minLength={2} value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your full name" /></label>}
         <label>Email address<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
         <label>Password<input type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
+        {mode === 'signup' && <LegalConsentFields />}
         {error && <p className="auth-error" role="alert">{error}</p>}{message && <p className="auth-message" role="status">{message}</p>}
         {showResendConfirmation && <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={saving || resendingConfirmation || emailWaitSeconds > 0}>{resendingConfirmation ? 'Requesting email…' : emailWaitSeconds > 0 ? `Wait ${emailWaitSeconds}s to resend` : 'Resend confirmation email'}</button>}
         <button className="auth-submit" type="submit" disabled={saving || resendingConfirmation || (mode === 'signup' && emailWaitSeconds > 0)}>{saving ? 'Please wait…' : mode === 'signup' && emailWaitSeconds > 0 ? `Please wait ${emailWaitSeconds}s…` : mode === 'signin' ? 'Sign in' : 'Create account'} <ArrowRight size={16} /></button>
@@ -481,7 +537,7 @@ export default function AuthGate() {
         </button>
       </>}
       <p className="auth-switch">{mode === 'signin' ? 'New to LiftDesk?' : 'Already have an account?'} <button type="button" disabled={saving || resendingConfirmation} onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage(''); setShowResendConfirmation(false) }}>{mode === 'signin' ? 'Create an account' : 'Sign in'}</button></p>
-      <p className="auth-terms-note">By continuing, you agree to the <a href="/terms">Terms of Service</a>. <a href="/privacy">Privacy Notice</a>.</p>
+      <p className="auth-terms-note">{mode === 'signup' ? 'Both required boxes above start unchecked. Select each one to create your account.' : 'New accounts require separate, unchecked choices for the Terms of Service and Privacy Notice.'}</p>
       <p className="auth-security"><ShieldCheck size={16} /> Your gym data is protected by database access policies.</p>
     </section><p className="auth-main-foot">LiftDesk <span>·</span> Gym operations, made clearer</p></main>
   </div>
@@ -498,9 +554,10 @@ export default function AuthGate() {
       <label>Google account<input type="email" value={session.user.email ?? ''} readOnly /></label>
       <label>Full name<input autoComplete="name" required minLength={2} maxLength={120} value={memberFullName} onChange={e => setMemberFullName(e.target.value)} placeholder="Your full name" /></label>
       <label>Phone number<input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberPhone} onChange={e => setMemberPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit mobile number" /></label>
-      <label>WhatsApp number<input type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberWhatsApp} onChange={e => setMemberWhatsApp(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit WhatsApp number" /></label>
-      <div className="form-two"><label>Age<input type="number" required min="13" max="120" value={memberAge} onChange={e => setMemberAge(e.target.value)} /></label><label>Weight (kg)<input type="number" required min="20" max="500" step="0.1" value={memberWeight} onChange={e => setMemberWeight(e.target.value)} /></label></div>
-      <label>Height (cm)<input type="number" required min="80" max="260" step="0.1" value={memberHeight} onChange={e => setMemberHeight(e.target.value)} /></label>
+      <label>WhatsApp number <span className="optional-label">Optional</span><input type="tel" inputMode="numeric" minLength={10} maxLength={10} pattern="[0-9]{10}" title="Enter exactly 10 digits, without +91 or spaces." value={memberWhatsApp} onChange={e => setMemberWhatsApp(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="Only if different from your phone" /></label>
+      <div className="form-two"><label>Age <span className="required-label">18+ required</span><input type="number" required min="18" max="120" value={memberAge} onChange={e => setMemberAge(e.target.value)} /></label><label>Weight (kg) <span className="optional-label">Optional</span><input type="number" min="20" max="500" step="0.1" value={memberWeight} onChange={e => setMemberWeight(e.target.value)} /></label></div>
+      <label>Height (cm) <span className="optional-label">Optional</span><input type="number" min="80" max="260" step="0.1" value={memberHeight} onChange={e => setMemberHeight(e.target.value)} /></label>
+      <label className="auth-consent-check"><input type="checkbox" required /> <span>I confirm that I am 18 or older. LiftDesk does not independently verify age.</span></label>
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button className="auth-submit" type="submit" disabled={saving}>{saving ? 'Joining gym…' : 'Complete member setup'} <ArrowRight size={16} /></button>
     </form>
@@ -531,6 +588,13 @@ export default function AuthGate() {
 function BrandMark() {
   const homeUrl = `/${window.location.search}${window.location.hash}`
   return <a className="auth-brand" href={homeUrl} aria-label="LiftDesk home"><LiftDeskMark size={46} /></a>
+}
+
+function LegalConsentFields() {
+  return <div className="auth-legal-consents" aria-label="Required LiftDesk policies">
+    <label className="auth-consent-check"><input type="checkbox" name="termsConsent" required defaultChecked={false} /><span>I agree to LiftDesk’s <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a>.</span></label>
+    <label className="auth-consent-check"><input type="checkbox" name="privacyConsent" required defaultChecked={false} /><span>I have read the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Notice</a> and consent to the use of my information as described there.</span></label>
+  </div>
 }
 
 function GoogleMark() {

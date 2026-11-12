@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { Activity, ArrowUpRight, Bell, CalendarDays, CircleHelp, ClipboardCheck, Dumbbell, LayoutDashboard, LoaderCircle, LogOut, Menu, Plus, Search, Settings2, Users, X } from 'lucide-react'
-import { createMember, createMemberInvitation, listAttendance, listFollowUps, listMemberFollowUpSummary, listMembers, recordManualCheckIn, updateGymWorkspaceSettings, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole, type MemberFollowUpSummary } from './lib/gymData'
+import { Activity, ArrowUpRight, Bell, CalendarDays, CircleHelp, ClipboardCheck, Dumbbell, LayoutDashboard, LoaderCircle, LogOut, Menu, Plus, Search, Settings2, ShieldCheck, Users, X } from 'lucide-react'
+import { createMember, createMemberInvitation, listAttendance, listFollowUps, listMemberFollowUpSummary, listMembers, recordManualCheckIn, type AttendanceRecord, type FollowUp, type Gym, type GymMember, type GymRole, type MemberFollowUpSummary } from './lib/gymData'
 import { signOutWithPushCleanup } from './lib/pushNotifications'
 import { userFacingError } from './lib/userFacingError'
 import LiftDeskMark from './LiftDeskMark'
@@ -10,7 +10,6 @@ import StaffWorkspace from './StaffWorkspace'
 import { useScrollMotion } from './lib/useScrollMotion'
 import CoachingWorkspace from './CoachingWorkspace'
 import FloatingGymChat from './FloatingGymChat'
-import { getMyOwnerPhone, updateMyOwnerPhone } from './lib/ownerApprovals'
 
 type Props = { gym: Gym; role: GymRole; user: User }
 type Section = 'Overview' | 'Members' | 'Coaching' | 'Attendance' | 'Follow-ups' | 'Reports' | 'Staff' | 'Settings' | 'Help'
@@ -49,7 +48,7 @@ const telHref = (value: string) => {
 
 export default function LiveApp({ gym, role, user }: Props) {
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1)
-  const [workspaceGym, setWorkspaceGym] = useState(gym)
+  const [workspaceGym] = useState(gym)
   const [section, setSection] = useState<Section>('Overview')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -99,11 +98,6 @@ export default function LiveApp({ gym, role, user }: Props) {
   const [showAdd, setShowAdd] = useState(false)
   const [creatingInvite, setCreatingInvite] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '', plan: 'Monthly', fee: '999', expiry: '' })
-  const [settingsForm, setSettingsForm] = useState({ name: gym.name, city: gym.city ?? '', phone: gym.phone ?? '' })
-  const [savingSettings, setSavingSettings] = useState(false)
-  const [ownerPhone, setOwnerPhone] = useState('')
-  const [loadingOwnerPhone, setLoadingOwnerPhone] = useState(false)
-  const [savingOwnerPhone, setSavingOwnerPhone] = useState(false)
 
   useScrollMotion(pageContentRef, `${section}:${loading}`)
 
@@ -121,17 +115,6 @@ export default function LiveApp({ gym, role, user }: Props) {
   }, [workspaceGym.id])
 
   useEffect(() => { void refresh() }, [refresh])
-
-  useEffect(() => {
-    if (section !== 'Settings' || role !== 'owner') return
-    let active = true
-    setLoadingOwnerPhone(true)
-    getMyOwnerPhone()
-      .then(value => { if (active) setOwnerPhone(value?.replace(/^\+91/, '') ?? '') })
-      .catch(error => { if (active) setError(userFacingError(error, 'Could not load your private contact number. Refresh and try again.')) })
-      .finally(() => { if (active) setLoadingOwnerPhone(false) })
-    return () => { active = false }
-  }, [section, role, user.id])
 
   useEffect(() => {
     if (!showAdd) return
@@ -242,35 +225,6 @@ export default function LiveApp({ gym, role, user }: Props) {
     finally { setSaving(false) }
   }
 
-  async function saveSettings(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(''); setNotice('')
-    if (role !== 'owner') {
-      setError('Only this gym’s Owner can update workspace settings.')
-      return
-    }
-    setSavingSettings(true)
-    try {
-      const updated = await updateGymWorkspaceSettings(workspaceGym.id, settingsForm)
-      setWorkspaceGym(updated)
-      setSettingsForm({ name: updated.name, city: updated.city ?? '', phone: updated.phone ?? '' })
-      setNotice('Gym settings saved.')
-    } catch (e) {
-      setError(userFacingError(e, 'Could not save gym settings. Check the details and try again.'))
-    } finally { setSavingSettings(false) }
-  }
-
-  async function saveOwnerPhone(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(''); setNotice('')
-    if (role !== 'owner') { setError('Only the gym Owner can update this private contact number.'); return }
-    if (!/^[6-9]\d{9}$/.test(ownerPhone)) { setError('Enter a valid 10-digit Indian mobile number.'); return }
-    setSavingOwnerPhone(true)
-    try {
-      await updateMyOwnerPhone(ownerPhone)
-      setNotice('Your contact number is updated. LiftDesk admin will see the latest number.')
-    } catch (e) { setError(userFacingError(e, 'Could not update your private contact number. Try again.')) }
-    finally { setSavingOwnerPhone(false) }
-  }
-
   return <div className="gym-theme-boundary app-shell">
     {mobileNavOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => closeMenu(true)} />}
     <aside ref={sidebarRef} id="workspace-navigation" className={'sidebar ' + (mobileNavOpen ? 'sidebar-open' : '')}>
@@ -285,12 +239,12 @@ export default function LiveApp({ gym, role, user }: Props) {
     <main className="main-area">
       <header className="topbar"><div className="topbar-left"><button ref={menuButtonRef} type="button" className="icon-button mobile-menu" aria-label="Open main navigation" aria-controls="workspace-navigation" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="breadcrumb-muted">{workspaceGym.name}</span><span className="breadcrumb-slash">/</span><b>{section}</b></div><div className="topbar-right"><span className="preview-pill live-pill"><span/> Live data</span><span className="topbar-divider"/><span className="today-label"><CalendarDays size={15}/> {new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span></div></header>
       <div className="page-content" ref={pageContentRef}>
-        <div className="page-heading"><div><div className="eyebrow">{workspaceGym.city ? workspaceGym.city.toUpperCase() + ' / ' : ''}{workspaceGym.name.toUpperCase()}</div><h1 ref={headingRef} tabIndex={-1}>{section === 'Overview' ? 'Your gym, at a glance.' : section}</h1><p>{section === 'Overview' ? 'A live view of your members, attendance and follow-ups.' : section === 'Members' ? 'Manage the member records stored for this gym.' : section === 'Attendance' ? 'Check-in history recorded for your gym.' : section === 'Follow-ups' ? 'Review open reminders and membership attention items.' : section === 'Staff' ? 'Manage employee records and daily staff attendance.' : section === 'Settings' ? 'Update your gym’s workspace details and appearance.' : section === 'Help' ? 'Guides to the tools and workflows available in your gym workspace.' : 'A summary of activity recorded in your workspace.'}</p></div>{section === 'Members' && <div className="heading-actions"><button type="button" className="button-secondary" disabled={creatingInvite || saving} onClick={() => void inviteMember()}>{creatingInvite ? 'Creating link…' : 'Invite member'}</button><button ref={addMemberButtonRef} className="button-primary" onClick={() => setShowAdd(true)}><Plus size={17}/> Add member</button></div>}</div>
+        <div className="page-heading"><div><div className="eyebrow">{workspaceGym.city ? workspaceGym.city.toUpperCase() + ' / ' : ''}{workspaceGym.name.toUpperCase()}</div><h1 ref={headingRef} tabIndex={-1}>{section === 'Overview' ? 'Your gym, at a glance.' : section}</h1><p>{section === 'Overview' ? 'A live view of your members, attendance and follow-ups.' : section === 'Members' ? 'Manage the member records stored for this gym.' : section === 'Attendance' ? 'Check-in history recorded for your gym.' : section === 'Follow-ups' ? 'Review open reminders and membership attention items.' : section === 'Staff' ? 'Manage employee records and daily staff attendance.' : section === 'Settings' ? 'Manage the people, attendance rules and alerts that keep your workspace running.' : section === 'Help' ? 'Guides to the tools and workflows available in your gym workspace.' : 'A summary of activity recorded in your workspace.'}</p></div>{section === 'Members' && <div className="heading-actions"><button type="button" className="button-secondary" disabled={creatingInvite || saving} onClick={() => void inviteMember()}>{creatingInvite ? 'Creating link…' : 'Invite member'}</button><button ref={addMemberButtonRef} className="button-primary" onClick={() => setShowAdd(true)}><Plus size={17}/> Add member</button></div>}</div>
          {error && <div className="notice-banner error-banner" role="alert"><span>{error}</span><button onClick={() => void refresh()}>Retry</button></div>}
         {notice && <div className="notice-banner" role="status"><ClipboardCheck size={17}/><span>{notice}</span><button onClick={() => setNotice('')}>Dismiss</button></div>}
         {loading ? <div className="surface live-loading"><LoaderCircle className="spin" size={22}/><p>Loading your gym records…</p></div> : <>
           {section === 'Overview' && <>
-            <div className="welcome-card" data-motion-reveal><img className="welcome-photo" src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1100&q=82" alt="Modern gym interior with strength-training equipment" loading="lazy" /><div className="welcome-copy"><div className="welcome-label"><Activity size={14}/> LIVE WORKSPACE</div><h2>Welcome to {workspaceGym.name}.</h2><p>These figures come from your gym's database, not sample records.</p><button className="text-action" onClick={() => setSection('Members')}>Manage members <Users size={15}/></button></div></div>
+            <div className="welcome-card" data-motion-reveal><div className="welcome-copy"><div className="welcome-label"><Activity size={14}/> LIVE WORKSPACE</div><h2>Welcome to {workspaceGym.name}.</h2><p>These figures come from your gym's database, not sample records.</p><button className="text-action" onClick={() => setSection('Members')}>Manage members <Users size={15}/></button></div><div className="welcome-art" aria-hidden="true"><div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-orb"><Dumbbell size={35} strokeWidth={1.4} /></div><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✳</span></div></div>
             <div className="section-head"><div><h2>The essentials</h2><p>Current records from your workspace.</p></div></div>
             <div className="metric-grid" data-motion-reveal>
               <Metric label="Active members" value={String(active.length)} detail={members.length + ' total records'} icon={Users}/>
@@ -318,7 +272,21 @@ export default function LiveApp({ gym, role, user }: Props) {
           {section === 'Follow-ups' && <section className="surface directory-panel" data-motion-reveal><div className="surface-heading"><div><h2>Member attendance tracking</h2><p>Track every gym member by their most recent visit</p></div><span>{filteredFollowUpMembers.length} members</span></div><div className="directory-toolbar"><div className="search-box"><Search size={17}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search members by name or phone" aria-label="Search follow-up members by name or phone"/></div></div><div className="table-scroll"><table><thead><tr><th>MEMBER</th><th>LAST VISIT</th><th>DAYS AWAY</th></tr></thead><tbody>{filteredFollowUpMembers.map(m => { const days = m.last_visit_at ? daysSinceVisit(m.last_visit_at) : null; const phone = telHref(m.phone); return <tr key={m.id}><td><b>{m.full_name}</b><br/>{phone ? <a href={phone}>{m.phone}</a> : <small>{m.phone}</small>}</td><td>{m.last_visit_at ? dateLabel(m.last_visit_at) : 'No visit recorded'}</td><td>{days === null ? 'Never visited' : days === 0 ? 'Today' : `${days} ${days === 1 ? 'day' : 'days'}`}</td></tr> })}</tbody></table>{filteredFollowUpMembers.length === 0 && <div className="empty-state" role="status">{followUpMembers.length === 0 ? 'No members in this gym yet.' : 'No members match this search.'}</div>}</div></section>}
           {section === 'Staff' && (role === 'owner' || role === 'admin') && <StaffWorkspace gymId={workspaceGym.id} role={role} />}
           {section === 'Reports' && <div className="page-stack" data-motion-reveal><div className="metric-grid"><Metric label="Total members" value={String(members.length)} detail="Records in this gym" icon={Users}/><Metric label="Active memberships" value={String(reportActiveMemberships.length)} detail="Active, not expiring this week" icon={Activity}/><Metric label="Attendance rows" value={String(attendance.length)} detail={`${reportVisitMemberCount} members · ${reportVisitAverage} visits/day`} icon={ClipboardCheck}/><Metric label="Away 7+ days" value={String(awayMemberCount)} detail={`${neverVisitedCount} with no recorded visit`} icon={Bell}/></div><section className="surface report-surface"><div className="surface-heading"><div><h2>Workspace summary</h2><p>Membership status breakdown for this gym.</p></div><span className="period-label">{new Intl.DateTimeFormat('en-IN', { timeZone: BUSINESS_TIME_ZONE, day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}</span></div><div className="report-bars"><ReportBar label="Current membership" count={reportActiveMemberships.length} total={members.length} color="green"/><ReportBar label="Expiring membership" count={reportExpiringMemberships.length} total={members.length} color="amber"/><ReportBar label="Inactive or expired" count={reportInactiveMemberships} total={members.length} color="grey"/></div><div className="report-note"><Activity size={16}/><span>Expiring means the membership ends within 7 days. Inactive includes paused, inactive, and expired memberships. Attendance rows cover the last 30 days.</span></div></section></div>}
-          {section === 'Settings' && role === 'owner' && <div className="page-stack"><form className="surface gym-settings-panel" onSubmit={saveSettings} data-motion-reveal><div className="settings-panel-heading"><div><h2>Gym workspace</h2><p>These details appear in your workspace and team tools.</p></div><span className="settings-role-badge">{roleLabel} access</span></div><div className="gym-settings-fields"><label>Gym name<input required minLength={2} maxLength={120} value={settingsForm.name} onChange={event => setSettingsForm({ ...settingsForm, name: event.target.value })}/></label><label>City<input required minLength={2} maxLength={100} value={settingsForm.city} onChange={event => setSettingsForm({ ...settingsForm, city: event.target.value })}/></label><label>Gym phone <span className="settings-optional">Optional</span><input type="tel" minLength={5} maxLength={30} value={settingsForm.phone} onChange={event => setSettingsForm({ ...settingsForm, phone: event.target.value })} placeholder="Gym contact number"/></label></div><div className="settings-panel-footer"><p>Dashboard colours stay consistent across all LiftDesk workspaces. Only this gym’s Owner can edit these details.</p><button type="submit" className="button-primary" disabled={savingSettings}>{savingSettings ? 'Saving…' : 'Save settings'}</button></div></form><form className="surface gym-settings-panel" onSubmit={saveOwnerPhone} data-motion-reveal><div className="settings-panel-heading"><div><h2>Owner contact</h2><p>This private number is visible to LiftDesk platform admins for account support. It is separate from your gym’s contact number.</p></div><span className="settings-role-badge">Private</span></div><div className="gym-settings-fields"><label>Your mobile number <span className="required-label">Required</span><input autoComplete="tel-national" type="tel" inputMode="numeric" required minLength={10} maxLength={10} pattern="[6-9][0-9]{9}" value={ownerPhone} onChange={event => setOwnerPhone(event.target.value.replace(/\D/g, '').slice(0, 10))} placeholder={loadingOwnerPhone ? 'Loading…' : '10-digit mobile number'} disabled={loadingOwnerPhone}/></label></div><div className="settings-panel-footer"><p>Changes appear in the LiftDesk admin gym directory after refresh.</p><button type="submit" className="button-primary" disabled={savingOwnerPhone || loadingOwnerPhone}>{savingOwnerPhone ? 'Saving…' : 'Save owner contact'}</button></div></form></div>}
+          {section === 'Settings' && role === 'owner' && <div className="settings-directory" data-motion-reveal>
+            <section className="settings-directory-row" aria-labelledby="settings-access-title">
+              <div className="settings-directory-copy"><h2 id="settings-access-title">Workspace access</h2><p>Choose who can work in this gym and what they can manage.</p></div>
+              <div className="settings-directory-panel"><div className="settings-directory-panel-copy"><h3>Admins and trainers</h3><p>Invite staff, assign workspace roles, and deactivate access when someone leaves.</p><span className="settings-current-state"><ShieldCheck size={14}/> Staff access is managed by the gym team</span></div><button type="button" className="button-secondary settings-directory-action" onClick={() => navigate('Staff')}>Manage staff <ArrowUpRight size={15}/></button></div>
+            </section>
+            <section className="settings-directory-row" aria-labelledby="settings-attendance-title">
+              <div className="settings-directory-copy"><h2 id="settings-attendance-title">Attendance rules</h2><p>See the safeguards LiftDesk applies to every check-in.</p></div>
+              <div className="settings-directory-panel"><div className="settings-directory-panel-copy"><h3>Staff-recorded check-ins</h3><p>Authorized staff record visits from Members. LiftDesk checks membership status and expiry, and allows one check-in per member per India calendar day. Member self check-in is off.</p><span className="settings-current-state"><ClipboardCheck size={14}/> One visit per member, per day</span></div><button type="button" className="button-secondary settings-directory-action" onClick={() => navigate('Attendance')}>View attendance <ArrowUpRight size={15}/></button></div>
+            </section>
+            <section className="settings-directory-row" aria-labelledby="settings-notifications-title">
+              <div className="settings-directory-copy"><h2 id="settings-notifications-title">Notifications</h2><p>Manage chat alerts for this browser or device.</p></div>
+              <div className="settings-directory-panel"><div className="settings-directory-panel-copy"><h3>Gym chat alerts</h3><p>Browser notification permission is optional and device-specific. Open Gym Chat to see availability and enable or turn off alerts for this device.</p><span className="settings-current-state"><Bell size={14}/> Your choice applies to this browser</span></div><button type="button" className="button-secondary settings-directory-action" onClick={() => document.querySelector<HTMLButtonElement>('.gym-chat-floating-launcher')?.click()}>Open Gym Chat <ArrowUpRight size={15}/></button></div>
+            </section>
+            <p className="settings-identity-note">Gym name and contact details are workspace setup information. If they need correction, contact LiftDesk support.</p>
+          </div>}
           {section === 'Help' && <div className="help-center" data-motion-reveal><section className="surface help-intro"><div><span className="help-kicker">LIFTDESK HELP</span><h2>Find your way around the workspace.</h2><p>These guides describe what the current LiftDesk tools do. Your access depends on your gym role.</p></div></section><div className="help-topic-grid"><HelpTopic title="Members" description="Add members, update their contact and membership details, and record a manual check-in from the member list." action="Open Members" onClick={() => navigate('Members')}/><HelpTopic title="Attendance" description="Check today’s visits and recent records. Staff record a check-in from Members after confirming the correct person." action="Open Attendance" onClick={() => navigate('Attendance')}/><HelpTopic title="Members away" description="Follow-ups tracks each member’s latest visit and how many days they have been away. It does not automatically message members." action="Open Follow-ups" onClick={() => navigate('Follow-ups')}/><HelpTopic title="Coaching" description="Trainers can review members in this gym and manage their diet plans, workout plans, progress, and coaching notes." action="Open Coaching" onClick={() => navigate('Coaching')}/><HelpTopic title="Reports" description="See gym-scoped membership counts, attendance records from the last 30 days, and members away for at least 7 days." action="Open Reports" onClick={() => navigate('Reports')}/>{(role === 'owner' || role === 'admin') && <HelpTopic title="Staff access" description="Owners and Admins manage staff records and invitations. Staff use the invited email account and are linked to this gym and assigned role." action="Open Staff" onClick={() => navigate('Staff')}/>}<HelpTopic title="Gym chat" description={role === 'owner' || role === 'admin' ? 'Owners and Admins can send and pin messages. Trainers and members can read gym messages but cannot send them.' : 'You can read gym messages here. Only Owners and Admins can send or pin messages.'} action="Open chat" onClick={() => document.querySelector<HTMLButtonElement>('.gym-chat-floating-launcher')?.click()}/></div></div>}
         </>}
         <footer className="page-footer"><div className="page-footer-primary"><button type="button" className="footer-home" onClick={() => navigate('Overview')} aria-label="LiftDesk home, Overview"><LiftDeskLogo /></button><span className="page-footer-context">{workspaceGym.name} <i aria-hidden="true">·</i> © {new Date().getFullYear()}</span></div><span className="page-footer-note">Private gym workspace</span></footer>

@@ -1,76 +1,72 @@
 import { useEffect } from 'react'
+import { ArrowDown, ArrowUpRight, Mail, ShieldCheck } from 'lucide-react'
 import LiftDeskMark from './LiftDeskMark'
 
 const dataRows = [
   {
     data: 'Account and sign-in',
-    examples: 'Name, email address, account ID, authentication provider and account status. For password sign-in, Supabase Auth handles the credential; LiftDesk does not store or read your plain-text password. Sign-in sessions are stored in your browser.',
-    purpose: 'Create accounts, confirm identity, sign you in, link you to a gym role, and protect workspace access.',
-    access: 'Supabase Auth; LiftDesk for account support; the Google account provider when you choose Google sign-in.',
-    retention: 'Account record: until separately deleted; LiftDesk has no automatic account deletion schedule. Browser session: until sign-out or session expiry.',
+    examples: 'Name, email, account ID, sign-in provider and account status; accepted Terms and Privacy Notice versions and server-recorded acceptance times. Supabase Auth handles password credentials; LiftDesk does not store or read plain-text passwords.',
+    purpose: 'Create and secure accounts, confirm sign-in, connect people to a gym role, record acceptance of current legal documents and help resolve account issues.',
+    access: 'Supabase; LiftDesk for account administration and support; Google receives information when you choose Google sign-in.',
+    retention: 'Until the account is separately deleted. LiftDesk has no automatic account deletion schedule. Browser session data remains until sign-out or expiry.',
   },
   {
     data: 'Gym and owner setup',
-    examples: 'Gym name, city, gym contact number, owner name, owner email, owner mobile number, workspace theme, approval/claim status and workspace status.',
-    purpose: 'Review and create gym workspaces, connect the owner, maintain LiftDesk’s internal gym directory, provide support and control access.',
+    examples: 'Gym name, city, gym and owner contact details, owner email, workspace status, approval/claim history and selected workspace settings.',
+    purpose: 'Review and provision workspaces, connect owners, maintain the directory, provide support and manage workspace access.',
     access: 'The gym owner and authorized gym admins; LiftDesk platform admins for provisioning and support. Owner support phone is restricted to platform admins.',
-    retention: 'While the workspace exists and until records are separately deleted. Pausing or archiving does not automatically delete these records.',
+    retention: 'While the workspace and related records exist. Pausing or archiving does not erase data; there is no automatic deletion timer.',
   },
   {
-    data: 'Member and membership records',
-    examples: 'Name, phone, WhatsApp number, email, age, height, weight, membership dates, plan, status, fee amount, notes and a QR check-in token.',
-    purpose: 'Maintain the gym directory, manage memberships, contact members, determine access/expiry, and record attendance.',
-    access: 'Authorized staff in that gym (including owners, admins and trainers); a signed-in member can view their own membership details.',
-    retention: 'Until the gym separately deletes the member record or related records. There is no automatic day-based purge for these records.',
+    data: 'Members and memberships',
+    examples: 'Member name, email, phone and optional WhatsApp number, age, adult age-declaration timestamp, membership dates, plan, fee, status, notes and QR check-in token.',
+    purpose: 'Maintain a gym member directory, manage membership and access, contact members and record visits.',
+    access: 'Authorized owner, admin and trainer accounts in that gym. Members can see their own membership information.',
+    retention: 'Until the gym separately deletes the relevant records. No automatic day-based purge is configured.',
   },
   {
-    data: 'Staff and staff attendance',
-    examples: 'Staff name, code, role, phone, email, joining date, employment status, optional photo link and notes; attendance date/status and who recorded it.',
-    purpose: 'Manage gym staff, assign workspace access, maintain employment records and track staff attendance.',
-    access: 'The gym owner and authorized admins; admin access to trainer records is limited by role. Linked staff accounts receive their assigned workspace role.',
-    retention: 'Until the gym separately deletes the staff or attendance record. No automatic day-based purge is configured.',
+    data: 'Staff and attendance',
+    examples: 'Staff name, role, contact information, joining date and status; member or staff check-in time, method and recording account.',
+    purpose: 'Manage team access and work status, record attendance and prepare gym activity reports.',
+    access: 'Authorized gym staff according to role. Members do not receive the staff directory or staff attendance records.',
+    retention: 'Until separately deleted with the relevant staff, member or workspace record. No automatic day-based purge is configured.',
   },
   {
-    data: 'Member attendance and follow-ups',
-    examples: 'Check-in date/time, method, recording staff account, visit history, follow-up type/status/due date and notes.',
-    purpose: 'Track visits, show attendance reports, identify membership or attendance follow-ups, and support gym operations.',
-    access: 'Authorized staff in the same gym. Members do not receive the staff attendance directory.',
-    retention: 'Until separately deleted with the relevant gym/member records. The app’s 30-day report view is not a 30-day deletion rule.',
+    data: 'Follow-ups and coaching',
+    examples: 'Follow-up type, status, due date and notes; workout or diet plans, goals, progress measurements, feedback and trainer observations.',
+    purpose: 'Help gym staff manage member follow-ups, share coaching plans and record progress when the gym chooses to use these features.',
+    access: 'Authorized owners, admins and trainers in that gym; members can see their own shared plans and progress.',
+    retention: 'Until separately deleted with the related member or workspace records. No automatic day-based purge is configured.',
   },
   {
-    data: 'Coaching and progress',
-    examples: 'Workout and diet plans, goals, dates, exercises/plan details, body weight and measurements, milestones, feedback, coaching observations and trainer notes.',
-    purpose: 'Let trainers prepare and update plans, record progress, and show members the plans and progress shared with them.',
-    access: 'Authorized owners, admins and trainers in the gym; members can view their own progress and plans that are published to them.',
-    retention: 'Until separately deleted with the member or workspace records. No automatic day-based purge is configured.',
-  },
-  {
-    data: 'Gym chat and encryption devices',
-    examples: 'Encrypted message content, sender/account and gym IDs, timestamps, pin status, and a public encryption key for each registered device. Private chat keys stay in that browser’s IndexedDB until browser storage is cleared.',
-    purpose: 'Deliver gym announcements and messages to registered gym devices while limiting access to intended participants.',
-    access: 'Chat participants in the same gym can read encrypted messages on registered devices. LiftDesk stores the encrypted message envelope and metadata.',
-    retention: 'Unpinned messages are automatically deleted after 48 hours. Pinned announcements remain while pinned; after unpinning, the 48-hour age rule applies. Server-side device keys remain until revoked or related records are removed.',
+    data: 'Gym chat and device keys',
+    examples: 'Encrypted message content, sender and gym IDs, timestamps, pin status, public device keys, and private chat keys stored in that browser’s IndexedDB.',
+    purpose: 'Deliver gym messages to registered devices while limiting message access to intended participants.',
+    access: 'Chat participants can read encrypted messages on registered devices. LiftDesk stores encrypted message envelopes and related metadata.',
+    retention: 'Unpinned messages are deleted after 48 hours. Pinned messages remain while pinned; after unpinning, the 48-hour age rule applies. Device keys remain until revoked or related records are removed.',
   },
   {
     data: 'Invitations and workspace requests',
-    examples: 'Invited email, invitation creator, hashed one-time token, expiry/use/revocation status; owner request name, email, phone, gym details and review status.',
-    purpose: 'Invite the correct person to a gym, prevent reuse of links, review new workspace requests and provision approved gyms.',
-    access: 'Relevant gym owner/admins and invited account; LiftDesk platform admins review workspace requests and provisions.',
-    retention: 'Invitation links expire after 48 hours (staff and member invites) or when used/revoked. Invitation status records and owner request records have no automatic deletion schedule.',
+    examples: 'Invited email, invitation creator, hashed one-time token, expiry and use status; workspace request contact details and review status.',
+    purpose: 'Invite the intended person, prevent invitation reuse and review workspace requests.',
+    access: 'Relevant gym staff and invited account; LiftDesk platform admins review workspace requests and provision gyms.',
+    retention: 'Invitation links expire after 48 hours or when used/revoked. Invitation and request records have no automatic deletion schedule.',
   },
   {
-    data: 'Optional chat push notifications',
-    examples: 'Browser push endpoint and encryption keys associated with an opted-in account and gym; delivery status. The push text is a generic new-message alert, not the chat message.',
-    purpose: 'Send a browser notification when a gym chat message arrives.',
-    access: 'Supabase and the push service addressed by your browser subscription (such as the browser/platform push provider).',
-    retention: 'Until you turn notifications off, remove the subscription, or the push service rejects the endpoint. Expired endpoints are removed when detected.',
+    data: 'Optional push notifications',
+    examples: 'Browser push endpoint and keys for an opted-in account and gym; delivery status. Alerts contain generic new-message text, not chat content.',
+    purpose: 'Send an alert when a gym chat message arrives.',
+    access: 'Supabase and the browser/platform push service addressed by your subscription.',
+    retention: 'Until notifications are disabled, the subscription is removed, or the push service rejects the endpoint. Expired endpoints are removed when detected.',
   },
 ]
+
+const privacyEmail = (subject: string) => `mailto:liftdesk11@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent('Please tell us your name, account email, gym (if applicable), and the privacy request you want to make. Do not include passwords or sensitive health details.')}`
 
 export default function PrivacyPage() {
   useEffect(() => {
     document.title = 'Privacy Notice | LiftDesk'
-    document.querySelector('meta[name="description"]')?.setAttribute('content', 'What information LiftDesk stores, why it is used, how long it is kept, and who can receive it.')
+    document.querySelector('meta[name="description"]')?.setAttribute('content', 'See the personal information LiftDesk stores, why it is used, who can access it, and how long it is kept.')
     document.querySelector('meta[name="robots"]')?.setAttribute('content', 'index, follow')
     document.querySelector('link[rel="canonical"]')?.setAttribute('href', 'https://liftdesk.pages.dev/privacy')
   }, [])
@@ -80,51 +76,79 @@ export default function PrivacyPage() {
       <a href="/" aria-label="LiftDesk home"><LiftDeskMark size={42} /></a>
       <a className="terms-home-link" href="/">Back to LiftDesk</a>
     </header>
-    <main className="terms-main privacy-main">
-      <article className="terms-document privacy-document">
-        <p className="terms-updated">Last updated 10 November 2026</p>
-        <h1>Privacy Notice</h1>
-        <p className="terms-lede">A clear view of the information LiftDesk stores, why it is used, how long it is kept, and who may receive it.</p>
-
-        <section className="terms-section privacy-intro-section">
-          <h2>Who handles your information</h2>
-          <p>LiftDesk is operated by Aditya Parashar. A gym decides what member and staff information it enters and which people it authorizes to use its workspace. LiftDesk provides the software and processes workspace information to operate it and provide support.</p>
-          <p>Some information describes a person, such as a name, email, phone number, account ID or attendance record. Coaching entries may also include body measurements, nutrition details or other personal notes. Gym operators should enter only information needed to run their gym and coach members. Phone numbers are entered by users or gym staff; LiftDesk currently checks format only and does not verify that a number exists, is active, or belongs to that person.</p>
-        </section>
-
-        <section className="terms-section privacy-data-section" aria-labelledby="privacy-data-title">
-          <h2 id="privacy-data-title">What we store, why, access and retention</h2>
-          <p>Retention below describes LiftDesk’s current application behavior. Most workspace records have no automatic deletion timer; archiving or pausing a gym does not erase them. Where no number of days is configured, the table says so rather than implying a fixed deadline.</p>
-          <div className="privacy-table-wrap" role="region" aria-label="LiftDesk data use and retention table" tabIndex={0}>
-            <table className="privacy-data-table">
-              <thead><tr><th scope="col">Data</th><th scope="col">Examples stored</th><th scope="col">Why we use it</th><th scope="col">Who may receive or access it</th><th scope="col">How long</th></tr></thead>
-              <tbody>{dataRows.map(row => <tr key={row.data}><th scope="row">{row.data}</th><td>{row.examples}</td><td>{row.purpose}</td><td>{row.access}</td><td>{row.retention}</td></tr>)}</tbody>
-            </table>
+    <main className="privacy-main">
+      <article className="privacy-document">
+        <section className="privacy-hero" aria-labelledby="privacy-title">
+          <div className="privacy-hero-copy">
+            <p className="privacy-overline">LIFTDESK · PRIVACY NOTICE</p>
+            <h1 id="privacy-title">Your information,<br />clearly accounted for.</h1>
+            <p className="privacy-lede">What the service stores, why it is needed, who may access it and how long it stays.</p>
+            <p className="privacy-updated">Last updated 10 November 2026</p>
           </div>
-          <p className="privacy-retention-note"><b>Important:</b> LiftDesk currently has no fixed deletion period for accounts, gym directories, member and staff records, attendance, follow-ups, coaching records, or archived workspaces. They remain until separately deleted. Contact the gym owner/admin about gym records, or LiftDesk about an account or deletion request. A request is not an automatic deletion command; we will review it and coordinate with the gym where appropriate.</p>
+          <a className="privacy-jump" href="#your-data">See the data details <ArrowDown size={16} /></a>
         </section>
 
-        <section className="terms-section">
-          <h2>Service providers and sharing</h2>
-          <p>LiftDesk shares data with service providers only as needed to run the product:</p>
-          <ul className="privacy-provider-list">
-            <li><a href="https://supabase.com/privacy" target="_blank" rel="noreferrer">Supabase</a> provides authentication, database storage, realtime chat delivery and server functions. Workspace data is stored and processed through the Supabase project configured for LiftDesk. Supabase may use its infrastructure subprocessors; see its <a href="https://supabase.com/legal/customer-resources/subprocessor-list" target="_blank" rel="noreferrer">current subprocessor list</a>.</li>
-            <li><a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google</a> receives information under Google’s own policies when you choose Google sign-in. LiftDesk receives account information made available by that sign-in, such as your account email and provider account ID.</li>
-            <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noreferrer">Cloudflare</a> hosts and delivers the public website. Like other web hosts, it may process connection and request data needed to deliver and secure the site; LiftDesk has no app-configured day count for provider infrastructure logs.</li>
-            <li>Your browser’s push notification provider receives a notification request and delivery endpoint only if you enable chat notifications. The notification contains a generic new-message alert, not the gym chat text.</li>
-          </ul>
-          <p>Gym information is also shared inside the relevant workspace with the roles described in the table. LiftDesk platform administrators may access gym directory and owner support information when provisioning or supporting workspaces. LiftDesk does not sell personal information or use it for targeted advertising.</p>
+        <section className="privacy-responsibility" aria-labelledby="privacy-responsibility-title">
+          <div><span className="privacy-section-index">01</span><h2 id="privacy-responsibility-title">Who decides how records are used?</h2></div>
+          <div className="privacy-responsibility-copy">
+            <p>Your gym chooses which member and staff records it enters, why it needs them for gym operations, and which staff roles can access them. LiftDesk provides the software, hosting and support tools. Ask the gym about records it entered; contact LiftDesk about your login account, platform use or a privacy request.</p>
+            <p>LiftDesk is operated by Aditya Parashar in India. Gym phone numbers are checked for format only; LiftDesk does not currently verify that a number exists, is active or belongs to the person named.</p>
+          </div>
         </section>
 
-        <section className="terms-section">
-          <h2>Security and your choices</h2>
-          <p>LiftDesk uses role-based database access rules to limit workspace records by gym and account role. New gym chat messages are encrypted on registered devices before storage; older chat messages created before that encryption feature may not be encrypted and are subject to the chat retention rule above. A message already delivered to a participant’s device cannot be recalled from that device.</p>
-          <p>You can ask your gym to correct or remove information it manages. You can turn off browser push notifications in Gym Chat or your browser settings. For account access, privacy, or deletion requests, email <a href="mailto:liftdesk11@gmail.com">liftdesk11@gmail.com</a>. Please identify the account and gym involved, and do not email passwords or sensitive health details.</p>
+        <section id="your-data" className="privacy-data-section" aria-labelledby="privacy-data-title">
+          <div className="privacy-section-heading">
+            <div><span className="privacy-section-index">02</span><h2 id="privacy-data-title">Data, purpose and retention</h2></div>
+            <p>Retention below describes the current product. Where there is no timer, we say so plainly.</p>
+          </div>
+          <div className="privacy-record-list">
+            {dataRows.map((row, index) => <article className="privacy-record" key={row.data}>
+              <div className="privacy-record-heading"><span>{String(index + 1).padStart(2, '0')}</span><h3>{row.data}</h3></div>
+              <div className="privacy-record-grid">
+                <div><h4>What we store</h4><p>{row.examples}</p></div>
+                <div><h4>Why we use it</h4><p>{row.purpose}</p></div>
+                <div><h4>Who can access it</h4><p>{row.access}</p></div>
+                <div><h4>How long we keep it</h4><p>{row.retention}</p></div>
+              </div>
+            </article>)}
+          </div>
+          <p className="privacy-retention-note"><ShieldCheck size={19} /><span><b>Pausing or archiving a gym does not delete its records.</b> LiftDesk has no automatic deletion timer for most accounts, member/staff records, attendance, coaching records, requests or archived workspaces. Ask the gym to remove records it controls, or contact LiftDesk about account and service data. Requests are reviewed and coordinated where appropriate.</span></p>
         </section>
 
-        <section className="terms-section">
-          <h2>Changes and contact</h2>
-          <p>We may update this notice as LiftDesk changes. The latest version and date will be posted here. LiftDesk is operated by Aditya Parashar in India. Privacy questions and requests can be sent to <a href="mailto:liftdesk11@gmail.com">liftdesk11@gmail.com</a>.</p>
+        <section className="privacy-sharing" aria-labelledby="privacy-sharing-title">
+          <div className="privacy-section-heading">
+            <div><span className="privacy-section-index">03</span><h2 id="privacy-sharing-title">Who helps provide LiftDesk?</h2></div>
+            <p>We use service providers to run the website and gym workspace. We do not sell personal information or use it for targeted advertising.</p>
+          </div>
+          <div className="privacy-provider-grid">
+            <article><h3>Supabase</h3><p>Authentication, database storage, realtime delivery and server functions. Its infrastructure subprocessors may also process data.</p><a href="https://supabase.com/legal/customer-resources/subprocessor-list" target="_blank" rel="noreferrer">View subprocessors <ArrowUpRight size={14} /></a></article>
+            <article><h3>Google</h3><p>Receives sign-in information when you choose Google sign-in. LiftDesk receives account details made available by Google.</p><a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google Privacy Policy <ArrowUpRight size={14} /></a></article>
+            <article><h3>Cloudflare</h3><p>Hosts and delivers the website and may process connection and request details needed to deliver and secure it. Provider log retention is not controlled by LiftDesk.</p><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noreferrer">Cloudflare Privacy Policy <ArrowUpRight size={14} /></a></article>
+            <article><h3>Browser push services</h3><p>Receive a delivery endpoint and generic notification request only when you enable chat notifications.</p><span>Optional feature · can be disabled in browser settings</span></article>
+          </div>
+          <p className="privacy-provider-footnote">The public site and workspace no longer load Google Fonts or Unsplash images from their servers. Your browser still sends the requests needed to load LiftDesk and, when signed in, the configured Supabase service.</p>
+        </section>
+
+        <section className="privacy-rights" aria-labelledby="privacy-rights-title">
+          <div className="privacy-rights-copy"><span className="privacy-section-index">04</span><h2 id="privacy-rights-title">Questions, requests or a concern?</h2><p>You can ask for access to your information, correction, deletion where applicable, or withdraw consent. For gym records, contact your gym first; for account and LiftDesk service data, contact us. Include the account email and gym name so we can identify the right records. Do not email passwords or sensitive health details.</p><p>We will review requests and coordinate with the gym where it controls the records. Workspace archive is not deletion. You may raise an unresolved grievance with the Data Protection Board of India after contacting us; see <a href="https://www.meity.gov.in/digital-personal-data-protection-act" target="_blank" rel="noreferrer">the Ministry’s DPDP information page</a> for current official guidance.</p><a className="privacy-email-link" href="mailto:liftdesk11@gmail.com"><Mail size={17} /> liftdesk11@gmail.com</a></div>
+          <div className="privacy-request-actions" aria-label="Email LiftDesk about a privacy request">
+            <a href={privacyEmail('LiftDesk privacy request: access my information')}>Access my information <ArrowUpRight size={15} /></a>
+            <a href={privacyEmail('LiftDesk privacy request: correct information')}>Correct information <ArrowUpRight size={15} /></a>
+            <a href={privacyEmail('LiftDesk privacy request: delete information')}>Request deletion <ArrowUpRight size={15} /></a>
+            <a href={privacyEmail('LiftDesk privacy request: withdraw consent or raise a concern')}>Withdraw consent or raise a concern <ArrowUpRight size={15} /></a>
+            <a href={privacyEmail('LiftDesk privacy request: nominate a representative')}>Nominate someone to act for me <ArrowUpRight size={15} /></a>
+          </div>
+        </section>
+
+        <section className="privacy-security" aria-labelledby="privacy-security-title">
+          <h2 id="privacy-security-title">Security and account choices</h2>
+          <p>Database access rules restrict workspace records by gym and role. New gym chat messages are encrypted on registered devices before storage; older messages may not be encrypted. A message already delivered to a participant’s device cannot be recalled. Turn off browser push notifications in Gym Chat or in your browser settings.</p>
+          <p>New member accounts are intended for adults aged 18 and over. Signup asks for an age declaration and does not independently verify age or identity. Existing member records are not automatically removed by this change.</p>
+        </section>
+
+        <section className="privacy-contact" aria-label="Privacy contact">
+          <div><span>Privacy contact</span><b>Aditya Parashar · India</b></div>
+          <a href="mailto:liftdesk11@gmail.com">Email Liftdesk <ArrowUpRight size={15} /></a>
         </section>
       </article>
     </main>

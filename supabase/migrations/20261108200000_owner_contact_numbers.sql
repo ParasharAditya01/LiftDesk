@@ -2,10 +2,10 @@
 -- Keep this separate from gyms.phone, which is the gym's public contact number.
 
 alter table public.owner_access_requests
-  add column owner_mobile_phone text
+  add column if not exists owner_mobile_phone text
   check (owner_mobile_phone is null or owner_mobile_phone ~ '^[6-9][0-9]{9}$');
 
-create table public.owner_contact_numbers (
+create table if not exists public.owner_contact_numbers (
   owner_user_id uuid primary key references auth.users(id) on delete cascade,
   phone text not null check (phone ~ '^[6-9][0-9]{9}$'),
   updated_at timestamptz not null default now()
@@ -118,6 +118,7 @@ $$;
 
 revoke all on function public.copy_owner_contact_on_approval() from public, anon, authenticated;
 
+drop trigger if exists owner_access_request_copy_contact on public.owner_access_requests;
 create trigger owner_access_request_copy_contact
 after update of status on public.owner_access_requests
 for each row execute function public.copy_owner_contact_on_approval();
