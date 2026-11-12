@@ -2317,3 +2317,14 @@ body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: v
 .landing-hero-copy>p, .landing-section-intro>p, .process-heading>p, .faq-intro>p, .terms-lede, .terms-section p, .privacy-document .terms-section p, .privacy-document .terms-section li, .privacy-responsibility-copy p, .privacy-section-heading>p, .privacy-rights-copy>p, .privacy-security p { font-size: var(--ld-type-body); }
 .primary-nav, .nav-item, .landing-nav, .landing-nav-cta, .landing-primary, .landing-secondary, .button-primary, .button-secondary, .text-action { font-size: var(--ld-type-control); }
 .eyebrow, .nav-caption, .landing-kicker, .landing-index, .landing-proofline, .privacy-overline, .privacy-section-index, .privacy-updated, .auth-consent-check, .terms-footer, .page-footer { font-size: var(--ld-type-caption); }
+
+/* Enforce the requested typography scale across component-level rules. */
+:root, body, #root, #root button, #root input, #root select, #root textarea {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+}
+:root { font-size: 16px; }
+#root h1, #root .landing-hero h1, #root .page-heading h1, #root .terms-document h1, #root .privacy-hero h1, #root .member-portal-hero h1 { font-size: 24px !important; line-height: 1.25 !important; letter-spacing: normal !important; }
+#root h2, #root .terms-section h2, #root .privacy-responsibility h2, #root .privacy-section-heading h2, #root .privacy-rights h2, #root .privacy-security h2 { font-size: 18px !important; line-height: 1.35 !important; letter-spacing: normal !important; }
+#root p, #root li, #root dd, #root dt { font-size: 16px; }
+#root nav, #root nav a, #root nav button, #root button, #root input, #root select, #root .button-primary, #root .button-secondary, #root .landing-primary, #root .landing-secondary, #root .text-action { font-size: 14px !important; }
+#root small, #root caption, #root figcaption, #root .eyebrow, #root .nav-caption, #root .landing-kicker, #root .landing-index, #root .landing-proofline, #root .privacy-overline, #root .privacy-section-index, #root .privacy-updated, #root .terms-footer, #root .page-footer { font-size: 12px !important; }
