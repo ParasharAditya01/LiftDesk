@@ -9,10 +9,12 @@ import { requireSupabase } from './lib/supabase'
 type Props = { onOpenWorkspace?: () => void; onSignOut: () => void }
 type Section = 'users' | 'content' | 'notifications' | 'reports'
 
-function readableError(error: unknown) {
+function readableError(error: unknown, context: 'general' | 'notification' = 'general') {
   const code = (error as { code?: string } | null)?.code
   if (code === '42501') return 'Your account is not authorized to manage LiftDesk platform data.'
-  if (code === '42883' || code === 'PGRST202') return 'The gym overview is not available yet. Apply the latest LiftDesk platform-admin database migration, then refresh.'
+  if (code === '42883' || code === 'PGRST202') return context === 'notification'
+    ? 'Owner notifications are not set up in the database yet. Apply the platform owner notifications migration, then try again.'
+    : 'A required LiftDesk platform-admin database function is not available yet. Apply the latest platform-admin migration, then refresh.'
   return 'LiftDesk could not load this information. Check your connection and try again.'
 }
 
@@ -95,7 +97,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
       if (sendError) throw sendError
       setNotice(`Notification sent to ${selectedGymIds.length} selected gym owner${selectedGymIds.length === 1 ? '' : 's'}.`)
       setNotificationTitle(''); setNotificationBody(''); setSelectedGymIds([])
-    } catch (err) { setError(readableError(err)) }
+    } catch (err) { setError(readableError(err, 'notification')) }
     finally { setBusyId('') }
   }
 
