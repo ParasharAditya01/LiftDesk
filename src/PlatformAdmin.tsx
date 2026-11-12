@@ -121,13 +121,13 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
 
   async function removeGym(gym: PlatformGymSummary) {
     const confirmed = window.confirm(
-      `Remove ${gym.gym_name} from LiftDesk? This will disable sign-in for its owner, staff, and members and revoke outstanding staff invitations. Existing gym records will be retained for history.`
+      `Permanently delete ${gym.gym_name} and all of its gym records? This cannot be undone. The owner, staff, and members will lose access to this workspace. Their LiftDesk sign-in accounts will remain.`
     )
     if (!confirmed) return
     setBusyId(gym.gym_id); setError(''); setNotice('')
     try {
       await removePlatformGymWorkspace(gym.gym_id)
-      setNotice(`${gym.gym_name} was removed from the active gym directory. Its records are retained.`)
+      setNotice(`${gym.gym_name} and its gym records were permanently deleted.`)
       await load()
     } catch (err) { setError(readableError(err)) }
     finally { setBusyId('') }
@@ -186,7 +186,7 @@ export default function PlatformAdmin({ onOpenWorkspace, onSignOut }: Props) {
         {loading ? <div className="platform-admin-empty"><LoaderCircle className="spin" size={20}/> Loading gym overview…</div>
           : filteredGyms.length === 0 ? <div className="platform-admin-empty"><Building2 size={20}/><div><b>{gyms.length ? 'No gyms match this search' : 'No gym workspaces yet'}</b><span>{gyms.length ? 'Try a different name, city, or filter.' : 'Approved workspaces will appear here.'}</span></div></div>
             : <div className="platform-gym-list">{filteredGyms.map(gym => <article className="platform-gym-card" key={gym.gym_id}>
-              <div className="platform-gym-heading"><div className="platform-gym-identity"><i><Building2 size={18}/></i><div><h2>{gym.gym_name}</h2><p>{gym.city || 'City not provided'} <span>·</span> Added {dateLabel(gym.created_at)}</p><p>Owner Google account: {gym.owner_email || 'Not provided'}</p><p>Owner contact: {gym.owner_phone ? <a href={`tel:${gym.owner_phone}`}>{gym.owner_phone}</a> : 'Not provided'}</p></div></div><div className="platform-gym-card-actions"><span className={`platform-health ${gym.workspace_paused_at ? 'is-paused' : gym.active_owner_count ? 'is-active' : 'needs-owner'}`}><i/>{gym.workspace_paused_at ? 'Workspace paused' : gym.active_owner_count ? 'Owner active' : 'Waiting for Google sign-in'}</span><button type="button" className="platform-pause-gym" disabled={Boolean(busyId)} onClick={() => void toggleWorkspacePause(gym)}>{busyId === gym.gym_id ? <LoaderCircle size={14} className="spin"/> : gym.workspace_paused_at ? <Play size={14}/> : <Pause size={14}/>} {gym.workspace_paused_at ? 'Resume' : 'Pause'}</button><button type="button" className="platform-remove-gym" disabled={Boolean(busyId)} onClick={() => void removeGym(gym)}>{busyId === gym.gym_id ? <LoaderCircle size={14} className="spin"/> : <X size={14}/>}Remove</button></div></div>
+              <div className="platform-gym-heading"><div className="platform-gym-identity"><i><Building2 size={18}/></i><div><h2>{gym.gym_name}</h2><p>{gym.city || 'City not provided'} <span>·</span> Added {dateLabel(gym.created_at)}</p><p>Owner Google account: {gym.owner_email || 'Not provided'}</p><p>Owner contact: {gym.owner_phone ? <a href={`tel:${gym.owner_phone}`}>{gym.owner_phone}</a> : 'Not provided'}</p></div></div><div className="platform-gym-card-actions"><span className={`platform-health ${gym.workspace_paused_at ? 'is-paused' : gym.active_owner_count ? 'is-active' : 'needs-owner'}`}><i/>{gym.workspace_paused_at ? 'Workspace paused' : gym.active_owner_count ? 'Owner active' : 'Waiting for Google sign-in'}</span><button type="button" className="platform-pause-gym" disabled={Boolean(busyId)} onClick={() => void toggleWorkspacePause(gym)}>{busyId === gym.gym_id ? <LoaderCircle size={14} className="spin"/> : gym.workspace_paused_at ? <Play size={14}/> : <Pause size={14}/>} {gym.workspace_paused_at ? 'Resume' : 'Pause'}</button><button type="button" className="platform-remove-gym" disabled={Boolean(busyId)} onClick={() => void removeGym(gym)}>{busyId === gym.gym_id ? <LoaderCircle size={14} className="spin"/> : <X size={14}/>}Delete workspace</button></div></div>
               <div className="platform-gym-metrics">
                 <div><span>Members</span><strong>{Number(gym.member_count).toLocaleString('en-IN')}</strong><small>{Number(gym.active_member_count).toLocaleString('en-IN')} active</small></div>
                 <div><span>Admins</span><strong>{Number(gym.admin_count).toLocaleString('en-IN')}</strong><small>{Number(gym.active_admin_count).toLocaleString('en-IN')} active</small></div>
